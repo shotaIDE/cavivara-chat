@@ -96,19 +96,71 @@ enum SupportTitle {
 
 **提供機能**:
 
-- `displayName`: UI 表示用の日本語名を返す
-  - small → "ちょっと応援"
-  - medium → "しっかり応援"
-  - large → "めっちゃ応援"
-- `icon`: 各プランのアイコンを返す
-  - small → Icons.favorite_border
-  - medium → Icons.favorite
-  - large → Icons.volunteer_activism
+```dart
+extension SupportPlanExtension on SupportPlan {
+  String get displayName {
+    switch (this) {
+      case SupportPlan.small:
+        return 'ちょっと応援';
+      case SupportPlan.medium:
+        return 'しっかり応援';
+      case SupportPlan.large:
+        return 'めっちゃ応援';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case SupportPlan.small:
+        return Icons.favorite_border;
+      case SupportPlan.medium:
+        return Icons.favorite;
+      case SupportPlan.large:
+        return Icons.volunteer_activism;
+    }
+  }
+
+  int get vivaPoint {
+    switch (this) {
+      case SupportPlan.small:
+        return 1;
+      case SupportPlan.medium:
+        return 4;
+      case SupportPlan.large:
+        return 8;
+    }
+  }
+
+  String get thankYouMessage {
+    switch (this) {
+      case SupportPlan.small:
+        return '頑張って!';
+      case SupportPlan.medium:
+        return 'いつもありがとう!';
+      case SupportPlan.large:
+        return 'これからも応援するヴィヴァ!';
+    }
+  }
+
+  String get productId {
+    switch (this) {
+      case SupportPlan.small:
+        return 'jp.cavivara.talk.support.small';
+      case SupportPlan.medium:
+        return 'jp.cavivara.talk.support.medium';
+      case SupportPlan.large:
+        return 'jp.cavivara.talk.support.large';
+    }
+  }
+}
+```
 
 **設計意図**:
 
 - 関心の分離: データモデルと UI ロジックを分離
 - テスタビリティ: モデル層のテストが UI 非依存
+- 依存関係の明確化: data/model は Flutter UI に依存しない
+- 再利用性: 同じモデルを異なる UI 実装で使用可能
 
 ### 4. SupportTitleExtension(UI 拡張)
 
@@ -118,9 +170,72 @@ enum SupportTitle {
 
 **提供機能**:
 
-- `displayName`: UI 表示用の称号名を返す
-- `requiredVivaPoint`: この称号に必要な累計 VP を返す
-- `nextTitle`: 次の称号を返す(最高称号の場合は null)
+```dart
+extension SupportTitleExtension on SupportTitle {
+  String get displayName {
+    switch (this) {
+      case SupportTitle.none:
+        return '';
+      case SupportTitle.beginner:
+        return '応援ビギナー';
+      case SupportTitle.supporter:
+        return '応援サポーター';
+      case SupportTitle.expert:
+        return '応援エキスパート';
+      case SupportTitle.master:
+        return '応援マスター';
+      case SupportTitle.legend:
+        return '応援レジェンド';
+      case SupportTitle.grandMaster:
+        return '応援グランドマスター';
+    }
+  }
+
+  int get requiredVivaPoint {
+    switch (this) {
+      case SupportTitle.none:
+        return 0;
+      case SupportTitle.beginner:
+        return 1;
+      case SupportTitle.supporter:
+        return 5;
+      case SupportTitle.expert:
+        return 10;
+      case SupportTitle.master:
+        return 20;
+      case SupportTitle.legend:
+        return 50;
+      case SupportTitle.grandMaster:
+        return 100;
+    }
+  }
+
+  SupportTitle? get nextTitle {
+    switch (this) {
+      case SupportTitle.none:
+        return SupportTitle.beginner;
+      case SupportTitle.beginner:
+        return SupportTitle.supporter;
+      case SupportTitle.supporter:
+        return SupportTitle.expert;
+      case SupportTitle.expert:
+        return SupportTitle.master;
+      case SupportTitle.master:
+        return SupportTitle.legend;
+      case SupportTitle.legend:
+        return SupportTitle.grandMaster;
+      case SupportTitle.grandMaster:
+        return null;
+    }
+  }
+}
+```
+
+**設計意図**:
+
+- 称号の判定ロジックを一元管理
+- UI からビジネスロジックを分離
+- テスタビリティの向上
 
 ### 5. VivaPointRepository(永続化)
 
@@ -133,11 +248,45 @@ enum SupportTitle {
 - `build()`: SharedPreferences から累計 VP を読み込み、デフォルトは 0
 - `add(int point)`: 指定された VP を加算して保存
 
+**実装例**:
+
+```dart
+@riverpod
+class VivaPointRepository extends _$VivaPointRepository {
+  @override
+  Future<int> build() async {
+    final preferenceService = ref.read(preferenceServiceProvider);
+    final value = await preferenceService.getInt(
+      PreferenceKey.totalVivaPoint,
+    );
+
+    return value ?? 0;
+  }
+
+  Future<void> add(int point) async {
+    final currentPoint = state.valueOrNull ?? 0;
+    final newPoint = currentPoint + point;
+
+    final preferenceService = ref.read(preferenceServiceProvider);
+    await preferenceService.setInt(
+      PreferenceKey.totalVivaPoint,
+      value: newPoint,
+    );
+
+    if (!ref.mounted) {
+      return;
+    }
+    state = AsyncValue.data(newPoint);
+  }
+}
+```
+
 **実装方式**:
 
 - Riverpod の @riverpod アノテーション
 - AsyncValue で非同期状態を管理
 - int 値を SharedPreferences に保存
+- 既存の PreferenceService を使用して SharedPreferences にアクセス
 
 ### 6. SupportTitleRepository(計算)
 
@@ -153,11 +302,61 @@ enum SupportTitle {
 - `pointsToNextTitle`: 次の称号まで必要な VP を返す
 - `progressToNextTitle`: 次の称号までの進捗(0.0〜1.0)を返す
 
+**実装例**:
+
+```dart
+@freezed
+class SupportTitleInfo with _$SupportTitleInfo {
+  const factory SupportTitleInfo({
+    required SupportTitle currentTitle,
+    SupportTitle? nextTitle,
+    required int pointsToNextTitle,
+    required double progressToNextTitle,
+  }) = _SupportTitleInfo;
+}
+
+@riverpod
+Future<SupportTitleInfo> supportTitleInfo(Ref ref) async {
+  final totalVivaPoint = await ref.watch(vivaPointRepositoryProvider.future);
+
+  // 現在の称号を計算
+  SupportTitle currentTitle = SupportTitle.none;
+  for (final title in SupportTitle.values.reversed) {
+    if (totalVivaPoint >= title.requiredVivaPoint) {
+      currentTitle = title;
+      break;
+    }
+  }
+
+  // 次の称号を取得
+  final nextTitle = currentTitle.nextTitle;
+
+  // 次の称号まで必要なポイントを計算
+  final pointsToNextTitle = nextTitle != null
+      ? nextTitle.requiredVivaPoint - totalVivaPoint
+      : 0;
+
+  // 進捗を計算
+  final progressToNextTitle = nextTitle != null
+      ? (totalVivaPoint - currentTitle.requiredVivaPoint) /
+          (nextTitle.requiredVivaPoint - currentTitle.requiredVivaPoint)
+      : 1.0;
+
+  return SupportTitleInfo(
+    currentTitle: currentTitle,
+    nextTitle: nextTitle,
+    pointsToNextTitle: pointsToNextTitle,
+    progressToNextTitle: progressToNextTitle,
+  );
+}
+```
+
 **実装方式**:
 
 - Riverpod の @riverpod アノテーション
 - VivaPointRepository に依存
 - 計算ロジックのみで永続化は行わない
+- Freezed を使用して称号情報をまとめたデータクラスを返す
 
 ### 7. InAppPurchaseService(サービス層)
 
@@ -173,17 +372,131 @@ enum SupportTitle {
 - `buyConsumable(ProductDetails product)`: 消費型商品を購入
 - `purchaseStream`: 購入イベントのストリーム
 
+**実装例**:
+
+```dart
+@riverpod
+class InAppPurchaseService extends _$InAppPurchaseService {
+  late final InAppPurchase _inAppPurchase;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
+
+  @override
+  Future<void> build() async {
+    _inAppPurchase = InAppPurchase.instance;
+
+    // 購入ストリームのリスナーを設定
+    _subscription = _inAppPurchase.purchaseStream.listen(
+      _onPurchaseUpdate,
+      onError: _onPurchaseError,
+    );
+
+    ref.onDispose(() {
+      _subscription?.cancel();
+    });
+  }
+
+  Future<bool> isAvailable() async {
+    return await _inAppPurchase.isAvailable();
+  }
+
+  Future<List<ProductDetails>> queryProductDetails(
+    Set<String> productIds,
+  ) async {
+    final response = await _inAppPurchase.queryProductDetails(productIds);
+
+    if (response.error != null) {
+      throw ProductQueryException();
+    }
+
+    if (response.productDetails.isEmpty) {
+      throw ProductNotFoundException();
+    }
+
+    return response.productDetails;
+  }
+
+  Future<void> buyConsumable(ProductDetails product) async {
+    final purchaseParam = PurchaseParam(productDetails: product);
+    await _inAppPurchase.buyConsumable(purchaseParam: purchaseParam);
+  }
+
+  void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+    for (final purchaseDetails in purchaseDetailsList) {
+      if (purchaseDetails.status == PurchaseStatus.purchased) {
+        // 購入完了処理
+        _completePurchase(purchaseDetails);
+      } else if (purchaseDetails.status == PurchaseStatus.error) {
+        // エラー処理
+        _handlePurchaseError(purchaseDetails);
+      }
+
+      // 購入処理を完了としてマーク
+      if (purchaseDetails.pendingCompletePurchase) {
+        _inAppPurchase.completePurchase(purchaseDetails);
+      }
+    }
+  }
+
+  void _onPurchaseError(Object error) {
+    // エラーログを送信
+    ref.read(errorReportServiceProvider).report(error);
+  }
+
+  Future<void> _completePurchase(PurchaseDetails purchaseDetails) async {
+    // VPを加算
+    final plan = _getPlanFromProductId(purchaseDetails.productID);
+    if (plan != null) {
+      await ref
+          .read(vivaPointRepositoryProvider.notifier)
+          .add(plan.vivaPoint);
+    }
+  }
+
+  void _handlePurchaseError(PurchaseDetails purchaseDetails) {
+    if (purchaseDetails.error?.code == 'user_cancelled') {
+      // ユーザーキャンセルは静かに処理
+      return;
+    }
+
+    // その他のエラーは報告
+    ref.read(errorReportServiceProvider).report(purchaseDetails.error);
+  }
+
+  SupportPlan? _getPlanFromProductId(String productId) {
+    for (final plan in SupportPlan.values) {
+      if (plan.productId == productId) {
+        return plan;
+      }
+    }
+    return null;
+  }
+}
+```
+
 **実装方式**:
 
 - Riverpod の @riverpod アノテーション
 - in_app_purchase パッケージを使用
-- エラーハンドリング(PurchaseException)
+- StreamSubscription で購入イベントを監視
+- ref.onDispose でリソースのクリーンアップ
 
 **エラー処理**:
 
 - ユーザーキャンセル: 静かに処理終了
-- ネットワークエラー: ユーザーにエラーダイアログ表示
-- 商品情報取得失敗: ユーザーにエラーダイアログ表示
+- ネットワークエラー: ErrorReportService でログ送信
+- 商品情報取得失敗: カスタム例外をスロー
+
+**カスタム例外**:
+
+```dart
+class ProductQueryException implements Exception {
+  const ProductQueryException();
+}
+
+class ProductNotFoundException implements Exception {
+  const ProductNotFoundException();
+}
+```
 
 ### 8. PreferenceKey 拡張
 
@@ -239,10 +552,54 @@ enum SupportTitle {
 
 **追加内容**:
 
-- "💝 カヴィヴァラを応援" ListTile を追加
-  - アイコン: 💝(絵文字)
-  - サブタイトルに累計 VP と現在の称号を表示(未応援時は表示なし)
-  - タップで SupportCavivaraScreen に遷移
+"💝 カヴィヴァラを応援" ListTile を「アプリについて」セクションに追加
+
+**実装例**:
+
+```dart
+Widget build(BuildContext context) {
+  final titleInfo = ref.watch(supportTitleInfoProvider);
+
+  return ListView(
+    children: [
+      // ...既存のセクション
+
+      // アプリについてセクション
+      ListTile(
+        leading: const Text('💝'),
+        title: const Text('カヴィヴァラを応援'),
+        subtitle: titleInfo.when(
+          data: (info) {
+            if (info.currentTitle == SupportTitle.none) {
+              return null;
+            }
+            final totalVp = ref.watch(vivaPointRepositoryProvider).valueOrNull ?? 0;
+            return Text('${totalVp}VP・称号: ${info.currentTitle.displayName}');
+          },
+          loading: () => null,
+          error: (_, __) => null,
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () {
+          Navigator.of(context).push(SupportCavivaraScreen.route());
+        },
+      ),
+
+      // ...他のセクション
+    ],
+  );
+}
+```
+
+**表示仕様**:
+
+- **アイコン**: 💝 絵文字
+- **タイトル**: "カヴィヴァラを応援"
+- **サブタイトル**:
+  - 未応援時(0VP): 表示なし
+  - 応援済み: "5VP・称号: 応援サポーター"のように表示
+- **trailing**: 右向き矢印アイコン
+- **タップ動作**: SupportCavivaraScreen に遷移
 
 ### 11. 応援完了ダイアログ
 
@@ -525,9 +882,65 @@ group('SupportTitleExtension', () {
 - 称号システムは拡張可能(新しい称号の追加)
 - 応援プランは追加可能(新しい価格帯)
 
+## 制約事項
+
+- iOS、Android 両プラットフォームで同一の機能と見た目を保証する
+- 応援課金は純粋なサポートであり、機能追加は一切行わない
+- App Store / Google Play のガイドラインを厳密に遵守する
+- 消費型アイテムのみを使用し、非消費型・サブスクリプションは使用しない
+- 個別の応援履歴(日時・金額の詳細)は記録しない
+- 累計 VP と称号のみをローカルに保存する
+- サーバーへの課金情報の送信は行わない
+
+## パフォーマンス考慮事項
+
+### リポジトリの効率的な使用
+
+- VivaPointRepository は AsyncValue で状態を管理し、不要な再読み込みを防ぐ
+- SupportTitleRepository は VivaPointRepository を watch し、VP 更新時のみ再計算
+- SharedPreferences への書き込みは最小限に抑える(VP 加算時のみ)
+
+### UI の効率的な再ビルド
+
+- ref.watch を使用して必要な部分のみを再ビルド
+- 応援画面では商品情報を一度だけ取得し、キャッシュする
+- 進捗バーのアニメーションは軽量に実装
+
+### 課金処理の非同期化
+
+- 購入処理は非同期で実行し、UI をブロックしない
+- purchaseStream を使用してバックグラウンドで購入完了を検知
+- 購入完了後の VP 加算は await せず、非同期で実行
+
+## アクセシビリティ考慮事項
+
+### スクリーンリーダー対応
+
+- 全ての ListTile と Button に適切なセマンティクスを設定
+- 累計 VP と称号の情報をスクリーンリーダーで読み上げ可能にする
+- 進捗バーの進捗状況を音声で伝える
+
+### 視覚的配慮
+
+- 称号の表示には十分なコントラストを確保
+- プランカードは視覚的に区別しやすいデザイン
+- アイコンとテキストを組み合わせて情報を伝達
+
+### タッチターゲット
+
+- 全てのタッチ可能な要素は最低 48x48dp のサイズを確保
+- プランカード間には十分な間隔を設ける
+
+### 多言語対応(将来的な拡張)
+
+- 現在は日本語のみだが、将来的に多言語対応可能な設計
+- 文字列は全てハードコードせず、定数として定義
+- 数値(VP、金額)は locale に応じた表示形式に対応
+
 ## 関連ドキュメント
 
 - [要件定義書: カヴィヴァラ応援課金機能](../requirement/support-cavivara-donation.md)
 - [in_app_purchase plugin documentation](https://pub.dev/packages/in_app_purchase)
 - [App Store In-App Purchase Guidelines](https://developer.apple.com/app-store/review/guidelines/#in-app-purchase)
 - [Google Play Billing Guidelines](https://support.google.com/googleplay/android-developer/answer/140504)
+- [SharedPreferences 使用時の設計方法](../how-to-design-when-using-shared-preferences.md)
