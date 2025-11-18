@@ -9,3 +9,10 @@
 /.claude/commands/task-executor-frontend.md
 /.claude/commands/task-executor-qa.md
 /.claude/settings.local.json
+/.github/ISSUE_EXAMPLE/screen-epic-example.md
+/.github/ISSUE_TEMPLATE/bug-report.md
+/.github/ISSUE_TEMPLATE/feature-epic.md
+/.github/ISSUE_TEMPLATE/feature-impl-be.md
+/.github/ISSUE_TEMPLATE/feature-impl-fe.md
+/.github/ISSUE_TEMPLATE/feature-impl.md
+/.github/pull_request_template.md
