@@ -1,1 +1,11 @@
+/.claude/commands/generate-epic.md
+/.claude/commands/generate-imple-backend.md
+/.claude/commands/generate-imple-BFF.md
+/.claude/commands/generate-imple-frontend.md
+/.claude/commands/generate-imple-qa.md
+/.claude/commands/generate-pr.md
+/.claude/commands/task-executor-backend.md
+/.claude/commands/task-executor-BFF.md
+/.claude/commands/task-executor-frontend.md
+/.claude/commands/task-executor-qa.md
 /.claude/settings.local.json
