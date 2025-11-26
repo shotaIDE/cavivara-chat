@@ -247,6 +247,37 @@ dart run flutter_launcher_icons
 [client/ios/Runner.xcodeproj/project.pbxproj](client/ios/Runner.xcodeproj/project.pbxproj) における差分を元に戻します。
 このファイルは xcconfig ファイルとの組み合わせでアイコン名が既に指定されているため、flutter_launcher_icons による変更は不要なためです。
 
+### RevenueCat の設定
+
+RevenueCat のダッシュボードで、本番環境のアプリを束ねる 1 つのプロジェクトを作成します。
+
+プロジェクト内で App Store と Google Play のアプリを作成します。
+以下を参考に必要な設定をストアから取得します。
+
+https://www.revenuecat.com/docs/projects/connect-a-store
+
+プロジェクトには`client/revenue-cat-config.sample.json`というサンプルファイルが含まれています。
+このファイルをコピーして`client/revenue-cat-config.json`を作成してください。
+
+本番環境のアプリをビルドし、App Store と Google Play にそれぞれアップロードします。
+課金アイテムを作成するために、アプリのアップロードや審査提出が必要なためです。
+
+以下を参考に課金アイテムを AppStore と Google Play それぞれに作成します。
+
+https://www.revenuecat.com/docs/offerings/products/setup-index
+
+具体的には、以下の手順を実行します。
+
+1. Entitlement(アプリ内で課金によって解放される資格)を RevenueCat のダッシュボードで作成します。
+2. App Store Connect でアプリを作成し、アプリ専用の課金アイテムを作成し、下書き状態としておきます
+3. Google Play Console でアプリを作成し、アプリ専用の課金アイテムを作成します。
+4. RevenueCat のダッシュボードで、App Store と Google Play で作成した課金アイテムを Product(アプリ内で購入できる単位)としてインポートします。
+5. RevenueCat のダッシュボードで、Entitlement と Product を紐付けます。
+
+:::message
+上記だけだとまだ課金処理が実装できないため、調査が必要です。
+:::
+
 ## 商用リリース後のセットアップ
 
 商用リリース後は、以下の手順を実施してプロジェクトを更新します。
