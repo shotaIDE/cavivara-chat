@@ -56,7 +56,7 @@ class HeadsUpNotificationOverlay extends ConsumerWidget {
   }
 }
 
-class _HeadsUpNotificationBody extends StatelessWidget {
+class _HeadsUpNotificationBody extends StatefulWidget {
   const _HeadsUpNotificationBody({
     required this.reward,
     required this.onTap,
@@ -66,46 +66,150 @@ class _HeadsUpNotificationBody extends StatelessWidget {
   final void Function(CavivaraReward reward) onTap;
 
   @override
+  State<_HeadsUpNotificationBody> createState() =>
+      _HeadsUpNotificationBodyState();
+}
+
+class _HeadsUpNotificationBodyState extends State<_HeadsUpNotificationBody>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _iconRotation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticOut,
+    );
+
+    _iconRotation =
+        Tween<double>(
+          begin: 0,
+          end: 1,
+        ).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeInOut,
+          ),
+        );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     final title = Text(
-      '称号を獲得しました',
-      style: Theme.of(context).textTheme.titleMedium,
+      '🎉 称号獲得！',
+      style: textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onSurface,
+      ),
     );
 
     final message = Text(
-      '${reward.displayName} を獲得しました',
-      style: Theme.of(context).textTheme.bodyMedium,
+      widget.reward.displayName,
+      style: textTheme.bodyLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.primary,
+        letterSpacing: 0.5,
+      ),
     );
 
-    return Material(
-      elevation: 6,
-      borderRadius: BorderRadius.circular(16),
-      color: Theme.of(context).colorScheme.surface,
-      child: InkWell(
-        onTap: () => onTap(reward),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.emoji_events,
-                size: 28,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
-                  children: [
-                    title,
-                    message,
-                  ],
-                ),
-              ),
+    final subtitle = Text(
+      'タップして詳細を見る',
+      style: textTheme.bodySmall?.copyWith(
+        color: colorScheme.onSurface.withValues(alpha: 0.6),
+      ),
+    );
+
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primaryContainer,
+              colorScheme.secondaryContainer,
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => widget.onTap(widget.reward),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  RotationTransition(
+                    turns: _iconRotation,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.emoji_events,
+                        size: 32,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        title,
+                        const SizedBox(height: 4),
+                        message,
+                        const SizedBox(height: 2),
+                        subtitle,
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
