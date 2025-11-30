@@ -106,7 +106,7 @@ jobs:
       - name: Run Flutter test
         run: flutter test --file-reporter json:flutter-test-results.log
         working-directory: ./client
-      - uses: dorny/test-reporter@7b7927aa7da8b82e81e755810cb51f39941a2cc7 # v2
+      - uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8 # v2
         if: success() || failure()
         with:
           name: "Test Flutter results"
