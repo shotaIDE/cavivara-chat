@@ -31,6 +31,7 @@ dependencies:
   in_app_review: ^2.0.10
   logging: ^1.3.0
   package_info_plus: ^9.0.0
+  purchases_flutter: ^9.9.9
   riverpod: 3.0.3
   riverpod_annotation: 3.0.3
   share_plus: 12.0.1

@@ -15,6 +15,7 @@ import 'package:house_worker/ui/component/color.dart';
 import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
+import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:house_worker/ui/root_presenter.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
@@ -63,6 +64,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildTermsOfServiceTile(context),
               _buildPrivacyPolicyTile(context),
               _buildLicenseTile(context),
+              const _SupportCavivaraTile(),
+              const Divider(),
               const SectionHeader(title: 'デバッグ'),
               _buildDebugTile(context),
               const _AppVersionTile(),
@@ -443,6 +446,22 @@ class _ReviewAppTile extends StatelessWidget {
       // アプリ内レビューは表示回数に制限があるため、ストアに移動するようにしている
       onTap: () =>
           InAppReview.instance.openStoreListing(appStoreId: appStoreId),
+    );
+  }
+}
+
+class _SupportCavivaraTile extends StatelessWidget {
+  const _SupportCavivaraTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.favorite, color: Colors.red),
+      title: const Text('💝 カヴィヴァラを応援'),
+      trailing: const _MoveScreenTrailingIcon(),
+      onTap: () {
+        Navigator.of(context).push(SupportCavivaraScreen.route());
+      },
     );
   }
 }
