@@ -2,6 +2,7 @@
 /.claude/commands/generate-imple-backend.md
 /.claude/commands/generate-imple-BFF.md
 /.claude/commands/generate-imple-frontend.md
+/.claude/commands/generate-imple-mobile.md
 /.claude/commands/generate-imple-qa.md
 /.claude/commands/generate-pr.md
 /.claude/commands/task-executor-backend.md
@@ -14,5 +15,6 @@
 /.github/ISSUE_TEMPLATE/feature-epic.md
 /.github/ISSUE_TEMPLATE/feature-impl-be.md
 /.github/ISSUE_TEMPLATE/feature-impl-fe.md
+/.github/ISSUE_TEMPLATE/feature-impl-mobile.md
 /.github/ISSUE_TEMPLATE/feature-impl.md
 /.github/pull_request_template.md
