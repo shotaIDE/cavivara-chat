@@ -16,7 +16,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
 
   @override
   Future<void> build() async {
-    // TODO(implementation): RevenueCat SDKの初期化
+    // TODO(claude): RevenueCat SDKの初期化
     // RevenueCat APIキーはPhase 10で設定する
     // await Purchases.configure(
     //   PurchasesConfiguration('YOUR_API_KEY'),
@@ -26,7 +26,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
   /// 利用可能な商品を取得
   Future<List<ProductPackage>> getAvailableProducts() async {
     try {
-      // TODO(implementation): RevenueCat SDKから商品情報を取得
+      // TODO(claude): RevenueCat SDKから商品情報を取得
       // final offerings = await Purchases.getOfferings();
       // final packages = offerings.current?.availablePackages ?? [];
       // return packages.map(_convertToProductPackage).toList();
@@ -47,7 +47,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
     try {
       _logger.info('Purchasing product: $productId');
 
-      // TODO(implementation): RevenueCat SDKで購入処理
+      // TODO(claude): RevenueCat SDKで購入処理
       // final customerInfo = await Purchases.purchaseStoreProduct(product);
       // await _completePurchase(customerInfo, productId);
 
