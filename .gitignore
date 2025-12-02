@@ -8,6 +8,7 @@
 /.claude/commands/task-executor-backend.md
 /.claude/commands/task-executor-BFF.md
 /.claude/commands/task-executor-frontend.md
+/.claude/commands/task-executor-mobile.md
 /.claude/commands/task-executor-qa.md
 /.claude/settings.local.json
 /.github/ISSUE_EXAMPLE/screen-epic-example.md
