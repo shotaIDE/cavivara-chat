@@ -26,9 +26,11 @@ class VivaPointRepository extends _$VivaPointRepository {
       value: newVp,
     );
 
-    if (ref.mounted) {
-      state = AsyncValue.data(newVp);
+    if (!ref.mounted) {
+      return;
     }
+
+    state = AsyncValue.data(newVp);
   }
 
   /// VPをリセット (デバッグ用)
@@ -40,8 +42,10 @@ class VivaPointRepository extends _$VivaPointRepository {
       value: 0,
     );
 
-    if (ref.mounted) {
-      state = const AsyncValue.data(0);
+    if (!ref.mounted) {
+      return;
     }
+
+    state = const AsyncValue.data(0);
   }
 }
