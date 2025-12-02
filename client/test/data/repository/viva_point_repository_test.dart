@@ -49,36 +49,36 @@ void main() {
       });
     });
 
-    group('VPの加算', () {
-      test('VPを加算できること (0 + 1 = 1)', () async {
+    group('VPの設定', () {
+      test('VPを設定できること', () async {
         await container
             .read(vivaPointRepositoryProvider.notifier)
-            .add(1);
+            .setPoint(100);
 
         final vivaPoint = await container.read(
           vivaPointRepositoryProvider.future,
         );
-        expect(vivaPoint, equals(1));
+        expect(vivaPoint, equals(100));
       });
 
-      test('複数回加算した場合に累計が正しいこと (0 + 1 + 4 = 5)', () async {
+      test('VPを複数回設定した場合に最後の値が保存されること', () async {
         final notifier = container.read(
           vivaPointRepositoryProvider.notifier,
         );
 
-        await notifier.add(1);
-        await notifier.add(4);
+        await notifier.setPoint(50);
+        await notifier.setPoint(75);
 
         final vivaPoint = await container.read(
           vivaPointRepositoryProvider.future,
         );
-        expect(vivaPoint, equals(5));
+        expect(vivaPoint, equals(75));
       });
 
-      test('VPが加算されて永続化されること', () async {
+      test('VPが設定されて永続化されること', () async {
         await container
             .read(vivaPointRepositoryProvider.notifier)
-            .add(8);
+            .setPoint(200);
 
         final newContainer = ProviderContainer();
         addTearDown(newContainer.dispose);
@@ -86,23 +86,29 @@ void main() {
           vivaPointRepositoryProvider.future,
         );
 
-        expect(vivaPoint, equals(8));
+        expect(vivaPoint, equals(200));
       });
 
-      test('既存のVPに加算されること (10 + 4 = 14)', () async {
+      test('既存のVPを上書きできること', () async {
+        container.dispose();
+        SharedPreferences.setMockInitialValues({
+          PreferenceKey.totalVivaPoint.name: 100,
+        });
+        SharedPreferencesAsyncPlatform.instance =
+            InMemorySharedPreferencesAsync.withData({
+              PreferenceKey.totalVivaPoint.name: 100,
+            });
+        container = ProviderContainer();
+
         final notifier = container.read(
           vivaPointRepositoryProvider.notifier,
         );
-
-        // まず10を加算
-        await notifier.add(10);
-        // さらに4を加算
-        await notifier.add(4);
+        await notifier.setPoint(300);
 
         final vivaPoint = await container.read(
           vivaPointRepositoryProvider.future,
         );
-        expect(vivaPoint, equals(14));
+        expect(vivaPoint, equals(300));
       });
     });
 
@@ -112,7 +118,7 @@ void main() {
           vivaPointRepositoryProvider.notifier,
         );
 
-        await notifier.add(10);
+        await notifier.setPoint(100);
         await notifier.reset();
 
         final vivaPoint = await container.read(
@@ -126,7 +132,7 @@ void main() {
           vivaPointRepositoryProvider.notifier,
         );
 
-        await notifier.add(10);
+        await notifier.setPoint(100);
         await notifier.reset();
 
         final newContainer = ProviderContainer();
@@ -140,7 +146,7 @@ void main() {
     });
 
     group('状態通知', () {
-      test('VP加算でプロバイダーが通知されること', () async {
+      test('VP設定でプロバイダーが通知されること', () async {
         // 初期化のために一度読み込む
         await container.read(vivaPointRepositoryProvider.future);
 
@@ -156,10 +162,10 @@ void main() {
           },
         );
 
-        await notifier.add(1);
+        await notifier.setPoint(50);
         expect(notificationCount, equals(1));
 
-        await notifier.add(4);
+        await notifier.setPoint(100);
         expect(notificationCount, equals(2));
       });
 
@@ -179,7 +185,7 @@ void main() {
           },
         );
 
-        await notifier.add(10);
+        await notifier.setPoint(100);
         await notifier.reset();
         expect(notificationCount, equals(2));
       });

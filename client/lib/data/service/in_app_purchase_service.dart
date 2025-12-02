@@ -97,11 +97,13 @@ class InAppPurchaseService extends _$InAppPurchaseService {
       return;
     }
 
-    // VPを加算
-    final vivaPoint = plan.vivaPoint;
-    await ref.read(vivaPointRepositoryProvider.notifier).add(vivaPoint);
+    // 現在のVPを取得して購入分を加算
+    final repository = ref.read(vivaPointRepositoryProvider.notifier);
+    final currentVp = await repository.future;
+    final newVp = currentVp + plan.vivaPoint;
+    await repository.setPoint(newVp);
 
-    _logger.info('Purchase completed: $productId, VP: $vivaPoint');
+    _logger.info('Purchase completed: $productId, VP: ${plan.vivaPoint}');
   }
 
   /// productIdからSupportPlanを取得
