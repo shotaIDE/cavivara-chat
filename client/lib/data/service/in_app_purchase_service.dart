@@ -57,7 +57,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
       // ユーザーキャンセルは静かに処理
       if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
         _logger.info('Purchase cancelled by user');
-        return;
+        throw const PurchaseException.cancelled();
       }
 
       // その他のエラーはエラーレポートに送信
