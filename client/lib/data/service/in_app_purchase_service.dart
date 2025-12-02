@@ -76,6 +76,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
   }
 
   /// RevenueCatのPackageを独自のProductPackageに変換
+  // ignore: unused_element
   ProductPackage _convertToProductPackage(Package package) {
     return ProductPackage(
       identifier: package.identifier,
@@ -85,6 +86,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
   }
 
   /// 購入完了処理 (VP加算)
+  // ignore: unused_element
   Future<void> _completePurchase(
     CustomerInfo customerInfo,
     String productId,
