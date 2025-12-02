@@ -216,15 +216,21 @@ class _PurchaseButtonState extends ConsumerState<_PurchaseButton> {
       isSucceeded = await ref
           .read(purchaseProResultProvider.notifier)
           .purchasePro();
-    } on PurchaseException catch (_) {
-      if (!mounted) {
-        return;
-      }
+    } on PurchaseException catch (e) {
+      e.when(
+        cancelled: () {
+          // ユーザーによるキャンセルは静かに処理
+        },
+        uncategorized: () {
+          if (!mounted) {
+            return;
+          }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('購入処理中にエラーが発生しました')));
-
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('購入処理中にエラーが発生しました')));
+        },
+      );
       return;
     }
 

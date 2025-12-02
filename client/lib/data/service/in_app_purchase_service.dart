@@ -64,12 +64,12 @@ class InAppPurchaseService extends _$InAppPurchaseService {
       _logger.warning('Purchase failed with error code: $errorCode');
       final errorReportService = ref.read(errorReportServiceProvider);
       await errorReportService.recordError(e, stack);
-      throw const PurchaseException();
+      throw const PurchaseException.uncategorized();
     } on Exception catch (e, stack) {
       _logger.warning('Purchase failed', e);
       final errorReportService = ref.read(errorReportServiceProvider);
       await errorReportService.recordError(e, stack);
-      throw const PurchaseException();
+      throw const PurchaseException.uncategorized();
     }
   }
 
