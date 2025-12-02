@@ -1,10 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
-import 'package:house_worker/data/model/support_plan.dart';
-import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:logging/logging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -86,34 +83,16 @@ class InAppPurchaseService extends _$InAppPurchaseService {
     );
   }
 
-  /// 購入完了処理 (VP加算)
+  /// 購入完了処理
+  ///
+  /// CustomerInfoを返すので、呼び出し側(Presenter)でVP加算などの
+  /// ビジネスロジックを実行してください。
   // ignore: unused_element
-  Future<void> _completePurchase(
+  Future<CustomerInfo> _completePurchase(
     CustomerInfo customerInfo,
     String productId,
   ) async {
-    final plan = _getPlanFromProductId(productId);
-    if (plan == null) {
-      _logger.warning('Unknown product ID: $productId');
-      return;
-    }
-
-    // 現在のVPを取得して購入分を加算
-    final repository = ref.read(vivaPointRepositoryProvider.notifier);
-    final currentVp = await repository.future;
-    final newVp = currentVp + plan.vivaPoint;
-    await repository.setPoint(newVp);
-
-    _logger.info('Purchase completed: $productId, VP: ${plan.vivaPoint}');
-  }
-
-  /// productIdからSupportPlanを取得
-  SupportPlan? _getPlanFromProductId(String productId) {
-    for (final plan in SupportPlan.values) {
-      if (plan.productId == productId) {
-        return plan;
-      }
-    }
-    return null;
+    _logger.info('Purchase completed: $productId');
+    return customerInfo;
   }
 }
