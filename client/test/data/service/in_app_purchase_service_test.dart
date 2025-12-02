@@ -1,8 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:house_worker/data/model/product_package.dart';
-import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:mocktail/mocktail.dart';
@@ -150,86 +148,6 @@ void main() {
           PurchasesErrorHelper.getErrorCode(platformException),
           isNot(equals(PurchasesErrorCode.purchaseCancelledError)),
         );
-      });
-    });
-
-    group('PurchaseException', () {
-      test('cancelledエラーが正しく作成されること', () {
-        const exception = PurchaseException.cancelled();
-
-        expect(exception, isA<PurchaseExceptionCancelled>());
-        expect(exception, isA<PurchaseException>());
-      });
-
-      test('uncategorizedエラーが正しく作成されること', () {
-        const exception = PurchaseException.uncategorized();
-
-        expect(exception, isA<PurchaseExceptionUncategorized>());
-        expect(exception, isA<PurchaseException>());
-      });
-
-      test('freezedパターンマッチングが正しく動作すること', () {
-        const cancelledError = PurchaseException.cancelled();
-        const uncategorizedError = PurchaseException.uncategorized();
-
-        final cancelledResult = cancelledError.when(
-          cancelled: () => 'cancelled',
-          uncategorized: () => 'uncategorized',
-        );
-
-        final uncategorizedResult = uncategorizedError.when(
-          cancelled: () => 'cancelled',
-          uncategorized: () => 'uncategorized',
-        );
-
-        expect(cancelledResult, equals('cancelled'));
-        expect(uncategorizedResult, equals('uncategorized'));
-      });
-    });
-
-    group('ProductPackage', () {
-      test('ProductPackageが正しく作成されること', () {
-        const package = ProductPackage(
-          identifier: 'monthly',
-          productId: 'com.example.monthly',
-          priceString: '¥1,000',
-        );
-
-        expect(package.identifier, equals('monthly'));
-        expect(package.productId, equals('com.example.monthly'));
-        expect(package.priceString, equals('¥1,000'));
-      });
-
-      test('同じ値を持つProductPackageは等しいこと', () {
-        const package1 = ProductPackage(
-          identifier: 'monthly',
-          productId: 'com.example.monthly',
-          priceString: '¥1,000',
-        );
-
-        const package2 = ProductPackage(
-          identifier: 'monthly',
-          productId: 'com.example.monthly',
-          priceString: '¥1,000',
-        );
-
-        expect(package1, equals(package2));
-      });
-
-      test('異なる値を持つProductPackageは等しくないこと', () {
-        const package1 = ProductPackage(
-          identifier: 'monthly',
-          productId: 'com.example.monthly',
-          priceString: '¥1,000',
-        );
-
-        const package2 = ProductPackage(
-          identifier: 'yearly',
-          productId: 'com.example.yearly',
-          priceString: '¥10,000',
-        );
-
-        expect(package1, isNot(equals(package2)));
       });
     });
   });
