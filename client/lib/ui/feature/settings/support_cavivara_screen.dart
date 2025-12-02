@@ -17,8 +17,8 @@ class SupportCavivaraScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('カヴィヴァラを応援'),
       ),
-      body: const Center(
-        child: Text('Support Cavivara Screen - Coming soon'),
+      body: const Placeholder(
+        color: Colors.grey,
       ),
     );
   }
