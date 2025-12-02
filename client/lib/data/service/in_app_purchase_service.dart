@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/data/model/support_plan.dart';
@@ -52,7 +53,10 @@ class InAppPurchaseService extends _$InAppPurchaseService {
       // await _completePurchase(customerInfo, productId);
 
       throw UnimplementedError('RevenueCat integration not yet implemented');
-    } on PurchasesErrorCode catch (errorCode) {
+    } on PlatformException catch (e, stack) {
+      // PlatformExceptionからエラーコードを取得
+      final errorCode = PurchasesErrorHelper.getErrorCode(e);
+
       // ユーザーキャンセルは静かに処理
       if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
         _logger.info('Purchase cancelled by user');
@@ -62,10 +66,7 @@ class InAppPurchaseService extends _$InAppPurchaseService {
       // その他のエラーはエラーレポートに送信
       _logger.warning('Purchase failed with error code: $errorCode');
       final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(
-        errorCode,
-        StackTrace.current,
-      );
+      await errorReportService.recordError(e, stack);
       throw const PurchaseException();
     } on Exception catch (e, stack) {
       _logger.warning('Purchase failed', e);
