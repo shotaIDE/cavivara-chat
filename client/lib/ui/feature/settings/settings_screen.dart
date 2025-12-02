@@ -59,12 +59,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const _ChatBubbleDesignTile(),
               const Divider(),
               const SectionHeader(title: 'アプリについて'),
+              const _SupportCavivaraTile(),
               const _ReviewAppTile(),
               _buildShareAppTile(context),
               _buildTermsOfServiceTile(context),
               _buildPrivacyPolicyTile(context),
               _buildLicenseTile(context),
-              const _SupportCavivaraTile(),
               const Divider(),
               const SectionHeader(title: 'デバッグ'),
               _buildDebugTile(context),
@@ -457,7 +457,7 @@ class _SupportCavivaraTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: const Icon(Icons.favorite, color: Colors.red),
-      title: const Text('💝 カヴィヴァラを応援'),
+      title: const Text('カヴィヴァラを応援'),
       trailing: const _MoveScreenTrailingIcon(),
       onTap: () {
         Navigator.of(context).push(SupportCavivaraScreen.route());
