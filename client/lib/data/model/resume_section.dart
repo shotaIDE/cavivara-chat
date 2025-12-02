@@ -38,8 +38,7 @@ enum ResumeSectionType {
   communication('communication', 'コミュニケーション指針'),
 
   /// 代表的な活動
-  activities('activities', '代表的な活動')
-  ;
+  activities('activities', '代表的な活動');
 
   const ResumeSectionType(this.id, this.displayName);
 
