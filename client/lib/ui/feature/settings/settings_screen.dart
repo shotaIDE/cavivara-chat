@@ -8,10 +8,12 @@ import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/sign_in_result.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
+import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/color.dart';
+import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
@@ -54,6 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               const SectionHeader(title: 'ユーザー情報'),
               _buildUserInfoTile(context, userProfile, ref),
+              const _SupporterTitleDisplayTile(),
               const Divider(),
               const SectionHeader(title: '表示設定'),
               const _ChatBubbleDesignTile(),
@@ -546,6 +549,49 @@ class _AppVersionTile extends ConsumerWidget {
             child: versionText,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 称号表示タイル
+class _SupporterTitleDisplayTile extends ConsumerWidget {
+  const _SupporterTitleDisplayTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vivaPointState = ref.watch(vivaPointRepositoryProvider);
+
+    return vivaPointState.when(
+      data: (totalVP) {
+        // VivaPointRepositoryから称号情報を取得
+        final vivaPointRepository = ref.read(
+          vivaPointRepositoryProvider.notifier,
+        );
+        final currentTitle = vivaPointRepository.getCurrentTitle(totalVP);
+
+        return ListTile(
+          leading: Icon(
+            currentTitle.icon,
+            color: currentTitle.color,
+          ),
+          title: const Text('応援ステータス'),
+          subtitle: Text('${totalVP}VP - ${currentTitle.displayName}'),
+          trailing: const _MoveScreenTrailingIcon(),
+          onTap: () {
+            Navigator.of(context).push(SupportCavivaraScreen.route());
+          },
+        );
+      },
+      loading: () => const ListTile(
+        leading: CircularProgressIndicator(),
+        title: Text('応援ステータス'),
+        subtitle: Text('読み込み中...'),
+      ),
+      error: (error, stack) => const ListTile(
+        leading: Icon(Icons.error),
+        title: Text('応援ステータス'),
+        subtitle: Text('読み込みエラー'),
       ),
     );
   }

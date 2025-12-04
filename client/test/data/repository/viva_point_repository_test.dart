@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/preference_key.dart';
+import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -188,6 +189,193 @@ void main() {
         await notifier.setPoint(100);
         await notifier.reset();
         expect(notificationCount, equals(2));
+      });
+    });
+
+    group('称号算出ロジック', () {
+      test('VP=0で駆け出しヴィヴァサポーターになること', () {
+        final notifier = container.read(
+          vivaPointRepositoryProvider.notifier,
+        );
+        final title = notifier.getCurrentTitle(0);
+        expect(title, equals(SupporterTitle.newbie));
+      });
+
+      test('VP=10で初心ヴィヴァサポーターになること', () {
+        final notifier = container.read(
+          vivaPointRepositoryProvider.notifier,
+        );
+        final title = notifier.getCurrentTitle(10);
+        expect(title, equals(SupporterTitle.beginner));
+      });
+
+      test('VP=500以上で伝説のヴィヴァサポーターになること', () {
+        final notifier = container.read(
+          vivaPointRepositoryProvider.notifier,
+        );
+        final title = notifier.getCurrentTitle(500);
+        expect(title, equals(SupporterTitle.legend));
+
+        final title1000 = notifier.getCurrentTitle(1000);
+        expect(title1000, equals(SupporterTitle.legend));
+      });
+
+      group('境界値テスト', () {
+        test('VP=9で駆け出しヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(9);
+          expect(title, equals(SupporterTitle.newbie));
+        });
+
+        test('VP=29で初心ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(29);
+          expect(title, equals(SupporterTitle.beginner));
+        });
+
+        test('VP=30で一人前ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(30);
+          expect(title, equals(SupporterTitle.intermediate));
+        });
+
+        test('VP=69で一人前ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(69);
+          expect(title, equals(SupporterTitle.intermediate));
+        });
+
+        test('VP=70でベテランヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(70);
+          expect(title, equals(SupporterTitle.advanced));
+        });
+
+        test('VP=149でベテランヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(149);
+          expect(title, equals(SupporterTitle.advanced));
+        });
+
+        test('VP=150で熟練ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(150);
+          expect(title, equals(SupporterTitle.expert));
+        });
+
+        test('VP=299で熟練ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(299);
+          expect(title, equals(SupporterTitle.expert));
+        });
+
+        test('VP=300で達人ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(300);
+          expect(title, equals(SupporterTitle.master));
+        });
+
+        test('VP=499で達人ヴィヴァサポーターになること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final title = notifier.getCurrentTitle(499);
+          expect(title, equals(SupporterTitle.master));
+        });
+      });
+
+      group('次の称号の取得', () {
+        test('駆け出しヴィヴァサポーターの次は初心ヴィヴァサポーターであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final nextTitle = notifier.getNextTitle(0);
+          expect(nextTitle, equals(SupporterTitle.beginner));
+        });
+
+        test('達人ヴィヴァサポーターの次は伝説のヴィヴァサポーターであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final nextTitle = notifier.getNextTitle(300);
+          expect(nextTitle, equals(SupporterTitle.legend));
+        });
+
+        test('伝説のヴィヴァサポーターの次はnullであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final nextTitle = notifier.getNextTitle(500);
+          expect(nextTitle, isNull);
+        });
+      });
+
+      group('次の称号までに必要なVP数の取得', () {
+        test('VP=0の場合、次の称号まであと10VPであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final vpToNext = notifier.getVPToNextTitle(0);
+          expect(vpToNext, equals(10));
+        });
+
+        test('VP=5の場合、次の称号まであと5VPであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final vpToNext = notifier.getVPToNextTitle(5);
+          expect(vpToNext, equals(5));
+        });
+
+        test('VP=25の場合、次の称号まであと5VPであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final vpToNext = notifier.getVPToNextTitle(25);
+          expect(vpToNext, equals(5));
+        });
+
+        test('VP=499の場合、次の称号まであと1VPであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final vpToNext = notifier.getVPToNextTitle(499);
+          expect(vpToNext, equals(1));
+        });
+
+        test('VP=500の場合（最上位称号）、次の称号まで0VPであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final vpToNext = notifier.getVPToNextTitle(500);
+          expect(vpToNext, equals(0));
+        });
+
+        test('VP=1000の場合（最上位称号）、次の称号まで0VPであること', () {
+          final notifier = container.read(
+            vivaPointRepositoryProvider.notifier,
+          );
+          final vpToNext = notifier.getVPToNextTitle(1000);
+          expect(vpToNext, equals(0));
+        });
       });
     });
   });
