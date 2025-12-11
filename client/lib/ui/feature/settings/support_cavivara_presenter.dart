@@ -37,12 +37,8 @@ abstract class SupportCavivaraState with _$SupportCavivaraState {
 class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
   @override
   Future<SupportCavivaraState> build() async {
-    return _buildState();
-  }
-
-  /// 状態を構築する
-  SupportCavivaraState _buildState() {
-    final vivaPointState = ref.read(vivaPointRepositoryProvider);
+    // ref.watchを使用してVP変更を自動追跡
+    final vivaPointState = ref.watch(vivaPointRepositoryProvider);
     final totalVP = vivaPointState.value ?? 0;
 
     final currentTitle = SupporterTitleLogic.fromTotalVP(totalVP);
@@ -106,7 +102,6 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
     );
     await supportHistoryRepository.addHistory(supportHistory);
 
-    // 状態を再構築
-    state = AsyncValue.data(_buildState());
+    // ref.watchを使用しているため、VPが更新されると自動的に状態が再構築される
   }
 }
