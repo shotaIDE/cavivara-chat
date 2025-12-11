@@ -9,4 +9,5 @@ enum PreferenceKey {
   hasEarnedPartTimeLeaderReward,
   chatBubbleDesign,
   totalVivaPoint,
+  supportHistoryList,
 }

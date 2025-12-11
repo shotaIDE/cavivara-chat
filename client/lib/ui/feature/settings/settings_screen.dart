@@ -12,9 +12,11 @@ import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/color.dart';
+import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
+import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:house_worker/ui/root_presenter.dart';
 import 'package:in_app_review/in_app_review.dart';
@@ -54,12 +56,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               const SectionHeader(title: 'ユーザー情報'),
               _buildUserInfoTile(context, userProfile, ref),
+              const _SupporterTitleDisplayTile(),
               const Divider(),
               const SectionHeader(title: '表示設定'),
               const _ChatBubbleDesignTile(),
               const Divider(),
               const SectionHeader(title: 'アプリについて'),
-              const _SupportCavivaraTile(),
               const _ReviewAppTile(),
               _buildShareAppTile(context),
               _buildTermsOfServiceTile(context),
@@ -450,22 +452,6 @@ class _ReviewAppTile extends StatelessWidget {
   }
 }
 
-class _SupportCavivaraTile extends StatelessWidget {
-  const _SupportCavivaraTile();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.favorite, color: Colors.red),
-      title: const Text('カヴィヴァラを応援'),
-      trailing: const _MoveScreenTrailingIcon(),
-      onTap: () {
-        Navigator.of(context).push(SupportCavivaraScreen.route());
-      },
-    );
-  }
-}
-
 class _OpenTrailingIcon extends StatelessWidget {
   const _OpenTrailingIcon();
 
@@ -546,6 +532,45 @@ class _AppVersionTile extends ConsumerWidget {
             child: versionText,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 称号表示タイル
+class _SupporterTitleDisplayTile extends ConsumerWidget {
+  const _SupporterTitleDisplayTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final presenterState = ref.watch(supportCavivaraPresenterProvider);
+
+    return presenterState.when(
+      data: (state) {
+        return ListTile(
+          leading: Icon(
+            state.currentTitle.icon,
+            color: state.currentTitle.color,
+          ),
+          title: const Text('応援ステータス'),
+          subtitle: Text(
+            '${state.totalVP}VP - ${state.currentTitle.displayName}',
+          ),
+          trailing: const _MoveScreenTrailingIcon(),
+          onTap: () {
+            Navigator.of(context).push(SupportCavivaraScreen.route());
+          },
+        );
+      },
+      loading: () => const ListTile(
+        leading: CircularProgressIndicator(),
+        title: Text('応援ステータス'),
+        subtitle: Text('読み込み中...'),
+      ),
+      error: (error, stack) => const ListTile(
+        leading: Icon(Icons.error),
+        title: Text('応援ステータス'),
+        subtitle: Text('読み込みエラー'),
       ),
     );
   }
