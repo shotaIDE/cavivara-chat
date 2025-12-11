@@ -1,42 +1,34 @@
 /// サポーター称号を表すenum
 enum SupporterTitle {
   /// 駆け出しヴィヴァサポーター
-  newbie,
+  newbie(0),
 
   /// 初心ヴィヴァサポーター
-  beginner,
+  beginner(10),
 
   /// 一人前ヴィヴァサポーター
-  intermediate,
+  intermediate(30),
 
   /// ベテランヴィヴァサポーター
-  advanced,
+  advanced(70),
 
   /// 熟練ヴィヴァサポーター
-  expert,
+  expert(150),
 
   /// 達人ヴィヴァサポーター
-  master,
+  master(300),
 
   /// 伝説のヴィヴァサポーター
-  legend,
+  legend(500);
+
+  const SupporterTitle(this.requiredVP);
+
+  /// 必要最低VP
+  final int requiredVP;
 }
 
 /// SupporterTitleにビジネスロジックを拡張するExtension
 extension SupporterTitleLogic on SupporterTitle {
-  /// 必要最低VP
-  int get requiredVP {
-    return switch (this) {
-      SupporterTitle.newbie => 0,
-      SupporterTitle.beginner => 10,
-      SupporterTitle.intermediate => 30,
-      SupporterTitle.advanced => 70,
-      SupporterTitle.expert => 150,
-      SupporterTitle.master => 300,
-      SupporterTitle.legend => 500,
-    };
-  }
-
   /// 累計VPから現在の称号を算出
   static SupporterTitle fromTotalVP(int totalVP) {
     // 降順でチェックし、最初に条件を満たす称号を返す
