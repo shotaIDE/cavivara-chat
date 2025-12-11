@@ -18,45 +18,53 @@ class SupporterTitleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // アクセシビリティラベルの構築
+    final label = showDescription
+        ? '${title.displayName}、${title.description}'
+        : title.displayName;
+
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // アイコン
-            Icon(
-              title.icon,
-              size: 32,
-              color: title.color,
-            ),
-            const SizedBox(width: 16),
-            // テキスト部分
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 称号名
-                  Text(
-                    title.displayName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: title.color,
-                    ),
-                  ),
-                  // 説明文（条件付き表示）
-                  if (showDescription) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      title.description,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ],
+      child: Semantics(
+        label: label,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // アイコン
+              Icon(
+                title.icon,
+                size: 32,
+                color: title.color,
               ),
-            ),
-          ],
+              const SizedBox(width: 16),
+              // テキスト部分
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 称号名
+                    Text(
+                      title.displayName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: title.color,
+                      ),
+                    ),
+                    // 説明文（条件付き表示）
+                    if (showDescription) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        title.description,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
