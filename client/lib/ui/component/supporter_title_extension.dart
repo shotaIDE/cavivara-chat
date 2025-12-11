@@ -29,19 +29,6 @@ extension SupporterTitleExtension on SupporterTitle {
     };
   }
 
-  /// 必要最低VP
-  int get requiredVP {
-    return switch (this) {
-      SupporterTitle.newbie => 0,
-      SupporterTitle.beginner => 10,
-      SupporterTitle.intermediate => 30,
-      SupporterTitle.advanced => 70,
-      SupporterTitle.expert => 150,
-      SupporterTitle.master => 300,
-      SupporterTitle.legend => 500,
-    };
-  }
-
   /// 称号アイコン
   IconData get icon {
     return switch (this) {

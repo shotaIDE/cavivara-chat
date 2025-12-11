@@ -5,7 +5,6 @@ import 'package:house_worker/data/repository/support_history_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:house_worker/ui/component/support_plan_extension.dart';
-import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'support_cavivara_presenter.g.dart';
@@ -27,22 +26,20 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
   /// 現在の称号取得
   SupporterTitle getCurrentTitle() {
     final totalVP = getTotalVP();
-    final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
-    return vivaPointRepository.getCurrentTitle(totalVP);
+    return SupporterTitleLogic.fromTotalVP(totalVP);
   }
 
   /// 次の称号取得（最上位の場合はnull）
   SupporterTitle? getNextTitle() {
-    final totalVP = getTotalVP();
-    final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
-    return vivaPointRepository.getNextTitle(totalVP);
+    final currentTitle = getCurrentTitle();
+    return currentTitle.nextTitle;
   }
 
   /// 次の称号までに必要なVP数
   int getVPToNextTitle() {
     final totalVP = getTotalVP();
-    final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
-    return vivaPointRepository.getVPToNextTitle(totalVP);
+    final currentTitle = getCurrentTitle();
+    return currentTitle.vpToNextTitle(totalVP);
   }
 
   /// 次の称号までの進捗率（0.0 - 1.0）

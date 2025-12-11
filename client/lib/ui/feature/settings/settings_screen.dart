@@ -17,6 +17,7 @@ import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
+import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:house_worker/ui/root_presenter.dart';
 import 'package:in_app_review/in_app_review.dart';
@@ -547,11 +548,9 @@ class _SupporterTitleDisplayTile extends ConsumerWidget {
 
     return vivaPointState.when(
       data: (totalVP) {
-        // VivaPointRepositoryから称号情報を取得
-        final vivaPointRepository = ref.read(
-          vivaPointRepositoryProvider.notifier,
-        );
-        final currentTitle = vivaPointRepository.getCurrentTitle(totalVP);
+        // SupportCavivaraPresenterから称号情報を取得
+        final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
+        final currentTitle = presenter.getCurrentTitle();
 
         return ListTile(
           leading: Icon(
