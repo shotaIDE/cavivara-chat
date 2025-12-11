@@ -22,38 +22,32 @@ class SupportCavivaraScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final presenter = ref.watch(supportCavivaraPresenterProvider.notifier);
+    final presenterState = ref.watch(supportCavivaraPresenterProvider);
 
-    // VP情報を取得
-    final totalVP = presenter.getTotalVP();
-    final currentTitle = presenter.getCurrentTitle();
-    final nextTitle = presenter.getNextTitle();
-    final vpToNext = presenter.getVPToNextTitle();
-    final progress = presenter.getProgressToNextTitle();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('カヴィヴァラを応援'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 16 + MediaQuery.of(context).viewPadding.left,
-            top: 16,
-            right: 16 + MediaQuery.of(context).viewPadding.right,
-            bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // VP進捗表示セクション
-              VPProgressWidget(
-                currentVP: totalVP,
-                currentTitle: currentTitle,
-                nextTitle: nextTitle,
-                vpToNext: vpToNext,
-                progress: progress,
-              ),
+    return presenterState.when(
+      data: (state) => Scaffold(
+        appBar: AppBar(
+          title: const Text('カヴィヴァラを応援'),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16 + MediaQuery.of(context).viewPadding.left,
+              top: 16,
+              right: 16 + MediaQuery.of(context).viewPadding.right,
+              bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // VP進捗表示セクション
+                VPProgressWidget(
+                  currentVP: state.totalVP,
+                  currentTitle: state.currentTitle,
+                  nextTitle: state.nextTitle,
+                  vpToNext: state.vpToNextTitle,
+                  progress: state.progressToNextTitle,
+                ),
               const SizedBox(height: 32),
 
               // 応援プラン選択セクション
@@ -114,8 +108,25 @@ class SupportCavivaraScreen extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
-            ],
+              ],
+            ),
           ),
+        ),
+      ),
+      loading: () => Scaffold(
+        appBar: AppBar(
+          title: const Text('カヴィヴァラを応援'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(
+          title: const Text('カヴィヴァラを応援'),
+        ),
+        body: Center(
+          child: Text('エラーが発生しました: $error'),
         ),
       ),
     );
@@ -130,7 +141,8 @@ class SupportCavivaraScreen extends ConsumerWidget {
     final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
 
     // 購入前の称号を保存
-    final oldTitle = presenter.getCurrentTitle();
+    final oldState = await ref.read(supportCavivaraPresenterProvider.future);
+    final oldTitle = oldState.currentTitle;
 
     // 購入処理
     try {
@@ -155,7 +167,8 @@ class SupportCavivaraScreen extends ConsumerWidget {
     }
 
     // 購入後の称号
-    final newTitle = presenter.getCurrentTitle();
+    final newState = await ref.read(supportCavivaraPresenterProvider.future);
+    final newTitle = newState.currentTitle;
 
     // 称号が変わった場合のみ新しい称号を渡す
     final promotedTitle = newTitle != oldTitle ? newTitle : null;

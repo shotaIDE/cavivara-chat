@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
-import 'package:house_worker/data/model/supporter_title_logic.dart';
 
 void main() {
   group('SupporterTitleLogic', () {

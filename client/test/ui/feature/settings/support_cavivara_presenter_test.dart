@@ -28,8 +28,8 @@ void main() {
       container.dispose();
     });
 
-    group('getTotalVP', () {
-      test('VivaPointRepositoryから累計VPを取得できること', () async {
+    group('state', () {
+      test('VivaPointRepositoryから累計VPを含むステートを取得できること', () async {
         // Arrange
         container.dispose();
         SharedPreferences.setMockInitialValues({
@@ -45,174 +45,31 @@ void main() {
         await container.read(vivaPointRepositoryProvider.future);
 
         // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        final totalVP = presenter.getTotalVP();
 
         // Assert
-        expect(totalVP, 50);
+        expect(state.totalVP, 50);
+        expect(state.currentTitle, SupporterTitle.intermediate);
+        expect(state.nextTitle, SupporterTitle.advanced);
       });
 
-      test('0VPの場合も正しく取得できること', () async {
+      test('0VPの場合も正しいステートを取得できること', () async {
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
 
         // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        final totalVP = presenter.getTotalVP();
 
         // Assert
-        expect(totalVP, 0);
-      });
-    });
-
-    group('getCurrentTitle', () {
-      test('現在の称号を取得できること', () async {
-        // Arrange
-        container.dispose();
-        SharedPreferences.setMockInitialValues({
-          PreferenceKey.totalVivaPoint.name: 50,
-        });
-        SharedPreferencesAsyncPlatform.instance =
-            InMemorySharedPreferencesAsync.withData({
-              PreferenceKey.totalVivaPoint.name: 50,
-            });
-        container = ProviderContainer();
-
-        // vivaPointRepositoryの初期化を待つ
-        await container.read(vivaPointRepositoryProvider.future);
-
-        // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
-        );
-        final title = presenter.getCurrentTitle();
-
-        // Assert
-        expect(title, SupporterTitle.intermediate);
+        expect(state.totalVP, 0);
+        expect(state.currentTitle, SupporterTitle.newbie);
       });
 
-      test('0VPの場合はnewbie称号が返ること', () {
-        // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
-        );
-        final title = presenter.getCurrentTitle();
-
-        // Assert
-        expect(title, SupporterTitle.newbie);
-      });
-    });
-
-    group('getNextTitle', () {
-      test('次の称号を取得できること', () async {
-        // Arrange
-        container.dispose();
-        SharedPreferences.setMockInitialValues({
-          PreferenceKey.totalVivaPoint.name: 50,
-        });
-        SharedPreferencesAsyncPlatform.instance =
-            InMemorySharedPreferencesAsync.withData({
-              PreferenceKey.totalVivaPoint.name: 50,
-            });
-        container = ProviderContainer();
-
-        // vivaPointRepositoryの初期化を待つ
-        await container.read(vivaPointRepositoryProvider.future);
-
-        // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
-        );
-        final nextTitle = presenter.getNextTitle();
-
-        // Assert
-        expect(nextTitle, SupporterTitle.advanced);
-      });
-
-      test('最上位称号の場合はnullが返ること', () async {
-        // Arrange
-        container.dispose();
-        SharedPreferences.setMockInitialValues({
-          PreferenceKey.totalVivaPoint.name: 500,
-        });
-        SharedPreferencesAsyncPlatform.instance =
-            InMemorySharedPreferencesAsync.withData({
-              PreferenceKey.totalVivaPoint.name: 500,
-            });
-        container = ProviderContainer();
-
-        // vivaPointRepositoryの初期化を待つ
-        await container.read(vivaPointRepositoryProvider.future);
-
-        // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
-        );
-        final nextTitle = presenter.getNextTitle();
-
-        // Assert
-        expect(nextTitle, null);
-      });
-    });
-
-    group('getVPToNextTitle', () {
-      test('次の称号までのVP数を取得できること', () async {
-        // Arrange
-        container.dispose();
-        SharedPreferences.setMockInitialValues({
-          PreferenceKey.totalVivaPoint.name: 50,
-        });
-        SharedPreferencesAsyncPlatform.instance =
-            InMemorySharedPreferencesAsync.withData({
-              PreferenceKey.totalVivaPoint.name: 50,
-            });
-        container = ProviderContainer();
-
-        // vivaPointRepositoryの初期化を待つ
-        await container.read(vivaPointRepositoryProvider.future);
-
-        // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
-        );
-        final vpToNext = presenter.getVPToNextTitle();
-
-        // Assert
-        expect(vpToNext, 20); // 50VP (intermediate), 次はadvanced (70VP必要)
-      });
-
-      test('最上位称号の場合は0が返ること', () async {
-        // Arrange
-        container.dispose();
-        SharedPreferences.setMockInitialValues({
-          PreferenceKey.totalVivaPoint.name: 500,
-        });
-        SharedPreferencesAsyncPlatform.instance =
-            InMemorySharedPreferencesAsync.withData({
-              PreferenceKey.totalVivaPoint.name: 500,
-            });
-        container = ProviderContainer();
-
-        // vivaPointRepositoryの初期化を待つ
-        await container.read(vivaPointRepositoryProvider.future);
-
-        // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
-        );
-        final vpToNext = presenter.getVPToNextTitle();
-
-        // Assert
-        expect(vpToNext, 0);
-      });
-    });
-
-    group('getProgressToNextTitle', () {
-      test('次の称号までの進捗率を0.0-1.0の範囲で取得できること', () async {
+      test('次の称号までのVP数と進捗率が正しく計算されること', () async {
         // Arrange
         // 50VP (intermediate: 30-69), 次はadvanced (70VP必要)
         // 進捗 = (50 - 30) / (70 - 30) = 20 / 40 = 0.5
@@ -230,16 +87,16 @@ void main() {
         await container.read(vivaPointRepositoryProvider.future);
 
         // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        final progress = presenter.getProgressToNextTitle();
 
         // Assert
-        expect(progress, closeTo(0.5, 0.01));
+        expect(state.vpToNextTitle, 20); // 70 - 50 = 20
+        expect(state.progressToNextTitle, closeTo(0.5, 0.01));
       });
 
-      test('最上位称号の場合は1.0が返ること', () async {
+      test('最上位称号の場合は次の称号がnullで進捗率が1.0であること', () async {
         // Arrange
         container.dispose();
         SharedPreferences.setMockInitialValues({
@@ -255,16 +112,18 @@ void main() {
         await container.read(vivaPointRepositoryProvider.future);
 
         // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        final progress = presenter.getProgressToNextTitle();
 
         // Assert
-        expect(progress, 1.0);
+        expect(state.currentTitle, SupporterTitle.legend);
+        expect(state.nextTitle, null);
+        expect(state.vpToNextTitle, 0);
+        expect(state.progressToNextTitle, 1.0);
       });
 
-      test('称号の境界値では0.0が返ること', () async {
+      test('称号の境界値では進捗率が0.0であること', () async {
         // Arrange
         // 30VP (intermediateの開始位置)
         container.dispose();
@@ -281,18 +140,17 @@ void main() {
         await container.read(vivaPointRepositoryProvider.future);
 
         // Act
-        final presenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        final progress = presenter.getProgressToNextTitle();
 
         // Assert
-        expect(progress, 0.0);
+        expect(state.progressToNextTitle, 0.0);
       });
     });
 
     group('supportCavivara', () {
-      test('購入成功時にVPが加算され、履歴が記録されること', () async {
+      test('購入成功時にVPが加算され、履歴が記録され、ステートが更新されること', () async {
         // Arrange
         const plan = SupportPlan.medium;
         // InAppPurchaseServiceをモック化（購入成功）
@@ -311,11 +169,11 @@ void main() {
         await presenter.supportCavivara(plan);
 
         // Assert
-        // VP加算を確認
-        final updatedPresenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        // 更新されたステートを確認
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        expect(updatedPresenter.getTotalVP(), plan.vivaPoint);
+        expect(state.totalVP, plan.vivaPoint);
 
         // 履歴記録を確認
         final history = await container.read(
@@ -350,11 +208,11 @@ void main() {
           throwsA(isA<PurchaseException>()),
         );
 
-        // VPが加算されていないことを確認
-        final updatedPresenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        // ステートのVPが加算されていないことを確認
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        expect(updatedPresenter.getTotalVP(), 0);
+        expect(state.totalVP, 0);
 
         // 履歴が記録されていないことを確認
         final history = await container.read(
@@ -386,11 +244,11 @@ void main() {
           throwsA(isA<PurchaseException>()),
         );
 
-        // VPが加算されていないことを確認
-        final updatedPresenter = container.read(
-          supportCavivaraPresenterProvider.notifier,
+        // ステートのVPが加算されていないことを確認
+        final state = await container.read(
+          supportCavivaraPresenterProvider.future,
         );
-        expect(updatedPresenter.getTotalVP(), 0);
+        expect(state.totalVP, 0);
       });
     });
   });

@@ -8,7 +8,6 @@ import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/sign_in_result.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
-import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
@@ -544,21 +543,19 @@ class _SupporterTitleDisplayTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vivaPointState = ref.watch(vivaPointRepositoryProvider);
+    final presenterState = ref.watch(supportCavivaraPresenterProvider);
 
-    return vivaPointState.when(
-      data: (totalVP) {
-        // SupportCavivaraPresenterから称号情報を取得
-        final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
-        final currentTitle = presenter.getCurrentTitle();
-
+    return presenterState.when(
+      data: (state) {
         return ListTile(
           leading: Icon(
-            currentTitle.icon,
-            color: currentTitle.color,
+            state.currentTitle.icon,
+            color: state.currentTitle.color,
           ),
           title: const Text('応援ステータス'),
-          subtitle: Text('${totalVP}VP - ${currentTitle.displayName}'),
+          subtitle: Text(
+            '${state.totalVP}VP - ${state.currentTitle.displayName}',
+          ),
           trailing: const _MoveScreenTrailingIcon(),
           onTap: () {
             Navigator.of(context).push(SupportCavivaraScreen.route());
