@@ -60,11 +60,15 @@ class VPProgressWidget extends StatelessWidget {
           const SizedBox(height: 8),
 
           // 進捗バー
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(nextTitle!.color),
+          Semantics(
+            label: '次の称号「${nextTitle!.displayName}」への進捗',
+            value: '${(progress * 100).toInt()}%',
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(nextTitle!.color),
+            ),
           ),
         ] else ...[
           // 最上位称号の場合
@@ -76,11 +80,15 @@ class VPProgressWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(currentTitle.color),
+          Semantics(
+            label: '最高称号の進捗',
+            value: '${(progress * 100).toInt()}%',
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(currentTitle.color),
+            ),
           ),
         ],
       ],
