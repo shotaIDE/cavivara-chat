@@ -98,7 +98,7 @@ void main() {
         expect(title, SupporterTitle.intermediate);
       });
 
-      test('0VPの場合はnewbie称号が返ること', () async {
+      test('0VPの場合はnewbie称号が返ること', () {
         // Act
         final presenter = container.read(
           supportCavivaraPresenterProvider.notifier,
@@ -410,7 +410,7 @@ class MockInAppPurchaseService extends InAppPurchaseService {
 // モッククラス（購入キャンセル）
 class MockInAppPurchaseServiceCancelled extends InAppPurchaseService {
   @override
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(String productId) {
     throw const PurchaseException.cancelled();
   }
 }
@@ -418,7 +418,7 @@ class MockInAppPurchaseServiceCancelled extends InAppPurchaseService {
 // モッククラス（購入失敗）
 class MockInAppPurchaseServiceUncategorized extends InAppPurchaseService {
   @override
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(String productId) {
     throw const PurchaseException.uncategorized();
   }
 }
