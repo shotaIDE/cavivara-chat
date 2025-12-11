@@ -21,13 +21,13 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       shell: bash
     - name: Cache Flutter on Linux
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5
       if: startsWith(runner.os, 'Linux')
       with:
         path: /opt/hostedtoolcache/flutter
         key: ${{ runner.OS }}-flutter-${{ steps.get-flutter-version.outputs.flutter-version }}
     - name: Cache Flutter on macOS
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5
       if: startsWith(runner.os, 'macOS')
       with:
         path: /Users/runner/hostedtoolcache/flutter
