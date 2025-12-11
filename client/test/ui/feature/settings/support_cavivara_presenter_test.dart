@@ -44,9 +44,6 @@ void main() {
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
 
-        // vivaPointRepositoryの初期化を待つ
-        await container.read(vivaPointRepositoryProvider.future);
-
         // Act
         final presenter = container.read(
           supportCavivaraPresenterProvider.notifier,
