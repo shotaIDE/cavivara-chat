@@ -37,7 +37,12 @@ class SupportCavivaraScreen extends ConsumerWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.only(
+            left: 16 + MediaQuery.of(context).viewPadding.left,
+            top: 16,
+            right: 16 + MediaQuery.of(context).viewPadding.right,
+            bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
