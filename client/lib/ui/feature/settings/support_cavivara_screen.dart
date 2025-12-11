@@ -132,28 +132,9 @@ class SupportCavivaraScreen extends ConsumerWidget {
     // 購入前の称号を保存
     final oldTitle = presenter.getCurrentTitle();
 
+    // 購入処理
     try {
-      // 購入処理
       await presenter.supportCavivara(plan);
-
-      // 購入後の称号
-      final newTitle = presenter.getCurrentTitle();
-
-      // 称号が変わった場合のみ新しい称号を渡す
-      final promotedTitle = newTitle != oldTitle ? newTitle : null;
-
-      // マウントチェック
-      if (!context.mounted) {
-        return;
-      }
-
-      // 感謝ダイアログ表示
-      await ThankYouDialog.show(
-        context,
-        plan: plan,
-        earnedVP: plan.vivaPoint,
-        newTitle: promotedTitle,
-      );
     } on PurchaseException catch (e) {
       // 購入キャンセルの場合は何もしない
       if (e is PurchaseExceptionCancelled) {
@@ -170,6 +151,26 @@ class SupportCavivaraScreen extends ConsumerWidget {
           content: Text('購入処理に失敗しました'),
         ),
       );
+      return;
     }
+
+    // 購入後の称号
+    final newTitle = presenter.getCurrentTitle();
+
+    // 称号が変わった場合のみ新しい称号を渡す
+    final promotedTitle = newTitle != oldTitle ? newTitle : null;
+
+    // マウントチェック
+    if (!context.mounted) {
+      return;
+    }
+
+    // 感謝ダイアログ表示
+    await ThankYouDialog.show(
+      context,
+      plan: plan,
+      earnedVP: plan.vivaPoint,
+      newTitle: promotedTitle,
+    );
   }
 }
