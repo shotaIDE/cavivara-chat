@@ -62,7 +62,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const _ChatBubbleDesignTile(),
               const Divider(),
               const SectionHeader(title: 'アプリについて'),
-              const _SupportCavivaraTile(),
               const _ReviewAppTile(),
               _buildShareAppTile(context),
               _buildTermsOfServiceTile(context),
@@ -449,22 +448,6 @@ class _ReviewAppTile extends StatelessWidget {
       // アプリ内レビューは表示回数に制限があるため、ストアに移動するようにしている
       onTap: () =>
           InAppReview.instance.openStoreListing(appStoreId: appStoreId),
-    );
-  }
-}
-
-class _SupportCavivaraTile extends StatelessWidget {
-  const _SupportCavivaraTile();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.favorite, color: Colors.red),
-      title: const Text('カヴィヴァラを応援'),
-      trailing: const _MoveScreenTrailingIcon(),
-      onTap: () {
-        Navigator.of(context).push(SupportCavivaraScreen.route());
-      },
     );
   }
 }
