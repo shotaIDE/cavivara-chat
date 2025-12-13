@@ -12,7 +12,7 @@
         "--flavor",
         "emulator",
         "--dart-define-from-file",
-        "emulator-config.json"
+        "dart-define_emulator.json"
       ]
     },
     {
@@ -26,7 +26,7 @@
         "--flavor",
         "emulator",
         "--dart-define-from-file",
-        "emulator-config.json",
+        "dart-define_emulator.json",
         "--dart-define",
         "ENABLE_ANALYTICS=true"
       ]
@@ -42,7 +42,7 @@
         "--flavor",
         "emulator",
         "--dart-define-from-file",
-        "emulator-config.json",
+        "dart-define_emulator.json",
         "--dart-define",
         "ENABLE_CRASHLYTICS=true"
       ]
@@ -58,7 +58,7 @@
         "--flavor",
         "emulator",
         "--dart-define-from-file",
-        "emulator-config.json"
+        "dart-define_emulator.json"
       ]
     },
     {
@@ -72,7 +72,7 @@
         "--flavor",
         "emulator",
         "--dart-define-from-file",
-        "emulator-config.json"
+        "dart-define_emulator.json"
       ]
     },
     {
@@ -109,7 +109,12 @@
       "cwd": "${workspaceFolder}/client",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "args": ["--flavor", "prod"]
+      "args": [
+        "--flavor",
+        "prod",
+        "--dart-define-from-file",
+        "dart-define_prod.json"
+      ]
     },
     {
       "name": "Prod-Profile",
@@ -118,7 +123,12 @@
       "cwd": "${workspaceFolder}/client",
       "program": "lib/main.dart",
       "flutterMode": "profile",
-      "args": ["--flavor", "prod"]
+      "args": [
+        "--flavor",
+        "prod",
+        "--dart-define-from-file",
+        "dart-define_prod.json"
+      ]
     },
     {
       "name": "Prod-Release",
@@ -127,7 +137,12 @@
       "cwd": "${workspaceFolder}/client",
       "program": "lib/main.dart",
       "flutterMode": "release",
-      "args": ["--flavor", "prod"]
+      "args": [
+        "--flavor",
+        "prod",
+        "--dart-define-from-file",
+        "dart-define_prod.json"
+      ]
     }
   ]
 }

@@ -15,8 +15,12 @@ platform :android do
   desc 'Prod環境向けアプリ(App Bundle)をビルドします。'
   lane :build_prod do
     flavor = 'prod'
+    dart_defines_path = './dart-define_prod.json'
 
-    build(flavor: flavor)
+    build(
+      flavor: flavor,
+      dart_defines_path: dart_defines_path
+    )
   end
 
   desc 'Dev環境向けアプリをGoogle Playにデプロイします。'
