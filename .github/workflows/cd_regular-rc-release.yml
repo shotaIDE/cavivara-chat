@@ -100,6 +100,11 @@ jobs:
           firebase-options-dart-base64-prod: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64_PROD }}
           working-parent-directory: ./client
           working-child-directory: ios
+      - name: Generate uncommitted Flutter files for prod
+        uses: ./.github/actions/generate-uncommitted-flutter-files-prod
+        with:
+          dart-define-json-base64: ${{ secrets.DART_DEFINE_JSON_BASE64_PROD }}
+          working-directory: ./client
       - name: Generate uncommitted iOS files for prod
         run: echo "${{ secrets.GOOGLE_SERVICE_PLIST_BASE64_PROD }}" | base64 -d > ios/Runner/Firebase/Prod/GoogleService-Info.plist
         working-directory: ./client
@@ -158,6 +163,11 @@ jobs:
           firebase-options-dart-base64-prod: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64_PROD }}
           working-parent-directory: ./client
           working-child-directory: android
+      - name: Generate uncommitted Flutter files for prod
+        uses: ./.github/actions/generate-uncommitted-flutter-files-prod
+        with:
+          dart-define-json-base64: ${{ secrets.DART_DEFINE_JSON_BASE64_PROD }}
+          working-directory: ./client
       - name: Generate uncommitted Android files for prod
         run: echo "${{ secrets.GOOGLE_SERVICE_JSON_BASE64_PROD }}" | base64 -d > android/app/src/prod/google-services.json
         working-directory: ./client

@@ -6,7 +6,8 @@ GoogleService-Info.plist
 
 /android/fastlane/google-play-service-account-key.json
 /android/fastlane/report.xml
-/emulator-config.json
+/dart-define_emulator.json
+/dart-define_prod.json
 /flutter-test-results.log
 /ios/fastlane/.env
 /ios/fastlane/app-store-connect-api-key.p8

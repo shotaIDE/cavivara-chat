@@ -383,28 +383,32 @@ firebase emulators:start --import=emulator-data --export-on-exit=emulator-data
 
 ### Firebase emulator に向けたクライアントアプリを実行する
 
-プロジェクトには`client/emulator-config.sample.json`というサンプルファイルが含まれています。
-このファイルをコピーして`client/emulator-config.json`を作成してください。
+プロジェクトには`client/dart-define_emulator.sample.json`というサンプルファイルが含まれています。
+このファイルをコピーして`client/dart-define_emulator.json`を作成してください。
 この手順はマシンごとに 1 回だけ必要です。
 
 ```shell
-cp client/emulator-config.sample.json client/emulator-config.json
+cp client/dart-define_emulator.sample.json client/dart-define_emulator.json
 ```
 
-作成した`client/emulator-config.json`ファイルには以下の形式で設定が記述されています：
+作成した`client/dart-define_emulator.json`ファイル中の`EMULATOR_HOST`の値を変更してください。
 
-```json
-{
-  "EMULATOR_HOST": "127.0.0.1"
-}
-```
-
-必要に応じて`EMULATOR_HOST`の値を変更してください。デフォルト値は`127.0.0.1`です。
-
-> **注意**: `emulator-config.json`は gitignore に設定されており、リポジトリにはコミットされません。各開発者が自分の環境に合わせて設定する必要があります。
+> **注意**: `dart-define_emulator.json`は gitignore に設定されており、リポジトリにはコミットされません。各開発者が自分の環境に合わせて設定する必要があります。
 
 次に、VSCode の「実行とデバッグ」パネルから"Emulator-Debug"などの構成を選択して実行してください。
-プロジェクトには適切な起動構成が含まれており、自動的に `--dart-define-from-file=client/emulator-config.json` 引数を使用して設定ファイルを読み込みます。
+プロジェクトには適切な起動構成が含まれており、自動的に `--dart-define-from-file=client/dart-define_emulator.json` 引数を使用して設定ファイルを読み込みます。
+
+## Prod 環境のクライアントアプリをデバッグ実行する
+
+プロジェクトには`client/dart-define_prod.sample.json`というサンプルファイルが含まれています。
+このファイルをコピーして`client/dart-define_prod.json`を作成してください。
+この手順はマシンごとに 1 回だけ必要です。
+
+```shell
+cp client/dart-define_prod.sample.json client/dart-define_prod.json
+```
+
+各キーの値を実際のものに置き換えてください。
 
 ## デプロイ
 

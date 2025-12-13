@@ -19,10 +19,12 @@ platform :ios do
   desc 'Prod環境向けアプリをビルドします。'
   lane :build_prod do
     flavor = 'prod'
+    dart_defines_path = './dart-define_prod.json'
     export_options_plist_path = './ios/ExportOptions_prod.plist'
 
     build(
       flavor: flavor,
+      dart_defines_path: dart_defines_path,
       export_options_plist_path: export_options_plist_path
     )
   end
