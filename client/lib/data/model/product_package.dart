@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:purchases_flutter/models/package_wrapper.dart';
 
 part 'product_package.freezed.dart';
 
@@ -10,4 +11,14 @@ abstract class ProductPackage with _$ProductPackage {
     required String productId,
     required String priceString,
   }) = _ProductPackage;
+}
+
+extension ProductPackageGenerator on ProductPackage {
+  static ProductPackage fromPackage(Package package) {
+    return ProductPackage(
+      identifier: package.identifier,
+      productId: package.storeProduct.identifier,
+      priceString: package.storeProduct.priceString,
+    );
+  }
 }

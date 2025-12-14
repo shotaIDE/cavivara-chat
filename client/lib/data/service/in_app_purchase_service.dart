@@ -12,6 +12,45 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'in_app_purchase_service.g.dart';
 
+/// 現在のOfferingから利用可能なパッケージを取得するProvider
+@riverpod
+Future<List<ProductPackage>> currentPackages(Ref ref) async {
+  final logger = Logger('InAppPurchaseService');
+
+  try {
+    if (flavor == Flavor.prod) {
+      // Prod環境ではRevenueCat SDKから商品情報を取得
+      logger.info('Getting available products from RevenueCat');
+
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? [];
+
+      logger.info('Found ${packages.length} available products');
+      return packages.map(ProductPackageGenerator.fromPackage).toList();
+    } else {
+      // 開発環境ではダミーデータを返す
+      logger.info('Getting available products (stub implementation)');
+      return [
+        const ProductPackage(
+          identifier: 'stub_monthly',
+          productId: 'stub_monthly_pro',
+          priceString: '¥980',
+        ),
+        const ProductPackage(
+          identifier: 'stub_annual',
+          productId: 'stub_annual_pro',
+          priceString: '¥9,800',
+        ),
+      ];
+    }
+  } on Exception catch (e, stack) {
+    logger.warning('Failed to get available products', e);
+    final errorReportService = ref.read(errorReportServiceProvider);
+    await errorReportService.recordError(e, stack);
+    rethrow;
+  }
+}
+
 @riverpod
 class InAppPurchaseService extends _$InAppPurchaseService {
   final _logger = Logger('InAppPurchaseService');
@@ -40,42 +79,6 @@ class InAppPurchaseService extends _$InAppPurchaseService {
     } else {
       // 開発環境ではダミー実装を使用
       _logger.info('Using stub implementation for ${flavor.name} environment');
-    }
-  }
-
-  /// 利用可能な商品を取得
-  Future<List<ProductPackage>> getAvailableProducts() async {
-    try {
-      if (flavor == Flavor.prod) {
-        // Prod環境ではRevenueCat SDKから商品情報を取得
-        _logger.info('Getting available products from RevenueCat');
-
-        final offerings = await Purchases.getOfferings();
-        final packages = offerings.current?.availablePackages ?? [];
-
-        _logger.info('Found ${packages.length} available products');
-        return packages.map(_convertToProductPackage).toList();
-      } else {
-        // 開発環境ではダミーデータを返す
-        _logger.info('Getting available products (stub implementation)');
-        return [
-          const ProductPackage(
-            identifier: 'stub_monthly',
-            productId: 'stub_monthly_pro',
-            priceString: '¥980',
-          ),
-          const ProductPackage(
-            identifier: 'stub_annual',
-            productId: 'stub_annual_pro',
-            priceString: '¥9,800',
-          ),
-        ];
-      }
-    } on Exception catch (e, stack) {
-      _logger.warning('Failed to get available products', e);
-      final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(e, stack);
-      rethrow;
     }
   }
 
@@ -127,15 +130,6 @@ class InAppPurchaseService extends _$InAppPurchaseService {
       await errorReportService.recordError(e, stack);
       throw const PurchaseException.uncategorized();
     }
-  }
-
-  /// RevenueCatのPackageを独自のProductPackageに変換
-  ProductPackage _convertToProductPackage(Package package) {
-    return ProductPackage(
-      identifier: package.identifier,
-      productId: package.storeProduct.identifier,
-      priceString: package.storeProduct.priceString,
-    );
   }
 
   /// 購入完了処理
