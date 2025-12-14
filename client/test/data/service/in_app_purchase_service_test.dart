@@ -16,6 +16,9 @@ void main() {
     registerFallbackValue(FakeStackTrace());
   });
 
+  // テスト実行時にflavorを設定（開発環境として実行）
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('InAppPurchaseService', () {
     late ProviderContainer container;
     late MockErrorReportService mockErrorReportService;
@@ -44,74 +47,60 @@ void main() {
     });
 
     group('getAvailableProducts', () {
-      test('UnimplementedErrorが投げられること', () async {
+      test('開発環境ではダミーデータが返されること', () async {
         // プロバイダーを初期化
         await container.read(inAppPurchaseServiceProvider.future);
         final service = container.read(inAppPurchaseServiceProvider.notifier);
 
-        expect(
-          service.getAvailableProducts,
-          throwsA(isA<UnimplementedError>()),
-        );
+        // 開発環境ではダミーデータが返される
+        final products = await service.getAvailableProducts();
+
+        expect(products, isNotEmpty);
+        expect(products.length, equals(2));
+        expect(products[0].identifier, equals('stub_monthly'));
+        expect(products[1].identifier, equals('stub_annual'));
       });
 
-      test('UnimplementedErrorの場合、エラーレポートサービスは呼ばれないこと', () async {
-        // UnimplementedErrorはErrorであってExceptionではないため、
-        // on Exceptionハンドラーで捕捉されず、エラーレポートサービスは呼ばれない
+      test('開発環境では例外が発生しないこと', () async {
         await container.read(inAppPurchaseServiceProvider.future);
         final service = container.read(inAppPurchaseServiceProvider.notifier);
 
-        try {
-          await service.getAvailableProducts();
-          fail('UnimplementedErrorが投げられるべきです');
-          // ignore: avoid_catching_errors
-        } on UnimplementedError {
-          // UnimplementedErrorはExceptionではないため、
-          // recordErrorは呼ばれない
-          verifyNever(
-            () => mockErrorReportService.recordError(
-              any<Object>(),
-              any<StackTrace>(),
-            ),
-          );
-        }
+        // 開発環境では正常に実行される
+        await expectLater(
+          service.getAvailableProducts(),
+          completes,
+        );
       });
     });
 
     group('purchaseProduct', () {
-      test('UnimplementedErrorが投げられること', () async {
+      test('開発環境では正常に完了すること', () async {
         // プロバイダーを初期化
         await container.read(inAppPurchaseServiceProvider.future);
         final service = container.read(inAppPurchaseServiceProvider.notifier);
-        const productId = 'test_product';
+        const productId = 'stub_monthly_pro';
 
-        expect(
-          () => service.purchaseProduct(productId),
-          throwsA(isA<UnimplementedError>()),
+        // 開発環境では例外なく完了する
+        await expectLater(
+          service.purchaseProduct(productId),
+          completes,
         );
       });
 
-      test('UnimplementedErrorの場合、エラーレポートサービスは呼ばれないこと', () async {
-        // UnimplementedErrorはErrorであってExceptionではないため、
-        // on Exceptionハンドラーで捕捉されず、エラーレポートサービスは呼ばれない
+      test('開発環境ではエラーレポートサービスは呼ばれないこと', () async {
         await container.read(inAppPurchaseServiceProvider.future);
         final service = container.read(inAppPurchaseServiceProvider.notifier);
-        const productId = 'test_product';
+        const productId = 'stub_monthly_pro';
 
-        try {
-          await service.purchaseProduct(productId);
-          fail('UnimplementedErrorが投げられるべきです');
-          // ignore: avoid_catching_errors
-        } on UnimplementedError {
-          // UnimplementedErrorはExceptionではないため、
-          // recordErrorは呼ばれない
-          verifyNever(
-            () => mockErrorReportService.recordError(
-              any<Object>(),
-              any<StackTrace>(),
-            ),
-          );
-        }
+        await service.purchaseProduct(productId);
+
+        // 開発環境では正常に完了するため、エラーレポートは呼ばれない
+        verifyNever(
+          () => mockErrorReportService.recordError(
+            any<Object>(),
+            any<StackTrace>(),
+          ),
+        );
       });
     });
 
