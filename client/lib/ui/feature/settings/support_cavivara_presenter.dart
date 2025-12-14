@@ -31,10 +31,7 @@ abstract class SupportCavivaraState with _$SupportCavivaraState {
     /// 次の称号までの進捗率（0.0 - 1.0）
     required double progressToNextTitle,
 
-    /// 各プランの価格文字列（プランが見つからない場合はnull）
-    required String? smallPlanPrice,
-    required String? mediumPlanPrice,
-    required String? largePlanPrice,
+    required List<ProductPackage> packages,
   }) = _SupportCavivaraState;
 }
 
@@ -77,49 +74,13 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
     // 商品パッケージを取得
     final packages = await packagesFuture;
 
-    // 各プランの価格を検索
-    final smallPlanPrice = packages
-        .firstWhere(
-          (p) => p.productId == SupportPlan.small.productId,
-          orElse: () => const ProductPackage(
-            identifier: '',
-            productId: '',
-            priceString: '',
-          ),
-        )
-        .priceString;
-
-    final mediumPlanPrice = packages
-        .firstWhere(
-          (p) => p.productId == SupportPlan.medium.productId,
-          orElse: () => const ProductPackage(
-            identifier: '',
-            productId: '',
-            priceString: '',
-          ),
-        )
-        .priceString;
-
-    final largePlanPrice = packages
-        .firstWhere(
-          (p) => p.productId == SupportPlan.large.productId,
-          orElse: () => const ProductPackage(
-            identifier: '',
-            productId: '',
-            priceString: '',
-          ),
-        )
-        .priceString;
-
     return SupportCavivaraState(
       totalVP: totalVP,
       currentTitle: currentTitle,
       nextTitle: nextTitle,
       vpToNextTitle: vpToNextTitle,
       progressToNextTitle: progressToNextTitle,
-      smallPlanPrice: smallPlanPrice.isEmpty ? null : smallPlanPrice,
-      mediumPlanPrice: mediumPlanPrice.isEmpty ? null : mediumPlanPrice,
-      largePlanPrice: largePlanPrice.isEmpty ? null : largePlanPrice,
+      packages: packages,
     );
   }
 

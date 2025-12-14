@@ -9,6 +9,8 @@ abstract class ProductPackage with _$ProductPackage {
   const factory ProductPackage({
     required String identifier,
     required String productId,
+    required String title,
+    required String description,
     required String priceString,
   }) = _ProductPackage;
 }
@@ -18,6 +20,8 @@ extension ProductPackageGenerator on ProductPackage {
     return ProductPackage(
       identifier: package.identifier,
       productId: package.storeProduct.identifier,
+      title: package.storeProduct.title,
+      description: package.storeProduct.description,
       priceString: package.storeProduct.priceString,
     );
   }

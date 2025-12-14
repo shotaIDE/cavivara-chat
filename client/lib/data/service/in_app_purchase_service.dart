@@ -34,11 +34,15 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
         const ProductPackage(
           identifier: 'stub_monthly',
           productId: 'stub_monthly_pro',
+          title: 'Stub Monthly Plan',
+          description: 'This is a stub monthly plan for development.',
           priceString: '¥980',
         ),
         const ProductPackage(
           identifier: 'stub_annual',
           productId: 'stub_annual_pro',
+          title: 'Stub Annual Plan',
+          description: 'This is a stub annual plan for development.',
           priceString: '¥9,800',
         ),
       ];

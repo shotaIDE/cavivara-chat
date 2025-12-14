@@ -59,29 +59,17 @@ class SupportCavivaraScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // 応援プランカード（small）
-                SupportPlanCard(
-                  plan: SupportPlan.small,
-                  priceString: state.smallPlanPrice,
-                  onTap: () => _onPlanTap(context, ref, SupportPlan.small),
-                ),
-                const SizedBox(height: 12),
+                ...state.packages.map((package) {
+                  return SupportPlanCard(
+                    plan: SupportPlan.small,
+                    title: package.title,
+                    description: package.description,
+                    priceString: package.priceString,
+                    onTap: () => _onPlanTap(context, ref, SupportPlan.small),
+                  );
+                }),
 
-                // 応援プランカード（medium）
-                SupportPlanCard(
-                  plan: SupportPlan.medium,
-                  priceString: state.mediumPlanPrice,
-                  onTap: () => _onPlanTap(context, ref, SupportPlan.medium),
-                ),
                 const SizedBox(height: 12),
-
-                // 応援プランカード（large）
-                SupportPlanCard(
-                  plan: SupportPlan.large,
-                  priceString: state.largePlanPrice,
-                  onTap: () => _onPlanTap(context, ref, SupportPlan.large),
-                ),
-                const SizedBox(height: 24),
 
                 // 区切り線
                 const Divider(),
