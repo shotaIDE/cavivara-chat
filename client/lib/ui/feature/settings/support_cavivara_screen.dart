@@ -48,66 +48,66 @@ class SupportCavivaraScreen extends ConsumerWidget {
                   vpToNext: state.vpToNextTitle,
                   progress: state.progressToNextTitle,
                 ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // 応援プラン選択セクション
-              Text(
-                '応援プランを選択',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                // 応援プラン選択セクション
+                Text(
+                  '応援プランを選択',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // 応援プランカード（small）
-              SupportPlanCard(
-                plan: SupportPlan.small,
-                priceString: null, // TODO(claude): 商品情報から取得
-                onTap: () => _onPlanTap(context, ref, SupportPlan.small),
-              ),
-              const SizedBox(height: 12),
-
-              // 応援プランカード（medium）
-              SupportPlanCard(
-                plan: SupportPlan.medium,
-                priceString: null, // TODO(claude): 商品情報から取得
-                onTap: () => _onPlanTap(context, ref, SupportPlan.medium),
-              ),
-              const SizedBox(height: 12),
-
-              // 応援プランカード（large）
-              SupportPlanCard(
-                plan: SupportPlan.large,
-                priceString: null, // TODO(claude): 商品情報から取得
-                onTap: () => _onPlanTap(context, ref, SupportPlan.large),
-              ),
-              const SizedBox(height: 24),
-
-              // 区切り線
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // 注意書き
-              Text(
-                '※ 応援課金では機能は追加されません',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                // 応援プランカード（small）
+                SupportPlanCard(
+                  plan: SupportPlan.small,
+                  priceString: state.smallPlanPrice,
+                  onTap: () => _onPlanTap(context, ref, SupportPlan.small),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '※ カヴィヴァラさんの開発を応援するための課金です',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 12),
+
+                // 応援プランカード（medium）
+                SupportPlanCard(
+                  plan: SupportPlan.medium,
+                  priceString: state.mediumPlanPrice,
+                  onTap: () => _onPlanTap(context, ref, SupportPlan.medium),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '※ 累計VPに応じて称号が変化します',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 12),
+
+                // 応援プランカード（large）
+                SupportPlanCard(
+                  plan: SupportPlan.large,
+                  priceString: state.largePlanPrice,
+                  onTap: () => _onPlanTap(context, ref, SupportPlan.large),
                 ),
-              ),
+                const SizedBox(height: 24),
+
+                // 区切り線
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // 注意書き
+                Text(
+                  '※ 応援課金では機能は追加されません',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '※ カヴィヴァラさんの開発を応援するための課金です',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '※ 累計VPに応じて称号が変化します',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),

@@ -46,14 +46,13 @@ void main() {
       container.dispose();
     });
 
-    group('getAvailableProducts', () {
+    group('currentPackages', () {
       test('開発環境ではダミーデータが返されること', () async {
         // プロバイダーを初期化
         await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
 
         // 開発環境ではダミーデータが返される
-        final products = await service.getAvailableProducts();
+        final products = await container.read(currentPackagesProvider.future);
 
         expect(products, isNotEmpty);
         expect(products.length, equals(2));
@@ -63,11 +62,10 @@ void main() {
 
       test('開発環境では例外が発生しないこと', () async {
         await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
 
         // 開発環境では正常に実行される
         await expectLater(
-          service.getAvailableProducts(),
+          container.read(currentPackagesProvider.future),
           completes,
         );
       });

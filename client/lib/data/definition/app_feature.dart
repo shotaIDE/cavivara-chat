@@ -14,3 +14,5 @@ const bool isAnalyticsEnabled =
 
 const bool isCrashlyticsEnabled =
     String.fromEnvironment('ENABLE_CRASHLYTICS') == 'true' || kReleaseMode;
+
+final isRevenueCatEnabled = flavor == Flavor.prod;
