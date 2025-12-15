@@ -88,7 +88,7 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
     final inAppPurchaseService = ref.read(
       inAppPurchaseServiceProvider.notifier,
     );
-    await inAppPurchaseService.purchaseProduct(product.productId);
+    await inAppPurchaseService.purchaseProduct(product);
 
     // 購入成功後、VPを加算
     final currentState = await future;

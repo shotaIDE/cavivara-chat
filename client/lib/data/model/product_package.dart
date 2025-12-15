@@ -9,7 +9,6 @@ part 'product_package.freezed.dart';
 abstract class ProductPackage with _$ProductPackage {
   const factory ProductPackage({
     required String identifier,
-    required String productId,
     required String title,
     required String description,
     required String priceString,
@@ -21,13 +20,11 @@ extension ProductPackageGenerator on ProductPackage {
   static ProductPackage fromPackage(Package package) {
     return ProductPackage(
       identifier: package.identifier,
-      productId: package.storeProduct.identifier,
       title: package.storeProduct.title,
       description: package.storeProduct.description,
       priceString: package.storeProduct.priceString,
       plan: SupportPlan.values.firstWhere(
-        (supportPlan) =>
-            supportPlan.storeIdentifier == package.storeProduct.identifier,
+        (supportPlan) => supportPlan.storeIdentifier == package.identifier,
       ),
     );
   }

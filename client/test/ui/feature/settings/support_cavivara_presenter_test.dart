@@ -7,7 +7,6 @@ import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/support_history_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';

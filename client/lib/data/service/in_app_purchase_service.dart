@@ -34,7 +34,6 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
       return [
         const ProductPackage(
           identifier: 'stub_monthly',
-          productId: 'stub_monthly_pro',
           title: 'Stub Monthly Plan',
           description: 'This is a stub monthly plan for development.',
           priceString: '¥980',
@@ -42,7 +41,6 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
         ),
         const ProductPackage(
           identifier: 'stub_annual',
-          productId: 'stub_annual_pro',
           title: 'Stub Annual Plan',
           description: 'This is a stub annual plan for development.',
           priceString: '¥9,800',
@@ -90,9 +88,10 @@ class InAppPurchaseService extends _$InAppPurchaseService {
   }
 
   /// 商品IDを指定して購入
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(ProductPackage product) async {
     try {
-      _logger.info('Purchasing product: $productId');
+      final identifier = product.identifier;
+      _logger.info('Purchasing product: $identifier');
 
       if (flavor == Flavor.prod) {
         // Prod環境ではRevenueCat SDKで購入処理を実行
@@ -100,20 +99,20 @@ class InAppPurchaseService extends _$InAppPurchaseService {
         final offerings = await Purchases.getOfferings();
         final packages = offerings.current?.availablePackages ?? [];
         final package = packages.firstWhere(
-          (p) => p.storeProduct.identifier == productId,
-          orElse: () => throw Exception('Product not found: $productId'),
+          (p) => p.identifier == identifier,
+          orElse: () => throw Exception('Product not found: $identifier'),
         );
 
         // 購入処理を実行
         final purchaseResult = await Purchases.purchase(
           PurchaseParams.package(package),
         );
-        await _completePurchase(purchaseResult.customerInfo, productId);
+        await _completePurchase(purchaseResult.customerInfo, identifier);
 
-        _logger.info('Purchase completed successfully: $productId');
+        _logger.info('Purchase completed successfully: $identifier');
       } else {
         // 開発環境ではダミー処理
-        _logger.info('Purchase completed (stub implementation): $productId');
+        _logger.info('Purchase completed (stub implementation): $identifier');
         // 開発環境では何もせず成功として扱う
       }
     } on PlatformException catch (e, stack) {
@@ -145,9 +144,9 @@ class InAppPurchaseService extends _$InAppPurchaseService {
   /// ビジネスロジックを実行してください。
   Future<CustomerInfo> _completePurchase(
     CustomerInfo customerInfo,
-    String productId,
+    String identifier,
   ) async {
-    _logger.info('Purchase completed: $productId');
+    _logger.info('Purchase completed: $identifier');
     return customerInfo;
   }
 }
