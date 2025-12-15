@@ -21,15 +21,6 @@ extension SupportPlanExtension on SupportPlan {
     };
   }
 
-  /// 獲得ヴィヴァポイント
-  int get vivaPoint {
-    return switch (this) {
-      SupportPlan.small => 1,
-      SupportPlan.medium => 4,
-      SupportPlan.large => 8,
-    };
-  }
-
   /// 感謝メッセージ
   String get thankYouMessage {
     return switch (this) {

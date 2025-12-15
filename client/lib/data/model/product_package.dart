@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:house_worker/data/model/support_plan.dart';
 import 'package:purchases_flutter/models/package_wrapper.dart';
 
 part 'product_package.freezed.dart';
@@ -12,6 +13,7 @@ abstract class ProductPackage with _$ProductPackage {
     required String title,
     required String description,
     required String priceString,
+    required SupportPlan plan,
   }) = _ProductPackage;
 }
 
@@ -23,6 +25,10 @@ extension ProductPackageGenerator on ProductPackage {
       title: package.storeProduct.title,
       description: package.storeProduct.description,
       priceString: package.storeProduct.priceString,
+      plan: SupportPlan.values.firstWhere(
+        (supportPlan) =>
+            supportPlan.storeIdentifier == package.storeProduct.identifier,
+      ),
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/data/model/support_plan.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
 import 'package:house_worker/ui/feature/settings/thank_you_dialog.dart';
@@ -65,7 +65,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
                     title: package.title,
                     description: package.description,
                     priceString: package.priceString,
-                    onTap: () => _onPlanTap(context, ref, SupportPlan.small),
+                    onTap: () => _onPlanTap(context, ref, package),
                   );
                 }),
 
@@ -124,7 +124,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
   Future<void> _onPlanTap(
     BuildContext context,
     WidgetRef ref,
-    SupportPlan plan,
+    ProductPackage product,
   ) async {
     final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
 
@@ -134,7 +134,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
 
     // 購入処理
     try {
-      await presenter.supportCavivara(plan);
+      await presenter.supportCavivara(product);
     } on PurchaseException catch (e) {
       // 購入キャンセルの場合は何もしない
       if (e is PurchaseExceptionCancelled) {
@@ -169,8 +169,8 @@ class SupportCavivaraScreen extends ConsumerWidget {
     // 感謝ダイアログ表示
     await ThankYouDialog.show(
       context,
-      plan: plan,
-      earnedVP: plan.vivaPoint,
+      plan: product.plan,
+      earnedVP: product.plan.vivaPoint,
       newTitle: promotedTitle,
     );
   }

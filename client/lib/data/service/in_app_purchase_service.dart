@@ -5,6 +5,7 @@ import 'package:house_worker/data/definition/app_definition.dart';
 import 'package:house_worker/data/definition/flavor.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
+import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:logging/logging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -37,6 +38,7 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
           title: 'Stub Monthly Plan',
           description: 'This is a stub monthly plan for development.',
           priceString: '¥980',
+          plan: SupportPlan.small,
         ),
         const ProductPackage(
           identifier: 'stub_annual',
@@ -44,6 +46,7 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
           title: 'Stub Annual Plan',
           description: 'This is a stub annual plan for development.',
           priceString: '¥9,800',
+          plan: SupportPlan.small,
         ),
       ];
     }
