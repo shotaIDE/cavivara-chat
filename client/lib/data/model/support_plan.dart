@@ -1,13 +1,13 @@
 /// 応援プランを表すenum
 enum SupportPlan {
   /// ちょっと応援
-  small('small', 1),
+  small('support-small', 1),
 
   /// しっかり応援
-  medium('medium', 4),
+  medium('support-medium', 4),
 
   /// めっちゃ応援
-  large('large', 10)
+  large('support-large', 10)
   ;
 
   const SupportPlan(this.storeIdentifier, this.vivaPoint);
