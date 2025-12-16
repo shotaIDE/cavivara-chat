@@ -90,12 +90,12 @@ class InAppPurchaseService {
 
   /// 商品IDを指定して購入
   Future<void> purchaseProduct(ProductPackage product) async {
-    try {
-      final identifier = product.identifier;
-      _logger.info('Purchasing product: $identifier');
+    final identifier = product.identifier;
+    _logger.info('Purchasing product: $identifier');
 
-      if (isRevenueCatEnabled) {
-        // Prod環境ではRevenueCat SDKで購入処理を実行
+    if (isRevenueCatEnabled) {
+      // Prod環境ではRevenueCat SDKで購入処理を実行
+      try {
         // まず商品情報を取得
         final offerings = await Purchases.getOfferings();
         final packages = offerings.current?.availablePackages ?? [];
@@ -109,31 +109,31 @@ class InAppPurchaseService {
           PurchaseParams.package(package),
         );
         await _completePurchase(purchaseResult.customerInfo, identifier);
+      } on PlatformException catch (e, stack) {
+        // PlatformExceptionからエラーコードを取得
+        final errorCode = PurchasesErrorHelper.getErrorCode(e);
 
-        _logger.info('Purchase completed successfully: $identifier');
-      } else {
-        // 開発環境ではダミー処理
-        _logger.info('Purchase completed (stub implementation): $identifier');
-        // 開発環境では何もせず成功として扱う
+        // ユーザーキャンセルは静かに処理
+        if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+          _logger.info('Purchase cancelled by user');
+          throw const PurchaseException.cancelled();
+        }
+
+        // その他のエラーはエラーレポートに送信
+        _logger.warning('Purchase failed with error code: $errorCode');
+        await _errorReportService.recordError(e, stack);
+        throw const PurchaseException.uncategorized();
+      } on Exception catch (e, stack) {
+        _logger.warning('Purchase failed', e);
+        await _errorReportService.recordError(e, stack);
+        throw const PurchaseException.uncategorized();
       }
-    } on PlatformException catch (e, stack) {
-      // PlatformExceptionからエラーコードを取得
-      final errorCode = PurchasesErrorHelper.getErrorCode(e);
 
-      // ユーザーキャンセルは静かに処理
-      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
-        _logger.info('Purchase cancelled by user');
-        throw const PurchaseException.cancelled();
-      }
-
-      // その他のエラーはエラーレポートに送信
-      _logger.warning('Purchase failed with error code: $errorCode');
-      await _errorReportService.recordError(e, stack);
-      throw const PurchaseException.uncategorized();
-    } on Exception catch (e, stack) {
-      _logger.warning('Purchase failed', e);
-      await _errorReportService.recordError(e, stack);
-      throw const PurchaseException.uncategorized();
+      _logger.info('Purchase completed successfully: $identifier');
+    } else {
+      // 開発環境ではダミー処理
+      _logger.info('Purchase completed (stub implementation): $identifier');
+      // 開発環境では何もせず成功として扱う
     }
   }
 
