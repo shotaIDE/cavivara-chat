@@ -49,7 +49,6 @@ class SupportPlanCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       // 獲得VP
                       Text(
-                        // '+${plan.vivaPoint}VP',
                         description,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
