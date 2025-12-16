@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:house_worker/data/definition/flavor.dart';
+import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/data/model/support_plan.dart';
@@ -17,8 +17,7 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
   final errorReportService = ref.read(errorReportServiceProvider);
 
   try {
-    if (flavor == Flavor.prod) {
-      // Prod環境ではRevenueCat SDKから商品情報を取得
+    if (isRevenueCatEnabled) {
       logger.info('Getting available products from RevenueCat');
 
       final offerings = await Purchases.getOfferings();
@@ -95,7 +94,7 @@ class InAppPurchaseService {
       final identifier = product.identifier;
       _logger.info('Purchasing product: $identifier');
 
-      if (flavor == Flavor.prod) {
+      if (isRevenueCatEnabled) {
         // Prod環境ではRevenueCat SDKで購入処理を実行
         // まず商品情報を取得
         final offerings = await Purchases.getOfferings();
