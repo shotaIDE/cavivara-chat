@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
-import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
 import 'package:house_worker/ui/feature/settings/thank_you_dialog.dart';
@@ -61,7 +60,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
 
                 ...state.packages.map((package) {
                   return SupportPlanCard(
-                    plan: SupportPlan.small,
+                    plan: package.plan,
                     title: package.title,
                     description: package.description,
                     priceString: package.priceString,
