@@ -17,6 +17,7 @@ part 'in_app_purchase_service.g.dart';
 @riverpod
 Future<List<ProductPackage>> currentPackages(Ref ref) async {
   final logger = Logger('InAppPurchaseService');
+  final errorReportService = ref.read(errorReportServiceProvider);
 
   try {
     if (flavor == Flavor.prod) {
@@ -27,7 +28,27 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
       final packages = offerings.current?.availablePackages ?? [];
 
       logger.info('Found ${packages.length} available products');
-      return packages.map(ProductPackageGenerator.fromPackage).toList();
+
+      final productPackages = packages
+          .map((package) {
+            final productPackage = ProductPackageGenerator.fromPackage(package);
+            if (productPackage == null) {
+              logger.severe('Found unknown package: ${package.identifier}');
+
+              errorReportService.recordError(
+                UnimplementedError(),
+                StackTrace.current,
+              );
+            }
+
+            return productPackage;
+          })
+          .whereType<ProductPackage>()
+          .toList();
+
+      logger.info('Found ${productPackages.length} valid products');
+
+      return productPackages;
     } else {
       // 開発環境ではダミーデータを返す
       logger.info('Getting available products (stub implementation)');
