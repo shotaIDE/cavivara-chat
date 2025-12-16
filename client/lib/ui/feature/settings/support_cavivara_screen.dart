@@ -8,7 +8,7 @@ import 'package:house_worker/ui/feature/settings/thank_you_dialog.dart';
 import 'package:house_worker/ui/feature/settings/vp_progress_widget.dart';
 
 /// カヴィヴァラ応援画面
-class SupportCavivaraScreen extends ConsumerWidget {
+class SupportCavivaraScreen extends ConsumerStatefulWidget {
   const SupportCavivaraScreen({super.key});
 
   static const name = 'SupportCavivaraScreen';
@@ -20,7 +20,13 @@ class SupportCavivaraScreen extends ConsumerWidget {
       );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SupportCavivaraScreen> createState() =>
+      _SupportCavivaraScreenState();
+}
+
+class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
+  @override
+  Widget build(BuildContext context) {
     final presenterState = ref.watch(supportCavivaraPresenterProvider);
 
     return presenterState.when(
@@ -64,7 +70,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
                     title: package.title,
                     description: package.description,
                     priceString: package.priceString,
-                    onTap: () => _onPlanTap(context, ref, package),
+                    onTap: () => _onPlanTap(package),
                   );
                 }),
 
@@ -120,11 +126,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
   }
 
   /// プランタップ時の処理
-  Future<void> _onPlanTap(
-    BuildContext context,
-    WidgetRef ref,
-    ProductPackage product,
-  ) async {
+  Future<void> _onPlanTap(ProductPackage product) async {
     final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
 
     // 購入前の称号を保存
@@ -141,7 +143,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
       }
 
       // その他のエラーの場合はスナックバーで通知
-      if (!context.mounted) {
+      if (!mounted) {
         return;
       }
 
@@ -161,7 +163,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
     final promotedTitle = newTitle != oldTitle ? newTitle : null;
 
     // マウントチェック
-    if (!context.mounted) {
+    if (!mounted) {
       return;
     }
 
