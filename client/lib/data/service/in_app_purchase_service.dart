@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/services.dart';
-import 'package:house_worker/data/definition/app_definition.dart';
 import 'package:house_worker/data/definition/flavor.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
@@ -78,35 +75,19 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
 }
 
 @riverpod
-class InAppPurchaseService extends _$InAppPurchaseService {
+InAppPurchaseService inAppPurchaseService(Ref ref) {
+  return InAppPurchaseService(
+    errorReportService: ref.watch(errorReportServiceProvider),
+  );
+}
+
+class InAppPurchaseService {
+  InAppPurchaseService({
+    required ErrorReportService errorReportService,
+  }) : _errorReportService = errorReportService;
+
+  final ErrorReportService _errorReportService;
   final _logger = Logger('InAppPurchaseService');
-
-  @override
-  Future<void> build() async {
-    // Prod環境の場合のみRevenueCat SDKを初期化
-    if (flavor == Flavor.prod) {
-      _logger.info('Initializing RevenueCat SDK for production');
-
-      // プラットフォームに応じたAPIキーを取得
-      final apiKey = Platform.isIOS
-          ? revenueCatProjectAppleApiKey
-          : revenueCatProjectGoogleApiKey;
-
-      if (apiKey.isEmpty) {
-        _logger.severe('RevenueCat API key is not configured');
-        throw StateError('RevenueCat API key is required in production');
-      }
-
-      await Purchases.configure(
-        PurchasesConfiguration(apiKey),
-      );
-
-      _logger.info('RevenueCat SDK initialized successfully');
-    } else {
-      // 開発環境ではダミー実装を使用
-      _logger.info('Using stub implementation for ${flavor.name} environment');
-    }
-  }
 
   /// 商品IDを指定して購入
   Future<void> purchaseProduct(ProductPackage product) async {
@@ -148,13 +129,11 @@ class InAppPurchaseService extends _$InAppPurchaseService {
 
       // その他のエラーはエラーレポートに送信
       _logger.warning('Purchase failed with error code: $errorCode');
-      final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(e, stack);
+      await _errorReportService.recordError(e, stack);
       throw const PurchaseException.uncategorized();
     } on Exception catch (e, stack) {
       _logger.warning('Purchase failed', e);
-      final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(e, stack);
+      await _errorReportService.recordError(e, stack);
       throw const PurchaseException.uncategorized();
     }
   }

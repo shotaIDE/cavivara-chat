@@ -85,9 +85,7 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
   /// カヴィヴァラを応援する（購入処理）
   Future<void> supportCavivara(ProductPackage product) async {
     // InAppPurchaseServiceで購入処理
-    final inAppPurchaseService = ref.read(
-      inAppPurchaseServiceProvider.notifier,
-    );
+    final inAppPurchaseService = ref.read(inAppPurchaseServiceProvider);
     await inAppPurchaseService.purchaseProduct(product);
 
     // 購入成功後、VPを加算
