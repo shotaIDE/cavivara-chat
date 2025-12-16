@@ -9,12 +9,6 @@ Flavor _getFlavor() {
 
   const flavorString = String.fromEnvironment('FLUTTER_APP_FLAVOR');
 
-  // 環境変数が設定されていない場合（テスト時など）はdevをデフォルトとする
-  if (flavorString.isEmpty) {
-    logger.info('FLUTTER_APP_FLAVOR not set, using dev as default');
-    return Flavor.dev;
-  }
-
   final flavor = Flavor.values.firstWhere(
     (value) => value.name == flavorString,
     orElse: () {
