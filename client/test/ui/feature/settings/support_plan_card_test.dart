@@ -12,6 +12,8 @@ void main() {
           home: Scaffold(
             body: SupportPlanCard(
               plan: SupportPlan.medium,
+              title: SupportPlan.medium.displayName,
+              description: '獲得${SupportPlan.medium.vivaPoint}VP',
               priceString: '¥500',
               onTap: () {},
             ),
@@ -21,9 +23,6 @@ void main() {
 
       // プラン名が表示されていること
       expect(find.text(SupportPlan.medium.displayName), findsOneWidget);
-
-      // アイコンが表示されていること
-      expect(find.byIcon(SupportPlan.medium.icon), findsOneWidget);
 
       // 獲得VPが表示されていること
       expect(
@@ -43,6 +42,8 @@ void main() {
           home: Scaffold(
             body: SupportPlanCard(
               plan: SupportPlan.small,
+              title: SupportPlan.small.displayName,
+              description: '獲得${SupportPlan.small.vivaPoint}VP',
               priceString: '¥120',
               onTap: () {
                 tapped = true;
@@ -69,7 +70,9 @@ void main() {
           home: Scaffold(
             body: SupportPlanCard(
               plan: SupportPlan.large,
-              priceString: null, // 価格未取得
+              title: SupportPlan.large.displayName,
+              description: '獲得${SupportPlan.large.vivaPoint}VP',
+              priceString: '---', // 価格未取得時のプレースホルダー
               onTap: () {},
             ),
           ),
@@ -87,6 +90,8 @@ void main() {
             home: Scaffold(
               body: SupportPlanCard(
                 plan: plan,
+                title: plan.displayName,
+                description: '獲得${plan.vivaPoint}VP',
                 priceString: '¥100',
                 onTap: () {},
               ),
@@ -96,9 +101,6 @@ void main() {
 
         // プラン名が表示されていること
         expect(find.text(plan.displayName), findsOneWidget);
-
-        // アイコンが表示されていること
-        expect(find.byIcon(plan.icon), findsOneWidget);
 
         // 獲得VPが表示されていること
         expect(find.textContaining('${plan.vivaPoint}VP'), findsOneWidget);

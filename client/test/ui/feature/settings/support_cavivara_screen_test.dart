@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/preference_key.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
+import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
@@ -15,10 +17,28 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 // モッククラス（購入成功）
 class MockInAppPurchaseService extends InAppPurchaseService {
+  MockInAppPurchaseService()
+    : super(errorReportService: _DummyErrorReportService());
+
   @override
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(ProductPackage product) async {
     // 購入成功をシミュレート
   }
+}
+
+class _DummyErrorReportService extends ErrorReportService {
+  @override
+  Future<void> recordError(
+    dynamic exception,
+    StackTrace stackTrace, {
+    bool fatal = false,
+  }) async {}
+
+  @override
+  Future<void> setUserId(String userId) async {}
+
+  @override
+  Future<void> clearUserId() async {}
 }
 
 void main() {
@@ -119,7 +139,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           inAppPurchaseServiceProvider.overrideWith(
-            MockInAppPurchaseService.new,
+            (ref) => MockInAppPurchaseService(),
           ),
         ],
       );

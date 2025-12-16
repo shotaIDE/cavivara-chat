@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:house_worker/data/model/product_package.dart';
+import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:mocktail/mocktail.dart';
@@ -48,9 +50,6 @@ void main() {
 
     group('currentPackages', () {
       test('開発環境ではダミーデータが返されること', () async {
-        // プロバイダーを初期化
-        await container.read(inAppPurchaseServiceProvider.future);
-
         // 開発環境ではダミーデータが返される
         final products = await container.read(currentPackagesProvider.future);
 
@@ -61,8 +60,6 @@ void main() {
       });
 
       test('開発環境では例外が発生しないこと', () async {
-        await container.read(inAppPurchaseServiceProvider.future);
-
         // 開発環境では正常に実行される
         await expectLater(
           container.read(currentPackagesProvider.future),
@@ -73,24 +70,33 @@ void main() {
 
     group('purchaseProduct', () {
       test('開発環境では正常に完了すること', () async {
-        // プロバイダーを初期化
-        await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
-        const productId = 'stub_monthly_pro';
+        final service = container.read(inAppPurchaseServiceProvider);
+        const product = ProductPackage(
+          identifier: 'stub_monthly_pro',
+          title: 'Test Product',
+          description: 'Test description',
+          priceString: '¥980',
+          plan: SupportPlan.small,
+        );
 
         // 開発環境では例外なく完了する
         await expectLater(
-          service.purchaseProduct(productId),
+          service.purchaseProduct(product),
           completes,
         );
       });
 
       test('開発環境ではエラーレポートサービスは呼ばれないこと', () async {
-        await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
-        const productId = 'stub_monthly_pro';
+        final service = container.read(inAppPurchaseServiceProvider);
+        const product = ProductPackage(
+          identifier: 'stub_monthly_pro',
+          title: 'Test Product',
+          description: 'Test description',
+          priceString: '¥980',
+          plan: SupportPlan.small,
+        );
 
-        await service.purchaseProduct(productId);
+        await service.purchaseProduct(product);
 
         // 開発環境では正常に完了するため、エラーレポートは呼ばれない
         verifyNever(
