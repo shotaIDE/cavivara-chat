@@ -8,7 +8,6 @@ Flavor _getFlavor() {
   final logger = Logger('Flavor');
 
   const flavorString = String.fromEnvironment('FLUTTER_APP_FLAVOR');
-
   final flavor = Flavor.values.firstWhere(
     (value) => value.name == flavorString,
     orElse: () {
