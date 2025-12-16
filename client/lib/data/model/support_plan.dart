@@ -7,7 +7,7 @@ enum SupportPlan {
   medium('support-medium', 4),
 
   /// めっちゃ応援
-  large('support-large', 10)
+  large('support-large', 8)
   ;
 
   const SupportPlan(this.storeIdentifier, this.vivaPoint);
