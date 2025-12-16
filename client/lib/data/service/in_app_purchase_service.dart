@@ -104,11 +104,9 @@ class InAppPurchaseService {
           orElse: () => throw Exception('Product not found: $identifier'),
         );
 
-        // 購入処理を実行
-        final purchaseResult = await Purchases.purchase(
+        await Purchases.purchase(
           PurchaseParams.package(package),
         );
-        await _completePurchase(purchaseResult.customerInfo, identifier);
       } on PlatformException catch (e, stack) {
         // PlatformExceptionからエラーコードを取得
         final errorCode = PurchasesErrorHelper.getErrorCode(e);
@@ -135,17 +133,5 @@ class InAppPurchaseService {
       _logger.info('Purchase completed (stub implementation): $identifier');
       // 開発環境では何もせず成功として扱う
     }
-  }
-
-  /// 購入完了処理
-  ///
-  /// CustomerInfoを返すので、呼び出し側(Presenter)でVP加算などの
-  /// ビジネスロジックを実行してください。
-  Future<CustomerInfo> _completePurchase(
-    CustomerInfo customerInfo,
-    String identifier,
-  ) async {
-    _logger.info('Purchase completed: $identifier');
-    return customerInfo;
   }
 }
