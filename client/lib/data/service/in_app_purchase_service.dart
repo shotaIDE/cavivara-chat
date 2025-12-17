@@ -1,8 +1,6 @@
 import 'package:flutter/services.dart';
-import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
-import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:logging/logging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -17,54 +15,33 @@ Future<List<ProductPackage>> currentPackages(Ref ref) async {
   final errorReportService = ref.read(errorReportServiceProvider);
 
   try {
-    if (isRevenueCatEnabled) {
-      logger.info('Getting available products from RevenueCat');
+    logger.info('Getting available products from RevenueCat');
 
-      final offerings = await Purchases.getOfferings();
-      final packages = offerings.current?.availablePackages ?? [];
+    final offerings = await Purchases.getOfferings();
+    final packages = offerings.current?.availablePackages ?? [];
 
-      logger.info('Found ${packages.length} available products');
+    logger.info('Found ${packages.length} available products');
 
-      final productPackages = packages
-          .map((package) {
-            final productPackage = ProductPackageGenerator.fromPackage(package);
-            if (productPackage == null) {
-              logger.severe('Found unknown package: ${package.identifier}');
+    final productPackages = packages
+        .map((package) {
+          final productPackage = ProductPackageGenerator.fromPackage(package);
+          if (productPackage == null) {
+            logger.severe('Found unknown package: ${package.identifier}');
 
-              errorReportService.recordError(
-                UnimplementedError(),
-                StackTrace.current,
-              );
-            }
+            errorReportService.recordError(
+              UnimplementedError(),
+              StackTrace.current,
+            );
+          }
 
-            return productPackage;
-          })
-          .whereType<ProductPackage>()
-          .toList();
+          return productPackage;
+        })
+        .whereType<ProductPackage>()
+        .toList();
 
-      logger.info('Found ${productPackages.length} valid products');
+    logger.info('Found ${productPackages.length} valid products');
 
-      return productPackages;
-    } else {
-      // 開発環境ではダミーデータを返す
-      logger.info('Getting available products (stub implementation)');
-      return [
-        const ProductPackage(
-          identifier: 'stub_monthly',
-          title: 'Stub Monthly Plan',
-          description: 'This is a stub monthly plan for development.',
-          priceString: '¥980',
-          plan: SupportPlan.small,
-        ),
-        const ProductPackage(
-          identifier: 'stub_annual',
-          title: 'Stub Annual Plan',
-          description: 'This is a stub annual plan for development.',
-          priceString: '¥9,800',
-          plan: SupportPlan.small,
-        ),
-      ];
-    }
+    return productPackages;
   } on Exception catch (e, stack) {
     logger.warning('Failed to get available products', e);
     final errorReportService = ref.read(errorReportServiceProvider);
@@ -93,45 +70,38 @@ class InAppPurchaseService {
     final identifier = product.identifier;
     _logger.info('Purchasing product: $identifier');
 
-    if (isRevenueCatEnabled) {
-      // Prod環境ではRevenueCat SDKで購入処理を実行
-      try {
-        // まず商品情報を取得
-        final offerings = await Purchases.getOfferings();
-        final packages = offerings.current?.availablePackages ?? [];
-        final package = packages.firstWhere(
-          (p) => p.identifier == identifier,
-          orElse: () => throw Exception('Product not found: $identifier'),
-        );
+    try {
+      // まず商品情報を取得
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? [];
+      final package = packages.firstWhere(
+        (p) => p.identifier == identifier,
+        orElse: () => throw Exception('Product not found: $identifier'),
+      );
 
-        await Purchases.purchase(
-          PurchaseParams.package(package),
-        );
-      } on PlatformException catch (e, stack) {
-        // PlatformExceptionからエラーコードを取得
-        final errorCode = PurchasesErrorHelper.getErrorCode(e);
+      await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
+    } on PlatformException catch (e, stack) {
+      // PlatformExceptionからエラーコードを取得
+      final errorCode = PurchasesErrorHelper.getErrorCode(e);
 
-        // ユーザーキャンセルは静かに処理
-        if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
-          _logger.info('Purchase cancelled by user');
-          throw const PurchaseException.cancelled();
-        }
-
-        // その他のエラーはエラーレポートに送信
-        _logger.warning('Purchase failed with error code: $errorCode');
-        await _errorReportService.recordError(e, stack);
-        throw const PurchaseException.uncategorized();
-      } on Exception catch (e, stack) {
-        _logger.warning('Purchase failed', e);
-        await _errorReportService.recordError(e, stack);
-        throw const PurchaseException.uncategorized();
+      // ユーザーキャンセルは静かに処理
+      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+        _logger.info('Purchase cancelled by user');
+        throw const PurchaseException.cancelled();
       }
 
-      _logger.info('Purchase completed successfully: $identifier');
-    } else {
-      // 開発環境ではダミー処理
-      _logger.info('Purchase completed (stub implementation): $identifier');
-      // 開発環境では何もせず成功として扱う
+      // その他のエラーはエラーレポートに送信
+      _logger.warning('Purchase failed with error code: $errorCode');
+      await _errorReportService.recordError(e, stack);
+      throw const PurchaseException.uncategorized();
+    } on Exception catch (e, stack) {
+      _logger.warning('Purchase failed', e);
+      await _errorReportService.recordError(e, stack);
+      throw const PurchaseException.uncategorized();
     }
+
+    _logger.info('Purchase completed successfully: $identifier');
   }
 }

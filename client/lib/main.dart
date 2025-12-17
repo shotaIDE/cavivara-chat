@@ -66,9 +66,7 @@ Future<void> main() async {
     _logger.info('Firebase Crashlytics: false');
   }
 
-  if (isRevenueCatEnabled) {
-    await _setupRevenueCat();
-  }
+  await _setupRevenueCat();
 
   runApp(const ProviderScope(child: RootApp()));
 }
@@ -126,12 +124,17 @@ String _getEmulatorHost() {
 
 Future<void> _setupRevenueCat() async {
   final PurchasesConfiguration configuration;
-  if (Platform.isAndroid) {
-    configuration = PurchasesConfiguration(revenueCatProjectGoogleApiKey);
-  } else if (Platform.isIOS) {
-    configuration = PurchasesConfiguration(revenueCatProjectAppleApiKey);
+
+  if (useRevenueCatTestStore) {
+    configuration = PurchasesConfiguration(revenueCatProjectTestApiKey);
   } else {
-    throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+    if (Platform.isAndroid) {
+      configuration = PurchasesConfiguration(revenueCatProjectGoogleApiKey);
+    } else if (Platform.isIOS) {
+      configuration = PurchasesConfiguration(revenueCatProjectAppleApiKey);
+    } else {
+      throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+    }
   }
 
   await Purchases.configure(configuration);
