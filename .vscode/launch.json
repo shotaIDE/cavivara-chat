@@ -82,7 +82,12 @@
       "cwd": "${workspaceFolder}/client",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "args": ["--flavor", "dev"]
+      "args": [
+        "--flavor",
+        "dev",
+        "--dart-define-from-file",
+        "dart-define_dev.json"
+      ]
     },
     {
       "name": "Dev-Profile",
@@ -91,7 +96,12 @@
       "cwd": "${workspaceFolder}/client",
       "program": "lib/main.dart",
       "flutterMode": "profile",
-      "args": ["--flavor", "dev"]
+      "args": [
+        "--flavor",
+        "dev",
+        "--dart-define-from-file",
+        "dart-define_dev.json"
+      ]
     },
     {
       "name": "Dev-Release",
@@ -100,7 +110,12 @@
       "cwd": "${workspaceFolder}/client",
       "program": "lib/main.dart",
       "flutterMode": "release",
-      "args": ["--flavor", "dev"]
+      "args": [
+        "--flavor",
+        "dev",
+        "--dart-define-from-file",
+        "dart-define_dev.json"
+      ]
     },
     {
       "name": "Prod-Debug",

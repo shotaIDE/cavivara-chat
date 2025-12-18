@@ -168,6 +168,11 @@ jobs:
           firebase-options-dart-base64-prod: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64_PROD }}
           working-parent-directory: ./client
           working-child-directory: ios
+      - name: Generate uncommitted Flutter files for dev
+        uses: ./.github/actions/generate-uncommitted-flutter-files-dev
+        with:
+          dart-define-json-base64: ${{ secrets.DART_DEFINE_JSON_BASE64_DEV }}
+          working-directory: ./client
       - name: Generate uncommitted iOS files for dev
         uses: ./.github/actions/generate-uncommitted-ios-files-dev
         with:
@@ -223,6 +228,11 @@ jobs:
           firebase-options-dart-base64-prod: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64_PROD }}
           working-parent-directory: ./client
           working-child-directory: android
+      - name: Generate uncommitted Flutter files for dev
+        uses: ./.github/actions/generate-uncommitted-flutter-files-dev
+        with:
+          dart-define-json-base64: ${{ secrets.DART_DEFINE_JSON_BASE64_DEV }}
+          working-directory: ./client
       - name: Generate uncommitted Android files for dev
         uses: ./.github/actions/generate-uncommitted-android-files-dev
         with:
