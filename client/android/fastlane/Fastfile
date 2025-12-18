@@ -8,8 +8,12 @@ platform :android do
   desc 'Dev環境向けアプリ(App Bundle)をビルドします。'
   lane :build_dev do
     flavor = 'dev'
+    dart_defines_path = './dart-define_dev.json'
 
-    build(flavor: flavor)
+    build(
+      flavor: flavor,
+      dart_defines_path: dart_defines_path
+    )
   end
 
   desc 'Prod環境向けアプリ(App Bundle)をビルドします。'
