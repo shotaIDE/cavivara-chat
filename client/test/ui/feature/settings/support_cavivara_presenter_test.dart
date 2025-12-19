@@ -1,17 +1,52 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/preference_key.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/support_history_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
+import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+
+// ヘルパー関数: currentPackagesProviderをモック化したProviderContainerを作成
+ProviderContainer createTestContainer() {
+  return ProviderContainer(
+    overrides: [
+      // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+      currentPackagesProvider.overrideWith((ref) {
+        return Future.value([
+          const ProductPackage(
+            identifier: 'test_small',
+            title: 'Small Plan',
+            description: 'Test small plan',
+            priceString: '¥100',
+            plan: SupportPlan.small,
+          ),
+          const ProductPackage(
+            identifier: 'test_medium',
+            title: 'Medium Plan',
+            description: 'Test medium plan',
+            priceString: '¥300',
+            plan: SupportPlan.medium,
+          ),
+          const ProductPackage(
+            identifier: 'test_large',
+            title: 'Large Plan',
+            description: 'Test large plan',
+            priceString: '¥500',
+            plan: SupportPlan.large,
+          ),
+        ]);
+      }),
+    ],
+  );
+}
 
 void main() {
   group('SupportCavivaraPresenter', () {
@@ -21,7 +56,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.empty();
-      container = ProviderContainer();
+      container = createTestContainer();
     });
 
     tearDown(() {
@@ -39,7 +74,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 50,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -81,7 +116,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 50,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -106,7 +141,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 500,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -134,7 +169,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 30,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -153,11 +188,44 @@ void main() {
       test('購入成功時にVPが加算され、履歴が記録され、ステートが更新されること', () async {
         // Arrange
         const plan = SupportPlan.medium;
+        const product = ProductPackage(
+          identifier: 'test_medium',
+          title: 'Medium Plan',
+          description: 'Test medium plan',
+          priceString: '¥500',
+          plan: plan,
+        );
         // InAppPurchaseServiceをモック化（購入成功）
         container = ProviderContainer(
           overrides: [
+            // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+            currentPackagesProvider.overrideWith((ref) {
+              return Future.value([
+                const ProductPackage(
+                  identifier: 'test_small',
+                  title: 'Small Plan',
+                  description: 'Test small plan',
+                  priceString: '¥100',
+                  plan: SupportPlan.small,
+                ),
+                const ProductPackage(
+                  identifier: 'test_medium',
+                  title: 'Medium Plan',
+                  description: 'Test medium plan',
+                  priceString: '¥300',
+                  plan: SupportPlan.medium,
+                ),
+                const ProductPackage(
+                  identifier: 'test_large',
+                  title: 'Large Plan',
+                  description: 'Test large plan',
+                  priceString: '¥500',
+                  plan: SupportPlan.large,
+                ),
+              ]);
+            }),
             inAppPurchaseServiceProvider.overrideWith(
-              MockInAppPurchaseService.new,
+              (ref) => MockInAppPurchaseService(),
             ),
           ],
         );
@@ -166,7 +234,7 @@ void main() {
         final presenter = container.read(
           supportCavivaraPresenterProvider.notifier,
         );
-        await presenter.supportCavivara(plan);
+        await presenter.supportCavivara(product);
 
         // Assert
         // 更新されたステートを確認
@@ -188,11 +256,44 @@ void main() {
       test('購入キャンセル時はPurchaseException.cancelledが投げられること', () async {
         // Arrange
         const plan = SupportPlan.small;
+        const product = ProductPackage(
+          identifier: 'test_small',
+          title: 'Small Plan',
+          description: 'Test small plan',
+          priceString: '¥120',
+          plan: plan,
+        );
         // InAppPurchaseServiceをモック化（購入キャンセル）
         container = ProviderContainer(
           overrides: [
+            // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+            currentPackagesProvider.overrideWith((ref) {
+              return Future.value([
+                const ProductPackage(
+                  identifier: 'test_small',
+                  title: 'Small Plan',
+                  description: 'Test small plan',
+                  priceString: '¥100',
+                  plan: SupportPlan.small,
+                ),
+                const ProductPackage(
+                  identifier: 'test_medium',
+                  title: 'Medium Plan',
+                  description: 'Test medium plan',
+                  priceString: '¥300',
+                  plan: SupportPlan.medium,
+                ),
+                const ProductPackage(
+                  identifier: 'test_large',
+                  title: 'Large Plan',
+                  description: 'Test large plan',
+                  priceString: '¥500',
+                  plan: SupportPlan.large,
+                ),
+              ]);
+            }),
             inAppPurchaseServiceProvider.overrideWith(
-              MockInAppPurchaseServiceCancelled.new,
+              (ref) => MockInAppPurchaseServiceCancelled(),
             ),
           ],
         );
@@ -204,7 +305,7 @@ void main() {
 
         // Assert
         await expectLater(
-          presenter.supportCavivara(plan),
+          presenter.supportCavivara(product),
           throwsA(isA<PurchaseException>()),
         );
 
@@ -224,11 +325,44 @@ void main() {
       test('購入失敗時はPurchaseException.uncategorizedが投げられること', () async {
         // Arrange
         const plan = SupportPlan.large;
+        const product = ProductPackage(
+          identifier: 'test_large',
+          title: 'Large Plan',
+          description: 'Test large plan',
+          priceString: '¥1200',
+          plan: plan,
+        );
         // InAppPurchaseServiceをモック化（購入失敗）
         container = ProviderContainer(
           overrides: [
+            // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+            currentPackagesProvider.overrideWith((ref) {
+              return Future.value([
+                const ProductPackage(
+                  identifier: 'test_small',
+                  title: 'Small Plan',
+                  description: 'Test small plan',
+                  priceString: '¥100',
+                  plan: SupportPlan.small,
+                ),
+                const ProductPackage(
+                  identifier: 'test_medium',
+                  title: 'Medium Plan',
+                  description: 'Test medium plan',
+                  priceString: '¥300',
+                  plan: SupportPlan.medium,
+                ),
+                const ProductPackage(
+                  identifier: 'test_large',
+                  title: 'Large Plan',
+                  description: 'Test large plan',
+                  priceString: '¥500',
+                  plan: SupportPlan.large,
+                ),
+              ]);
+            }),
             inAppPurchaseServiceProvider.overrideWith(
-              MockInAppPurchaseServiceUncategorized.new,
+              (ref) => MockInAppPurchaseServiceUncategorized(),
             ),
           ],
         );
@@ -240,7 +374,7 @@ void main() {
 
         // Assert
         await expectLater(
-          presenter.supportCavivara(plan),
+          presenter.supportCavivara(product),
           throwsA(isA<PurchaseException>()),
         );
 
@@ -256,24 +390,48 @@ void main() {
 
 // モッククラス（購入成功）
 class MockInAppPurchaseService extends InAppPurchaseService {
+  MockInAppPurchaseService()
+    : super(errorReportService: _DummyErrorReportService());
+
   @override
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(ProductPackage product) async {
     // 購入成功をシミュレート
   }
 }
 
 // モッククラス（購入キャンセル）
 class MockInAppPurchaseServiceCancelled extends InAppPurchaseService {
+  MockInAppPurchaseServiceCancelled()
+    : super(errorReportService: _DummyErrorReportService());
+
   @override
-  Future<void> purchaseProduct(String productId) {
+  Future<void> purchaseProduct(ProductPackage product) {
     throw const PurchaseException.cancelled();
   }
 }
 
 // モッククラス（購入失敗）
 class MockInAppPurchaseServiceUncategorized extends InAppPurchaseService {
+  MockInAppPurchaseServiceUncategorized()
+    : super(errorReportService: _DummyErrorReportService());
+
   @override
-  Future<void> purchaseProduct(String productId) {
+  Future<void> purchaseProduct(ProductPackage product) {
     throw const PurchaseException.uncategorized();
   }
+}
+
+class _DummyErrorReportService extends ErrorReportService {
+  @override
+  Future<void> recordError(
+    dynamic exception,
+    StackTrace stackTrace, {
+    bool fatal = false,
+  }) async {}
+
+  @override
+  Future<void> setUserId(String userId) async {}
+
+  @override
+  Future<void> clearUserId() async {}
 }

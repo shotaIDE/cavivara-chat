@@ -8,48 +8,80 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'in_app_purchase_service.g.dart';
 
+/// 現在のOfferingから利用可能なパッケージを取得するProvider
 @riverpod
-class InAppPurchaseService extends _$InAppPurchaseService {
+Future<List<ProductPackage>> currentPackages(Ref ref) async {
+  final logger = Logger('InAppPurchaseService');
+  final errorReportService = ref.read(errorReportServiceProvider);
+
+  try {
+    logger.info('Getting available products from RevenueCat');
+
+    final offerings = await Purchases.getOfferings();
+    final packages = offerings.current?.availablePackages ?? [];
+
+    logger.info('Found ${packages.length} available products');
+
+    final productPackages = packages
+        .map((package) {
+          final productPackage = ProductPackageGenerator.fromPackage(package);
+          if (productPackage == null) {
+            logger.severe('Found unknown package: ${package.identifier}');
+
+            errorReportService.recordError(
+              UnimplementedError(),
+              StackTrace.current,
+            );
+          }
+
+          return productPackage;
+        })
+        .whereType<ProductPackage>()
+        .toList();
+
+    logger.info('Found ${productPackages.length} valid products');
+
+    return productPackages;
+  } on Exception catch (e, stack) {
+    logger.warning('Failed to get available products', e);
+    final errorReportService = ref.read(errorReportServiceProvider);
+    await errorReportService.recordError(e, stack);
+    rethrow;
+  }
+}
+
+@riverpod
+InAppPurchaseService inAppPurchaseService(Ref ref) {
+  return InAppPurchaseService(
+    errorReportService: ref.watch(errorReportServiceProvider),
+  );
+}
+
+class InAppPurchaseService {
+  InAppPurchaseService({
+    required ErrorReportService errorReportService,
+  }) : _errorReportService = errorReportService;
+
+  final ErrorReportService _errorReportService;
   final _logger = Logger('InAppPurchaseService');
 
-  @override
-  Future<void> build() async {
-    // TODO(claude): RevenueCat SDKの初期化
-    // RevenueCat APIキーはPhase 10で設定する
-    // await Purchases.configure(
-    //   PurchasesConfiguration('YOUR_API_KEY'),
-    // );
-  }
-
-  /// 利用可能な商品を取得
-  Future<List<ProductPackage>> getAvailableProducts() async {
-    try {
-      // TODO(claude): RevenueCat SDKから商品情報を取得
-      // final offerings = await Purchases.getOfferings();
-      // final packages = offerings.current?.availablePackages ?? [];
-      // return packages.map(_convertToProductPackage).toList();
-
-      // 現時点ではダミーデータを返す
-      _logger.info('Getting available products (stub implementation)');
-      throw UnimplementedError('RevenueCat integration not yet implemented');
-    } on Exception catch (e, stack) {
-      _logger.warning('Failed to get available products', e);
-      final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(e, stack);
-      rethrow;
-    }
-  }
-
   /// 商品IDを指定して購入
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(ProductPackage product) async {
+    final identifier = product.identifier;
+    _logger.info('Purchasing product: $identifier');
+
     try {
-      _logger.info('Purchasing product: $productId');
+      // まず商品情報を取得
+      final offerings = await Purchases.getOfferings();
+      final packages = offerings.current?.availablePackages ?? [];
+      final package = packages.firstWhere(
+        (p) => p.identifier == identifier,
+        orElse: () => throw Exception('Product not found: $identifier'),
+      );
 
-      // TODO(claude): RevenueCat SDKで購入処理
-      // final customerInfo = await Purchases.purchaseStoreProduct(product);
-      // await _completePurchase(customerInfo, productId);
-
-      throw UnimplementedError('RevenueCat integration not yet implemented');
+      await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
     } on PlatformException catch (e, stack) {
       // PlatformExceptionからエラーコードを取得
       final errorCode = PurchasesErrorHelper.getErrorCode(e);
@@ -62,37 +94,14 @@ class InAppPurchaseService extends _$InAppPurchaseService {
 
       // その他のエラーはエラーレポートに送信
       _logger.warning('Purchase failed with error code: $errorCode');
-      final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(e, stack);
+      await _errorReportService.recordError(e, stack);
       throw const PurchaseException.uncategorized();
     } on Exception catch (e, stack) {
       _logger.warning('Purchase failed', e);
-      final errorReportService = ref.read(errorReportServiceProvider);
-      await errorReportService.recordError(e, stack);
+      await _errorReportService.recordError(e, stack);
       throw const PurchaseException.uncategorized();
     }
-  }
 
-  /// RevenueCatのPackageを独自のProductPackageに変換
-  // ignore: unused_element
-  ProductPackage _convertToProductPackage(Package package) {
-    return ProductPackage(
-      identifier: package.identifier,
-      productId: package.storeProduct.identifier,
-      priceString: package.storeProduct.priceString,
-    );
-  }
-
-  /// 購入完了処理
-  ///
-  /// CustomerInfoを返すので、呼び出し側(Presenter)でVP加算などの
-  /// ビジネスロジックを実行してください。
-  // ignore: unused_element
-  Future<CustomerInfo> _completePurchase(
-    CustomerInfo customerInfo,
-    String productId,
-  ) async {
-    _logger.info('Purchase completed: $productId');
-    return customerInfo;
+    _logger.info('Purchase completed successfully: $identifier');
   }
 }

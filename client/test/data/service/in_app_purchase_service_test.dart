@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
-import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -15,6 +14,9 @@ void main() {
   setUpAll(() {
     registerFallbackValue(FakeStackTrace());
   });
+
+  // テスト実行時にflavorを設定（開発環境として実行）
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   group('InAppPurchaseService', () {
     late ProviderContainer container;
@@ -42,79 +44,6 @@ void main() {
     tearDown(() {
       container.dispose();
     });
-
-    group('getAvailableProducts', () {
-      test('UnimplementedErrorが投げられること', () async {
-        // プロバイダーを初期化
-        await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
-
-        expect(
-          service.getAvailableProducts,
-          throwsA(isA<UnimplementedError>()),
-        );
-      });
-
-      test('UnimplementedErrorの場合、エラーレポートサービスは呼ばれないこと', () async {
-        // UnimplementedErrorはErrorであってExceptionではないため、
-        // on Exceptionハンドラーで捕捉されず、エラーレポートサービスは呼ばれない
-        await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
-
-        try {
-          await service.getAvailableProducts();
-          fail('UnimplementedErrorが投げられるべきです');
-          // ignore: avoid_catching_errors
-        } on UnimplementedError {
-          // UnimplementedErrorはExceptionではないため、
-          // recordErrorは呼ばれない
-          verifyNever(
-            () => mockErrorReportService.recordError(
-              any<Object>(),
-              any<StackTrace>(),
-            ),
-          );
-        }
-      });
-    });
-
-    group('purchaseProduct', () {
-      test('UnimplementedErrorが投げられること', () async {
-        // プロバイダーを初期化
-        await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
-        const productId = 'test_product';
-
-        expect(
-          () => service.purchaseProduct(productId),
-          throwsA(isA<UnimplementedError>()),
-        );
-      });
-
-      test('UnimplementedErrorの場合、エラーレポートサービスは呼ばれないこと', () async {
-        // UnimplementedErrorはErrorであってExceptionではないため、
-        // on Exceptionハンドラーで捕捉されず、エラーレポートサービスは呼ばれない
-        await container.read(inAppPurchaseServiceProvider.future);
-        final service = container.read(inAppPurchaseServiceProvider.notifier);
-        const productId = 'test_product';
-
-        try {
-          await service.purchaseProduct(productId);
-          fail('UnimplementedErrorが投げられるべきです');
-          // ignore: avoid_catching_errors
-        } on UnimplementedError {
-          // UnimplementedErrorはExceptionではないため、
-          // recordErrorは呼ばれない
-          verifyNever(
-            () => mockErrorReportService.recordError(
-              any<Object>(),
-              any<StackTrace>(),
-            ),
-          );
-        }
-      });
-    });
-
     group('エラーハンドリング', () {
       test(
         'PlatformExceptionでpurchaseCancelledErrorの場合、'

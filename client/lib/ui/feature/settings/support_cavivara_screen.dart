@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
-import 'package:house_worker/data/model/support_plan.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
 import 'package:house_worker/ui/feature/settings/thank_you_dialog.dart';
 import 'package:house_worker/ui/feature/settings/vp_progress_widget.dart';
 
 /// カヴィヴァラ応援画面
-class SupportCavivaraScreen extends ConsumerWidget {
+class SupportCavivaraScreen extends ConsumerStatefulWidget {
   const SupportCavivaraScreen({super.key});
 
   static const name = 'SupportCavivaraScreen';
@@ -21,7 +20,13 @@ class SupportCavivaraScreen extends ConsumerWidget {
       );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SupportCavivaraScreen> createState() =>
+      _SupportCavivaraScreenState();
+}
+
+class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
+  @override
+  Widget build(BuildContext context) {
     final presenterState = ref.watch(supportCavivaraPresenterProvider);
 
     return presenterState.when(
@@ -48,66 +53,54 @@ class SupportCavivaraScreen extends ConsumerWidget {
                   vpToNext: state.vpToNextTitle,
                   progress: state.progressToNextTitle,
                 ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // 応援プラン選択セクション
-              Text(
-                '応援プランを選択',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                // 応援プラン選択セクション
+                Text(
+                  '応援プランを選択',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // 応援プランカード（small）
-              SupportPlanCard(
-                plan: SupportPlan.small,
-                priceString: null, // TODO(claude): 商品情報から取得
-                onTap: () => _onPlanTap(context, ref, SupportPlan.small),
-              ),
-              const SizedBox(height: 12),
+                ...state.packages.map((package) {
+                  return SupportPlanCard(
+                    plan: package.plan,
+                    title: package.title,
+                    description: package.description,
+                    priceString: package.priceString,
+                    onTap: () => _onPlanTap(package),
+                  );
+                }),
 
-              // 応援プランカード（medium）
-              SupportPlanCard(
-                plan: SupportPlan.medium,
-                priceString: null, // TODO(claude): 商品情報から取得
-                onTap: () => _onPlanTap(context, ref, SupportPlan.medium),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // 応援プランカード（large）
-              SupportPlanCard(
-                plan: SupportPlan.large,
-                priceString: null, // TODO(claude): 商品情報から取得
-                onTap: () => _onPlanTap(context, ref, SupportPlan.large),
-              ),
-              const SizedBox(height: 24),
+                // 区切り線
+                const Divider(),
+                const SizedBox(height: 16),
 
-              // 区切り線
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // 注意書き
-              Text(
-                '※ 応援課金では機能は追加されません',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                // 注意書き
+                Text(
+                  '※ 応援課金では機能は追加されません',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '※ カヴィヴァラさんの開発を応援するための課金です',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 8),
+                Text(
+                  '※ カヴィヴァラさんの開発を応援するための課金です',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '※ 累計VPに応じて称号が変化します',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: 8),
+                Text(
+                  '※ 累計VPに応じて称号が変化します',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
               ],
             ),
           ),
@@ -133,11 +126,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
   }
 
   /// プランタップ時の処理
-  Future<void> _onPlanTap(
-    BuildContext context,
-    WidgetRef ref,
-    SupportPlan plan,
-  ) async {
+  Future<void> _onPlanTap(ProductPackage product) async {
     final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
 
     // 購入前の称号を保存
@@ -146,7 +135,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
 
     // 購入処理
     try {
-      await presenter.supportCavivara(plan);
+      await presenter.supportCavivara(product);
     } on PurchaseException catch (e) {
       // 購入キャンセルの場合は何もしない
       if (e is PurchaseExceptionCancelled) {
@@ -154,7 +143,7 @@ class SupportCavivaraScreen extends ConsumerWidget {
       }
 
       // その他のエラーの場合はスナックバーで通知
-      if (!context.mounted) {
+      if (!mounted) {
         return;
       }
 
@@ -174,15 +163,15 @@ class SupportCavivaraScreen extends ConsumerWidget {
     final promotedTitle = newTitle != oldTitle ? newTitle : null;
 
     // マウントチェック
-    if (!context.mounted) {
+    if (!mounted) {
       return;
     }
 
     // 感謝ダイアログ表示
     await ThankYouDialog.show(
       context,
-      plan: plan,
-      earnedVP: plan.vivaPoint,
+      plan: product.plan,
+      earnedVP: product.plan.vivaPoint,
       newTitle: promotedTitle,
     );
   }

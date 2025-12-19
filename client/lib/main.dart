@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -10,10 +11,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:house_worker/data/definition/app_definition.dart';
 import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/definition/flavor.dart';
 import 'package:house_worker/ui/root_app.dart';
 import 'package:logging/logging.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 // TODO(ide): 本番環境を構築した後、_prod ファイルをインポートするように修正する
 import 'firebase_options_dev.dart' as prod;
@@ -62,6 +65,8 @@ Future<void> main() async {
   } else {
     _logger.info('Firebase Crashlytics: false');
   }
+
+  await _setupRevenueCat();
 
   runApp(const ProviderScope(child: RootApp()));
 }
@@ -115,4 +120,22 @@ String _getEmulatorHost() {
 
     return '127.0.0.1';
   }
+}
+
+Future<void> _setupRevenueCat() async {
+  final PurchasesConfiguration configuration;
+
+  if (useRevenueCatTestStore) {
+    configuration = PurchasesConfiguration(revenueCatProjectTestApiKey);
+  } else {
+    if (Platform.isAndroid) {
+      configuration = PurchasesConfiguration(revenueCatProjectGoogleApiKey);
+    } else if (Platform.isIOS) {
+      configuration = PurchasesConfiguration(revenueCatProjectAppleApiKey);
+    } else {
+      throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+    }
+  }
+
+  await Purchases.configure(configuration);
 }

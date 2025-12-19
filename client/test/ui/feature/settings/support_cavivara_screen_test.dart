@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/preference_key.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
+import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
 import 'package:house_worker/ui/feature/settings/vp_progress_widget.dart';
@@ -15,10 +16,28 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 // モッククラス（購入成功）
 class MockInAppPurchaseService extends InAppPurchaseService {
+  MockInAppPurchaseService()
+    : super(errorReportService: _DummyErrorReportService());
+
   @override
-  Future<void> purchaseProduct(String productId) async {
+  Future<void> purchaseProduct(ProductPackage product) async {
     // 購入成功をシミュレート
   }
+}
+
+class _DummyErrorReportService extends ErrorReportService {
+  @override
+  Future<void> recordError(
+    dynamic exception,
+    StackTrace stackTrace, {
+    bool fatal = false,
+  }) async {}
+
+  @override
+  Future<void> setUserId(String userId) async {}
+
+  @override
+  Future<void> clearUserId() async {}
 }
 
 void main() {
@@ -29,7 +48,36 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.empty();
-      container = ProviderContainer();
+      container = ProviderContainer(
+        overrides: [
+          // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+          currentPackagesProvider.overrideWith((ref) {
+            return Future.value([
+              const ProductPackage(
+                identifier: 'test_small',
+                title: 'Small Plan',
+                description: 'Test small plan',
+                priceString: '¥100',
+                plan: SupportPlan.small,
+              ),
+              const ProductPackage(
+                identifier: 'test_medium',
+                title: 'Medium Plan',
+                description: 'Test medium plan',
+                priceString: '¥300',
+                plan: SupportPlan.medium,
+              ),
+              const ProductPackage(
+                identifier: 'test_large',
+                title: 'Large Plan',
+                description: 'Test large plan',
+                priceString: '¥500',
+                plan: SupportPlan.large,
+              ),
+            ]);
+          }),
+        ],
+      );
     });
 
     tearDown(() {
@@ -58,10 +106,10 @@ void main() {
       // 応援プランカードが3つ表示されていること
       expect(find.byType(SupportPlanCard), findsNWidgets(3));
 
-      // 各プランのカードが表示されていること
-      expect(find.text(SupportPlan.small.displayName), findsOneWidget);
-      expect(find.text(SupportPlan.medium.displayName), findsOneWidget);
-      expect(find.text(SupportPlan.large.displayName), findsOneWidget);
+      // 各プランのカード（タイトル）が表示されていること
+      expect(find.text('Small Plan'), findsOneWidget);
+      expect(find.text('Medium Plan'), findsOneWidget);
+      expect(find.text('Large Plan'), findsOneWidget);
     });
 
     testWidgets('VP進捗情報が正しく表示されること', (tester) async {
@@ -74,7 +122,36 @@ void main() {
           InMemorySharedPreferencesAsync.withData({
             PreferenceKey.totalVivaPoint.name: 50,
           });
-      container = ProviderContainer();
+      container = ProviderContainer(
+        overrides: [
+          // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+          currentPackagesProvider.overrideWith((ref) {
+            return Future.value([
+              const ProductPackage(
+                identifier: 'test_small',
+                title: 'Small Plan',
+                description: 'Test small plan',
+                priceString: '¥100',
+                plan: SupportPlan.small,
+              ),
+              const ProductPackage(
+                identifier: 'test_medium',
+                title: 'Medium Plan',
+                description: 'Test medium plan',
+                priceString: '¥300',
+                plan: SupportPlan.medium,
+              ),
+              const ProductPackage(
+                identifier: 'test_large',
+                title: 'Large Plan',
+                description: 'Test large plan',
+                priceString: '¥500',
+                plan: SupportPlan.large,
+              ),
+            ]);
+          }),
+        ],
+      );
 
       // vivaPointRepositoryの初期化を待つ
       await container.read(vivaPointRepositoryProvider.future);
@@ -118,8 +195,34 @@ void main() {
       // Arrange - InAppPurchaseServiceをモック化
       container = ProviderContainer(
         overrides: [
+          // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+          currentPackagesProvider.overrideWith((ref) {
+            return Future.value([
+              const ProductPackage(
+                identifier: 'test_small',
+                title: 'Small Plan',
+                description: 'Test small plan',
+                priceString: '¥100',
+                plan: SupportPlan.small,
+              ),
+              const ProductPackage(
+                identifier: 'test_medium',
+                title: 'Medium Plan',
+                description: 'Test medium plan',
+                priceString: '¥300',
+                plan: SupportPlan.medium,
+              ),
+              const ProductPackage(
+                identifier: 'test_large',
+                title: 'Large Plan',
+                description: 'Test large plan',
+                priceString: '¥500',
+                plan: SupportPlan.large,
+              ),
+            ]);
+          }),
           inAppPurchaseServiceProvider.overrideWith(
-            MockInAppPurchaseService.new,
+            (ref) => MockInAppPurchaseService(),
           ),
         ],
       );
@@ -135,7 +238,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Act - smallプランカードをタップ
-      await tester.tap(find.text(SupportPlan.small.displayName));
+      await tester.tap(find.text('Small Plan'));
       await tester.pump();
 
       // Assert

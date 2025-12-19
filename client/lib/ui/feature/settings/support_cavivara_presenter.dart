@@ -1,11 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/support_history.dart';
-import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/support_history_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
-import 'package:house_worker/ui/component/support_plan_extension.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'support_cavivara_presenter.freezed.dart';
@@ -29,6 +28,8 @@ abstract class SupportCavivaraState with _$SupportCavivaraState {
 
     /// 次の称号までの進捗率（0.0 - 1.0）
     required double progressToNextTitle,
+
+    required List<ProductPackage> packages,
   }) = _SupportCavivaraState;
 }
 
@@ -40,6 +41,9 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
     // ref.watchを使用してVP変更を自動追跡
     final vivaPointState = ref.watch(vivaPointRepositoryProvider);
     final totalVP = vivaPointState.value ?? 0;
+
+    // 商品情報を取得
+    final packagesFuture = ref.watch(currentPackagesProvider.future);
 
     final currentTitle = SupporterTitleLogic.fromTotalVP(totalVP);
     final nextTitle = currentTitle.nextTitle;
@@ -65,35 +69,37 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
       }
     }
 
+    // 商品パッケージを取得
+    final packages = await packagesFuture;
+
     return SupportCavivaraState(
       totalVP: totalVP,
       currentTitle: currentTitle,
       nextTitle: nextTitle,
       vpToNextTitle: vpToNextTitle,
       progressToNextTitle: progressToNextTitle,
+      packages: packages,
     );
   }
 
   /// カヴィヴァラを応援する（購入処理）
-  Future<void> supportCavivara(SupportPlan plan) async {
+  Future<void> supportCavivara(ProductPackage product) async {
     // InAppPurchaseServiceで購入処理
-    final inAppPurchaseService = ref.read(
-      inAppPurchaseServiceProvider.notifier,
-    );
-    await inAppPurchaseService.purchaseProduct(plan.productId);
+    final inAppPurchaseService = ref.read(inAppPurchaseServiceProvider);
+    await inAppPurchaseService.purchaseProduct(product);
 
     // 購入成功後、VPを加算
     final currentState = await future;
     final currentVP = currentState.totalVP;
-    final newTotalVP = currentVP + plan.vivaPoint;
+    final newTotalVP = currentVP + product.plan.vivaPoint;
     final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
     await vivaPointRepository.setPoint(newTotalVP);
 
     // 履歴を記録
     final supportHistory = SupportHistory(
       timestamp: DateTime.now(),
-      plan: plan,
-      earnedVP: plan.vivaPoint,
+      plan: product.plan,
+      earnedVP: product.plan.vivaPoint,
       totalVPAfter: newTotalVP,
     );
 
