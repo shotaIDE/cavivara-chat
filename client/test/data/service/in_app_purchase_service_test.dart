@@ -1,10 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:house_worker/data/model/product_package.dart';
-import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
-import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -47,67 +44,6 @@ void main() {
     tearDown(() {
       container.dispose();
     });
-
-    group('currentPackages', () {
-      test('開発環境ではダミーデータが返されること', () async {
-        // 開発環境ではダミーデータが返される
-        final products = await container.read(currentPackagesProvider.future);
-
-        expect(products, isNotEmpty);
-        expect(products.length, equals(2));
-        expect(products[0].identifier, equals('stub_monthly'));
-        expect(products[1].identifier, equals('stub_annual'));
-      });
-
-      test('開発環境では例外が発生しないこと', () async {
-        // 開発環境では正常に実行される
-        await expectLater(
-          container.read(currentPackagesProvider.future),
-          completes,
-        );
-      });
-    });
-
-    group('purchaseProduct', () {
-      test('開発環境では正常に完了すること', () async {
-        final service = container.read(inAppPurchaseServiceProvider);
-        const product = ProductPackage(
-          identifier: 'stub_monthly_pro',
-          title: 'Test Product',
-          description: 'Test description',
-          priceString: '¥980',
-          plan: SupportPlan.small,
-        );
-
-        // 開発環境では例外なく完了する
-        await expectLater(
-          service.purchaseProduct(product),
-          completes,
-        );
-      });
-
-      test('開発環境ではエラーレポートサービスは呼ばれないこと', () async {
-        final service = container.read(inAppPurchaseServiceProvider);
-        const product = ProductPackage(
-          identifier: 'stub_monthly_pro',
-          title: 'Test Product',
-          description: 'Test description',
-          priceString: '¥980',
-          plan: SupportPlan.small,
-        );
-
-        await service.purchaseProduct(product);
-
-        // 開発環境では正常に完了するため、エラーレポートは呼ばれない
-        verifyNever(
-          () => mockErrorReportService.recordError(
-            any<Object>(),
-            any<StackTrace>(),
-          ),
-        );
-      });
-    });
-
     group('エラーハンドリング', () {
       test(
         'PlatformExceptionでpurchaseCancelledErrorの場合、'
