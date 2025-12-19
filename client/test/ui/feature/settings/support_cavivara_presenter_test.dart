@@ -14,6 +14,40 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
+// ヘルパー関数: currentPackagesProviderをモック化したProviderContainerを作成
+ProviderContainer createTestContainer() {
+  return ProviderContainer(
+    overrides: [
+      // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+      currentPackagesProvider.overrideWith((ref) {
+        return Future.value([
+          const ProductPackage(
+            identifier: 'test_small',
+            title: 'Small Plan',
+            description: 'Test small plan',
+            priceString: '¥100',
+            plan: SupportPlan.small,
+          ),
+          const ProductPackage(
+            identifier: 'test_medium',
+            title: 'Medium Plan',
+            description: 'Test medium plan',
+            priceString: '¥300',
+            plan: SupportPlan.medium,
+          ),
+          const ProductPackage(
+            identifier: 'test_large',
+            title: 'Large Plan',
+            description: 'Test large plan',
+            priceString: '¥500',
+            plan: SupportPlan.large,
+          ),
+        ]);
+      }),
+    ],
+  );
+}
+
 void main() {
   group('SupportCavivaraPresenter', () {
     late ProviderContainer container;
@@ -22,7 +56,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.empty();
-      container = ProviderContainer();
+      container = createTestContainer();
     });
 
     tearDown(() {
@@ -40,7 +74,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 50,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -82,7 +116,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 50,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -107,7 +141,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 500,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -135,7 +169,7 @@ void main() {
             InMemorySharedPreferencesAsync.withData({
               PreferenceKey.totalVivaPoint.name: 30,
             });
-        container = ProviderContainer();
+        container = createTestContainer();
 
         // vivaPointRepositoryの初期化を待つ
         await container.read(vivaPointRepositoryProvider.future);
@@ -164,6 +198,32 @@ void main() {
         // InAppPurchaseServiceをモック化（購入成功）
         container = ProviderContainer(
           overrides: [
+            // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+            currentPackagesProvider.overrideWith((ref) {
+              return Future.value([
+                const ProductPackage(
+                  identifier: 'test_small',
+                  title: 'Small Plan',
+                  description: 'Test small plan',
+                  priceString: '¥100',
+                  plan: SupportPlan.small,
+                ),
+                const ProductPackage(
+                  identifier: 'test_medium',
+                  title: 'Medium Plan',
+                  description: 'Test medium plan',
+                  priceString: '¥300',
+                  plan: SupportPlan.medium,
+                ),
+                const ProductPackage(
+                  identifier: 'test_large',
+                  title: 'Large Plan',
+                  description: 'Test large plan',
+                  priceString: '¥500',
+                  plan: SupportPlan.large,
+                ),
+              ]);
+            }),
             inAppPurchaseServiceProvider.overrideWith(
               (ref) => MockInAppPurchaseService(),
             ),
@@ -206,6 +266,32 @@ void main() {
         // InAppPurchaseServiceをモック化（購入キャンセル）
         container = ProviderContainer(
           overrides: [
+            // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+            currentPackagesProvider.overrideWith((ref) {
+              return Future.value([
+                const ProductPackage(
+                  identifier: 'test_small',
+                  title: 'Small Plan',
+                  description: 'Test small plan',
+                  priceString: '¥100',
+                  plan: SupportPlan.small,
+                ),
+                const ProductPackage(
+                  identifier: 'test_medium',
+                  title: 'Medium Plan',
+                  description: 'Test medium plan',
+                  priceString: '¥300',
+                  plan: SupportPlan.medium,
+                ),
+                const ProductPackage(
+                  identifier: 'test_large',
+                  title: 'Large Plan',
+                  description: 'Test large plan',
+                  priceString: '¥500',
+                  plan: SupportPlan.large,
+                ),
+              ]);
+            }),
             inAppPurchaseServiceProvider.overrideWith(
               (ref) => MockInAppPurchaseServiceCancelled(),
             ),
@@ -249,6 +335,32 @@ void main() {
         // InAppPurchaseServiceをモック化（購入失敗）
         container = ProviderContainer(
           overrides: [
+            // InAppPurchaseのパッケージリストをモック化（3つのプランを返す）
+            currentPackagesProvider.overrideWith((ref) {
+              return Future.value([
+                const ProductPackage(
+                  identifier: 'test_small',
+                  title: 'Small Plan',
+                  description: 'Test small plan',
+                  priceString: '¥100',
+                  plan: SupportPlan.small,
+                ),
+                const ProductPackage(
+                  identifier: 'test_medium',
+                  title: 'Medium Plan',
+                  description: 'Test medium plan',
+                  priceString: '¥300',
+                  plan: SupportPlan.medium,
+                ),
+                const ProductPackage(
+                  identifier: 'test_large',
+                  title: 'Large Plan',
+                  description: 'Test large plan',
+                  priceString: '¥500',
+                  plan: SupportPlan.large,
+                ),
+              ]);
+            }),
             inAppPurchaseServiceProvider.overrideWith(
               (ref) => MockInAppPurchaseServiceUncategorized(),
             ),

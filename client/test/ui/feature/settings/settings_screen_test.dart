@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/preference_key.dart';
+import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/auth_service.dart';
+import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,6 +34,10 @@ void main() {
               ),
             );
           }),
+          // InAppPurchaseのパッケージリストをモック化（空リストを返す）
+          currentPackagesProvider.overrideWith(
+            (ref) => Future.value(<ProductPackage>[]),
+          ),
         ],
       );
     });
@@ -65,8 +71,8 @@ void main() {
       });
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.withData({
-        PreferenceKey.totalVivaPoint.name: 50,
-      });
+            PreferenceKey.totalVivaPoint.name: 50,
+          });
       container = ProviderContainer(
         overrides: [
           currentUserProfileProvider.overrideWith((ref) {
@@ -79,6 +85,10 @@ void main() {
               ),
             );
           }),
+          // InAppPurchaseのパッケージリストをモック化（空リストを返す）
+          currentPackagesProvider.overrideWith(
+            (ref) => Future.value(<ProductPackage>[]),
+          ),
         ],
       );
 
