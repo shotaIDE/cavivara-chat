@@ -12,7 +12,7 @@ class SkipClearChatConfirmation extends _$SkipClearChatConfirmation {
     final value = await preferenceService.getBool(
       PreferenceKey.skipClearChatConfirmation,
     );
-    return _generateCurrentValue(value);
+    return _generateValue(storedValue: value);
   }
 
   Future<void> setShouldSkip() async {
@@ -40,11 +40,11 @@ class SkipClearChatConfirmation extends _$SkipClearChatConfirmation {
     }
 
     state = AsyncValue.data(
-      _generateCurrentValue(null),
+      _generateValue(storedValue: null),
     );
   }
 
-  bool _generateCurrentValue(bool? storedValue) {
+  bool _generateValue({required bool? storedValue}) {
     return storedValue ?? false;
   }
 }
