@@ -151,7 +151,7 @@ Future<void> _setupRevenueCat() async {
 List<Override> _getOverrides() {
   final overrides = <Override>[];
 
-  if (useRevenueCatTestStore) {
+  if (!useRevenueCatTestStore) {
     overrides.addAll([
       currentPackagesProvider.overrideWith(currentPackagesMock),
       inAppPurchaseServiceProvider.overrideWith(inAppPurchaseServiceMock),
