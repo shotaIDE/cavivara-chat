@@ -70,7 +70,7 @@ class _ResetConfirmationSettingsTile extends ConsumerWidget {
       onTap: () async {
         await ref
             .read(skipClearChatConfirmationProvider.notifier)
-            .updateSkip(shouldSkip: false);
+            .resetForDebug();
       },
     );
   }
