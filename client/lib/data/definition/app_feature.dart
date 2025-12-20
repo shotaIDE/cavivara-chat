@@ -15,4 +15,8 @@ const bool isAnalyticsEnabled =
 const bool isCrashlyticsEnabled =
     String.fromEnvironment('ENABLE_CRASHLYTICS') == 'true' || kReleaseMode;
 
-final useRevenueCatTestStore = flavor != Flavor.prod;
+/// RevenueCat のテスト用ストアを使用するか否か
+///
+/// RevenueCat のテスト用ストアはリリースモードでの実行が禁止されているため、
+/// それ以外で利用する。
+final bool useRevenueCatTestStore = !kReleaseMode || flavor != Flavor.prod;

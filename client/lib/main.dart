@@ -14,9 +14,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:house_worker/data/definition/app_definition.dart';
 import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/definition/flavor.dart';
+import 'package:house_worker/data/service/in_app_purchase_service.dart';
+import 'package:house_worker/data/service/in_app_purchase_service_mock.dart';
 import 'package:house_worker/ui/root_app.dart';
 import 'package:logging/logging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 // TODO(ide): 本番環境を構築した後、_prod ファイルをインポートするように修正する
 import 'firebase_options_dev.dart' as prod;
@@ -68,7 +71,12 @@ Future<void> main() async {
 
   await _setupRevenueCat();
 
-  runApp(const ProviderScope(child: RootApp()));
+  runApp(
+    ProviderScope(
+      overrides: _getOverrides(),
+      child: const RootApp(),
+    ),
+  );
 }
 
 void _setupLogging() {
@@ -138,4 +146,17 @@ Future<void> _setupRevenueCat() async {
   }
 
   await Purchases.configure(configuration);
+}
+
+List<Override> _getOverrides() {
+  final overrides = <Override>[];
+
+  if (useRevenueCatTestStore) {
+    overrides.addAll([
+      currentPackagesProvider.overrideWith(currentPackagesMock),
+      inAppPurchaseServiceProvider.overrideWith(inAppPurchaseServiceMock),
+    ]);
+  }
+
+  return overrides;
 }
