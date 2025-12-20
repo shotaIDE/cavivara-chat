@@ -191,9 +191,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      await ref
-          .read(skipClearChatConfirmationProvider.notifier)
-          .updateSkip(shouldSkip: result.shouldSkipConfirmation);
+      if (result.shouldSkipConfirmation) {
+        await ref
+            .read(skipClearChatConfirmationProvider.notifier)
+            .setShouldSkip();
+      }
     }
 
     if (!mounted) {
