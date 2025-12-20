@@ -133,16 +133,21 @@ String _getEmulatorHost() {
 Future<void> _setupRevenueCat() async {
   final PurchasesConfiguration configuration;
 
-  if (useRevenueCatTestStore) {
-    configuration = PurchasesConfiguration(revenueCatProjectTestApiKey);
-  } else {
-    if (Platform.isAndroid) {
-      configuration = PurchasesConfiguration(revenueCatProjectGoogleApiKey);
-    } else if (Platform.isIOS) {
-      configuration = PurchasesConfiguration(revenueCatProjectAppleApiKey);
-    } else {
-      throw Exception('Unsupported platform: ${Platform.operatingSystem}');
-    }
+  switch (revenueCatMode) {
+    case RevenueCatMode.useMockData:
+      return;
+
+    case RevenueCatMode.useTestStore:
+      configuration = PurchasesConfiguration(revenueCatProjectTestApiKey);
+
+    case RevenueCatMode.useProductionStore:
+      if (Platform.isAndroid) {
+        configuration = PurchasesConfiguration(revenueCatProjectGoogleApiKey);
+      } else if (Platform.isIOS) {
+        configuration = PurchasesConfiguration(revenueCatProjectAppleApiKey);
+      } else {
+        throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+      }
   }
 
   await Purchases.configure(configuration);
@@ -151,11 +156,16 @@ Future<void> _setupRevenueCat() async {
 List<Override> _getOverrides() {
   final overrides = <Override>[];
 
-  if (!useRevenueCatTestStore) {
-    overrides.addAll([
-      currentPackagesProvider.overrideWith(currentPackagesMock),
-      inAppPurchaseServiceProvider.overrideWith(inAppPurchaseServiceMock),
-    ]);
+  switch (revenueCatMode) {
+    case RevenueCatMode.useMockData:
+      overrides.addAll([
+        currentPackagesProvider.overrideWith(currentPackagesMock),
+        inAppPurchaseServiceProvider.overrideWith(inAppPurchaseServiceMock),
+      ]);
+
+    case RevenueCatMode.useTestStore:
+    case RevenueCatMode.useProductionStore:
+      break;
   }
 
   return overrides;

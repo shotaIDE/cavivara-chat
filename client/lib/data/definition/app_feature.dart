@@ -19,4 +19,12 @@ const bool isCrashlyticsEnabled =
 ///
 /// RevenueCat のテスト用ストアはリリースモードでの実行が禁止されているため、
 /// それ以外で利用する。
-final bool useRevenueCatTestStore = !kReleaseMode && flavor != Flavor.prod;
+final RevenueCatMode revenueCatMode = flavor == Flavor.prod
+    ? RevenueCatMode.useProductionStore
+    : (kReleaseMode ? RevenueCatMode.useMockData : RevenueCatMode.useTestStore);
+
+enum RevenueCatMode {
+  useMockData,
+  useTestStore,
+  useProductionStore,
+}
