@@ -16,6 +16,7 @@ import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
+import 'package:house_worker/ui/feature/settings/submit_feedback_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:house_worker/ui/root_presenter.dart';
@@ -63,6 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const Divider(),
               const SectionHeader(title: 'アプリについて'),
               const _ReviewAppTile(),
+              const _FeedbackTile(),
               _buildShareAppTile(context),
               _buildTermsOfServiceTile(context),
               _buildPrivacyPolicyTile(context),
@@ -448,6 +450,20 @@ class _ReviewAppTile extends StatelessWidget {
       // アプリ内レビューは表示回数に制限があるため、ストアに移動するようにしている
       onTap: () =>
           InAppReview.instance.openStoreListing(appStoreId: appStoreId),
+    );
+  }
+}
+
+class _FeedbackTile extends StatelessWidget {
+  const _FeedbackTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.feedback),
+      title: const Text('ご意見・ご要望'),
+      trailing: const _MoveScreenTrailingIcon(),
+      onTap: () => Navigator.of(context).push(SubmitFeedbackScreen.route()),
     );
   }
 }
