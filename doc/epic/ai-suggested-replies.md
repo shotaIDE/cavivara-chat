@@ -51,128 +51,129 @@ AI がメッセージを送信した直後に、会話の文脈を分析して�
 
 ## Implement Issue List
 
-### Phase 1: Response Schema の変更（返答サジェスト対応の基盤整備）
+このエピックは、以下の3つのタスクで構成されます。Phase 1 と Phase 2 はそれぞれ独立した一つのタスクとして実装します。
 
-このフェーズでは、AI の返答と同時に返答サジェストを受け取れるように Response Schema を変更します。ただし、この段階では受け取ったサジェストを利用せず、内部的な構造変更のみを行います。
+### Task 1: Response Schema の変更（返答サジェスト対応の基盤整備）
 
-#### Frontend - Data Layer (Phase 1)
+**目的**: AI の返答と同時に返答サジェストを受け取れるように Response Schema を変更する。ただし、この段階では受け取ったサジェストを利用せず、内部的な構造変更のみを行う。
 
-- [ ] `AiResponse` モデルの実装
+**実装内容**:
 
-  - AI からの構造化された返答を表現する Freezed モデル
-  - `message` (String): AI の返答メッセージ
-  - `suggestedReplies` (List\<String\>): 返答サジェストのリスト（3〜5 個）
-  - JSON デシリアライゼーション対応
+#### Frontend - Data Layer
 
-- [ ] `AiChatService` の Response Schema 対応
+**`AiResponse` モデルの実装**
+- AI からの構造化された返答を表現する Freezed モデル
+- `message` (String): AI の返答メッセージ
+- `suggestedReplies` (List\<String\>): 返答サジェストのリスト（3〜5 個）
+- JSON デシリアライゼーション対応
 
-  - `GenerationConfig` に `responseSchema` を追加
-  - `responseMimeType` を `application/json` に設定
-  - JSON Schema の定義（`message` と `suggestedReplies` フィールド）
-  - `sendMessageStream` の返り値を `Stream<String>` から `Stream<AiResponse>` に変更
-  - ストリーミング中は `suggestedReplies` を空リストとして扱う
+**`AiChatService` の Response Schema 対応**
+- `GenerationConfig` に `responseSchema` を追加
+- `responseMimeType` を `application/json` に設定
+- JSON Schema の定義（`message` と `suggestedReplies` フィールド）
+- `sendMessageStream` の返り値を `Stream<String>` から `Stream<AiResponse>` に変更
+- ストリーミング中は `suggestedReplies` を空リストとして扱う
 
-- [ ] `HomePresenter` の Response Schema 対応
-  - `sendMessage` メソッドを `AiResponse` を受け取るように修正
-  - `message` フィールドのみを使用してチャットメッセージを更新（既存動作を維持）
-  - `suggestedReplies` は一旦無視する（Phase 2 で利用）
+**`HomePresenter` の Response Schema 対応**
+- `sendMessage` メソッドを `AiResponse` を受け取るように修正
+- `message` フィールドのみを使用してチャットメッセージを更新（既存動作を維持）
+- `suggestedReplies` は一旦無視する（Task 2 で利用）
 
-#### Testing (Phase 1)
+#### Testing
 
-- [ ] `AiResponse` モデルのユニットテスト
+**`AiResponse` モデルのユニットテスト**
+- JSON デシリアライゼーションの検証
+- 各フィールドの値の検証
 
-  - JSON デシリアライゼーションの検証
-  - 各フィールドの値の検証
+**`AiChatService` の Response Schema 対応のユニットテスト**
+- Response Schema が正しく設定されているか検証
+- `Stream<AiResponse>` が正しく返されるか検証
+- 既存のチャット機能が動作することを確認（リグレッションテスト）
 
-- [ ] `AiChatService` の Response Schema 対応のユニットテスト
+**`HomePresenter` の統合テスト**
+- 既存のチャット機能が正常に動作することを確認
+- `suggestedReplies` を無視して正しくメッセージが表示されるか検証
 
-  - Response Schema が正しく設定されているか検証
-  - `Stream<AiResponse>` が正しく返されるか検証
-  - 既存のチャット機能が動作することを確認（リグレッションテスト）
+---
 
-- [ ] `HomePresenter` の統合テスト
-  - 既存のチャット機能が正常に動作することを確認
-  - `suggestedReplies` を無視して正しくメッセージが表示されるか検証
+### Task 2: 返答サジェスト機能の実装
 
-### Phase 2: 返答サジェスト機能の実装
+**目的**: Task 1 で整備した `AiResponse` の `suggestedReplies` を利用して、画面に返答サジェストボタンを表示する機能を実装する。
 
-このフェーズでは、Phase 1 で整備した `AiResponse` の `suggestedReplies` を利用して、画面に返答サジェストボタンを表示する機能を実装します。
+**実装内容**:
 
-#### Frontend - Data Layer (Phase 2)
+#### Frontend - Data Layer
 
-- [ ] `SuggestedReply` モデルの実装
+**`SuggestedReply` モデルの実装**
+- `id` (String): 一意の識別子
+- `text` (String): 表示テキスト
+- Freezed モデルとして実装
 
-  - `id` (String): 一意の識別子
-  - `text` (String): 表示テキスト
-  - Freezed モデルとして実装
+**`SuggestionCacheRepository` の実装**
+- メモリ内キャッシュによる候補の一時保存
+- セッションごと（`cavivaraId` ごと）のキャッシュ管理
+- キャッシュのクリア機能
 
-- [ ] `SuggestionCacheRepository` の実装
-  - メモリ内キャッシュによる候補の一時保存
-  - セッションごと（`cavivaraId` ごと）のキャッシュ管理
-  - キャッシュのクリア機能
+#### Frontend - UI Layer
 
-#### Frontend - UI Layer (Phase 2)
+**`SuggestedReplyButton` Component の実装**
+- Atomic Design の organisms レベルのコンポーネント
+- タップ時のフィードバックアニメーション
+- アクセシビリティ対応（Semantics ウィジェット）
+- カヴィヴァラのデザインに合ったスタイリング
 
-- [ ] `SuggestedReplyButton` Component の実装
+**`SuggestedReplyList` Component の実装**
+- 横スクロール可能なボタンリスト（ListView.separated）
+- フェードインアニメーション
+- 空状態の処理（候補がない場合は非表示）
 
-  - Atomic Design の organisms レベルのコンポーネント
-  - タップ時のフィードバックアニメーション
-  - アクセシビリティ対応（Semantics ウィジェット）
-  - カヴィヴァラのデザインに合ったスタイリング
+**`HomePresenter` の返答サジェスト対応**
+- `AiResponse` の `suggestedReplies` を `SuggestionCacheRepository` に保存
+- 候補取得用の Provider (`currentSuggestionsProvider`) を追加
+- 候補選択時のメッセージ送信ロジック
+- メッセージ送信時に古い候補をクリア
 
-- [ ] `SuggestedReplyList` Component の実装
+**`HomeScreen` の UI 更新**
+- AI 返答完了後に `SuggestedReplyList` を表示
+- メッセージ入力エリアとサジェストエリアのレイアウト調整
+- 画面スクロール時の候補表示の調整
 
-  - 横スクロール可能なボタンリスト（ListView.separated）
-  - フェードインアニメーション
-  - 空状態の処理（候補がない場合は非表示）
+#### Testing
 
-- [ ] `HomePresenter` の返答サジェスト対応
+**`SuggestedReply` モデルのユニットテスト**
+- Freezed モデルの基本機能検証
 
-  - `AiResponse` の `suggestedReplies` を `SuggestionCacheRepository` に保存
-  - 候補取得用の Provider (`currentSuggestionsProvider`) を追加
-  - 候補選択時のメッセージ送信ロジック
-  - メッセージ送信時に古い候補をクリア
+**`SuggestionCacheRepository` のユニットテスト**
+- 保存・取得・クリア機能の検証
+- セッションごとの分離が正しく動作するか検証
 
-- [ ] `HomeScreen` の UI 更新
-  - AI 返答完了後に `SuggestedReplyList` を表示
-  - メッセージ入力エリアとサジェストエリアのレイアウト調整
-  - 画面スクロール時の候補表示の調整
+**`SuggestedReplyButton` のウィジェットテスト**
+- タップ動作の検証
+- アクセシビリティの検証
+- アニメーションの検証
 
-#### Testing (Phase 2)
+**`SuggestedReplyList` のウィジェットテスト**
+- 横スクロールの検証
+- 空状態の検証
+- アニメーションの検証
 
-- [ ] `SuggestedReply` モデルのユニットテスト
+**`HomePresenter` の統合テスト**
+- 返答サジェスト表示フローの End-to-End テスト
+- 候補選択時のメッセージ送信が正しく動作するか検証
+- モックを使用したテスト
 
-  - Freezed モデルの基本機能検証
+---
 
-- [ ] `SuggestionCacheRepository` のユニットテスト
+### Task 3: ドキュメント整備
 
-  - 保存・取得・クリア機能の検証
-  - セッションごとの分離が正しく動作するか検証
+**目的**: 実装した機能の技術仕様と要件を文書化する。
 
-- [ ] `SuggestedReplyButton` のウィジェットテスト
+**実装内容**:
 
-  - タップ動作の検証
-  - アクセシビリティの検証
-  - アニメーションの検証
+**技術設計ドキュメントの作成**
+- `doc/design/suggested-replies-feature.md` の作成
+- Response Schema 仕様、データモデル、UI/UX フローの詳細
+- Task 1 と Task 2 の実装詳細
 
-- [ ] `SuggestedReplyList` のウィジェットテスト
-
-  - 横スクロールの検証
-  - 空状態の検証
-  - アニメーションの検証
-
-- [ ] `HomePresenter` の統合テスト
-  - 返答サジェスト表示フローの End-to-End テスト
-  - 候補選択時のメッセージ送信が正しく動作するか検証
-  - モックを使用したテスト
-
-### Documentation
-
-- [ ] 技術設計ドキュメントの作成
-
-  - `doc/design/suggested-replies-feature.md`
-  - Response Schema 仕様、データモデル、UI/UX フローの詳細
-  - Phase 1 と Phase 2 の実装詳細
-
-- [ ] 要件定義ドキュメントの更新
-  - `doc/requirement/chat-feature.md` への機能追加
+**要件定義ドキュメントの更新**
+- `doc/requirement/chat-feature.md` への機能追加
