@@ -1,9 +1,9 @@
 /.claude/commands/generate-epic.md
-/.claude/commands/generate-imple-backend.md
-/.claude/commands/generate-imple-BFF.md
-/.claude/commands/generate-imple-frontend.md
-/.claude/commands/generate-imple-mobile.md
-/.claude/commands/generate-imple-qa.md
+/.claude/commands/generate-impl-backend.md
+/.claude/commands/generate-impl-BFF.md
+/.claude/commands/generate-impl-frontend.md
+/.claude/commands/generate-impl-mobile.md
+/.claude/commands/generate-impl-qa.md
 /.claude/commands/generate-pr.md
 /.claude/commands/task-executor-backend.md
 /.claude/commands/task-executor-BFF.md
