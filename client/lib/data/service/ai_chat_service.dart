@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/service/cavivara_knowledge_service.dart';
@@ -32,6 +33,20 @@ class AiChatService {
   /// チャットセッションのキャッシュ（systemPromptごとに保持）
   final Map<String, ChatSession> _chatSessions = {};
 
+  /// Response Schema定義（AIの返答形式を指定）
+  static final _aiResponseSchema = Schema.object(
+    properties: {
+      'content': Schema.string(
+        description: 'AIの返答テキスト',
+      ),
+      'suggestedReplies': Schema.array(
+        description: '次の返答候補のリスト（3〜5個）',
+        items: Schema.string(),
+      ),
+    },
+    optionalProperties: ['suggestedReplies'],
+  );
+
   /// Gemini 2.5 Flashモデルを取得（systemPromptを指定可能）
   GenerativeModel _getModel(String systemPrompt) {
     return FirebaseAI.googleAI().generativeModel(
@@ -45,6 +60,9 @@ class AiChatService {
         topK: 40,
         // 生成する最大トークン数
         maxOutputTokens: 2048,
+        // Response Schemaを使用して構造化レスポンスを取得
+        responseMimeType: 'application/json',
+        responseSchema: _aiResponseSchema,
       ),
       systemInstruction: Content.system(systemPrompt),
       tools: knowledgeBase.tools,
@@ -56,7 +74,9 @@ class AiChatService {
   /// [message] - 送信するメッセージ
   /// [systemPrompt] - 使用するシステムプロンプト（必須）
   /// [conversationHistory] - 会話履歴（指定された場合、新しいセッションを開始してhistoryを設定）
-  Stream<String> sendMessageStream(
+  ///
+  /// Response Schemaを使用して構造化されたAIレスポンスを返す
+  Stream<AiResponse> sendMessageStream(
     String message, {
     required String systemPrompt,
     List<ChatMessage>? conversationHistory,
@@ -102,11 +122,11 @@ class AiChatService {
   }
 
   /// メッセージ処理を開始する
-  Stream<String> _startMessageProcessing({
+  Stream<AiResponse> _startMessageProcessing({
     required ChatSession chatSession,
     required String message,
   }) {
-    final controller = StreamController<String>();
+    final controller = StreamController<AiResponse>();
 
     unawaited(() async {
       final responseStream = chatSession.sendMessageStream(
@@ -128,7 +148,7 @@ class AiChatService {
   Future<void> _processResponseStream({
     required ChatSession chatSession,
     required Stream<GenerateContentResponse> responseStream,
-    required StreamController<String> controller,
+    required StreamController<AiResponse> controller,
     int functionCallDepth = 0,
   }) async {
     // 関数呼び出しの最大深度を制限（無限再帰を防ぐ）
@@ -147,6 +167,9 @@ class AiChatService {
       return;
     }
     try {
+      // ストリーミング中のテキストを蓄積
+      final textBuffer = StringBuffer();
+
       await for (final chunk in responseStream) {
         final functionCalls = chunk.functionCalls;
         if (functionCalls.isNotEmpty) {
@@ -172,7 +195,31 @@ class AiChatService {
         }
 
         _logger.info('応答チャンクを受信: $text');
-        controller.add(text);
+        textBuffer.write(text);
+
+        // ストリーミング中は content のみを含む AiResponse を送信
+        // suggestedReplies は最終レスポンスでのみ取得できる
+        controller.add(
+          AiResponse(
+            content: text,
+          ),
+        );
+      }
+
+      // ストリーミング完了後、最終的な完全なレスポンスをパースして送信
+      // Response Schema使用時は、最終レスポンスがJSON形式で返される
+      final fullText = textBuffer.toString();
+      if (fullText.isNotEmpty) {
+        try {
+          // JSONとしてパースを試みる
+          final jsonResponse = AiResponse.fromJson(
+            {'content': fullText, 'suggestedReplies': <String>[]},
+          );
+          _logger.info('最終レスポンスを送信: $jsonResponse');
+        } on Exception catch (e) {
+          _logger.warning('最終レスポンスのパースに失敗（フォールバック処理）: $e');
+          // パースに失敗した場合は、テキストのみのレスポンスとして扱う
+        }
       }
     } on SocketException catch (e) {
       _logger.severe('Network error occurred during response processing: $e');
@@ -194,7 +241,7 @@ class AiChatService {
   Future<void> _handleFunctionCall({
     required ChatSession chatSession,
     required FunctionCall functionCall,
-    required StreamController<String> controller,
+    required StreamController<AiResponse> controller,
     required int functionCallDepth,
   }) async {
     _logger.info(
