@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_ai/firebase_ai.dart';
@@ -168,8 +169,9 @@ class AiChatService {
       return;
     }
     try {
-      // ストリーミング中のテキストを蓄積
-      final textBuffer = StringBuffer();
+      // Response Schema使用時は、レスポンス全体がJSON形式で返される
+      // ストリーミング中のJSONテキストを蓄積
+      final jsonBuffer = StringBuffer();
 
       await for (final chunk in responseStream) {
         final functionCalls = chunk.functionCalls;
@@ -196,30 +198,34 @@ class AiChatService {
         }
 
         _logger.info('応答チャンクを受信: $text');
-        textBuffer.write(text);
-
-        // ストリーミング中は content のみを含む AiResponse を送信
-        // suggestedReplies は最終レスポンスでのみ取得できる
-        controller.add(
-          AiResponse(
-            content: text,
-          ),
-        );
+        jsonBuffer.write(text);
       }
 
-      // ストリーミング完了後、最終的な完全なレスポンスをパースして送信
-      // Response Schema使用時は、最終レスポンスがJSON形式で返される
-      final fullText = textBuffer.toString();
-      if (fullText.isNotEmpty) {
+      // ストリーミング完了後、JSONをパースしてAiResponseを送信
+      final fullJsonText = jsonBuffer.toString();
+      if (fullJsonText.isNotEmpty) {
         try {
-          // JSONとしてパースを試みる
-          final jsonResponse = AiResponse.fromJson(
-            {'content': fullText, 'suggestedReplies': <String>[]},
+          // JSON文字列をMapとしてパース
+          final jsonMap = Map<String, dynamic>.from(
+            // dart:convertを使用してJSONをパース
+            const JsonDecoder().convert(fullJsonText) as Map<dynamic, dynamic>,
           );
-          _logger.info('最終レスポンスを送信: $jsonResponse');
+
+          final aiResponse = AiResponse.fromJson(jsonMap);
+          _logger.info(
+            '構造化レスポンスをパース: '
+            'content="${aiResponse.content}", '
+            'suggestedReplies=${aiResponse.suggestedReplies}',
+          );
+
+          // パースしたAiResponseを送信
+          controller.add(aiResponse);
         } on Exception catch (e) {
-          _logger.warning('最終レスポンスのパースに失敗（フォールバック処理）: $e');
-          // パースに失敗した場合は、テキストのみのレスポンスとして扱う
+          _logger.warning('JSONパースに失敗、テキストとして扱います: $e');
+          // パースに失敗した場合は、テキストをそのままcontentとして扱う
+          controller.add(
+            AiResponse(content: fullJsonText),
+          );
         }
       }
     } on SocketException catch (e) {
