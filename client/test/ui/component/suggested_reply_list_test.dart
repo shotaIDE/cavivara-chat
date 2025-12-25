@@ -134,8 +134,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // SingleChildScrollView が存在することを確認
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      // ListView が存在することを確認（横スクロール可能）
+      expect(find.byType(ListView), findsOneWidget);
     });
   });
 }

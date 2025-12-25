@@ -22,29 +22,21 @@ class SuggestedReplyList extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    // 各ボタンをローカル変数に格納
-    final buttons = suggestions
-        .map(
-          (suggestion) => SuggestedReplyButton(
+    // 横スクロール可能なボタンリストを構築
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemBuilder: (context, index) {
+          final suggestion = suggestions[index];
+          return SuggestedReplyButton(
             text: suggestion,
             onTap: () => onSuggestionTap(suggestion),
-          ),
-        )
-        .toList();
-
-    // 横スクロール可能なボタンリストを構築
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: buttons
-            .map(
-              (button) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: button,
-              ),
-            )
-            .toList(),
+          );
+        },
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemCount: suggestions.length,
       ),
     );
   }
