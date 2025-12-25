@@ -16,13 +16,14 @@ class SentChatStringCountRepository extends _$SentChatStringCountRepository {
   }
 
   Future<void> add(int stringCount) async {
+    final preferenceService = ref.read(preferenceServiceProvider);
+
     if (stringCount <= 0) {
       return;
     }
 
     final current = await future;
     final updated = current + stringCount;
-    final preferenceService = ref.read(preferenceServiceProvider);
     await preferenceService.setInt(
       PreferenceKey.totalSentChatStringCount,
       value: updated,

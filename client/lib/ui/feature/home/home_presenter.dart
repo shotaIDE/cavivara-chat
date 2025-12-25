@@ -30,6 +30,9 @@ class ChatMessages extends _$ChatMessages {
       return;
     }
 
+    // メッセージ送信開始時に既存のサジェストをクリア
+    ref.read(suggestedRepliesProvider(cavivaraId).notifier).clear();
+
     // 簡単なID生成（DateTime + hashCode）
     final now = DateTime.now();
     final userMessageId = '${now.millisecondsSinceEpoch}_${content.hashCode}';
@@ -86,6 +89,7 @@ class ChatMessages extends _$ChatMessages {
 
     var hasError = false;
     var buffer = '';
+    var lastSuggestedReplies = <String>[];
     try {
       final responseStream = aiChatService.sendMessageStream(
         content,
@@ -113,6 +117,9 @@ class ChatMessages extends _$ChatMessages {
             timestamp: DateTime.now(),
           ),
         );
+
+        // 最新のサジェストを保持
+        lastSuggestedReplies = aiResponse.suggestedReplies;
       }
     } on SendMessageException catch (e) {
       hasError = true;
@@ -159,6 +166,13 @@ class ChatMessages extends _$ChatMessages {
         ),
       );
 
+      // サジェストを保存
+      if (lastSuggestedReplies.isNotEmpty) {
+        ref
+            .read(suggestedRepliesProvider(cavivaraId).notifier)
+            .save(lastSuggestedReplies);
+      }
+
       if (buffer.isNotEmpty) {
         unawaited(
           ref
@@ -172,6 +186,9 @@ class ChatMessages extends _$ChatMessages {
   /// チャット履歴をクリアする
   void clearMessages() {
     state = [];
+
+    // サジェストもクリア
+    ref.read(suggestedRepliesProvider(cavivaraId).notifier).clear();
 
     // AIサービスのセッションキャッシュもクリア
     final cavivaraProfile = ref.read(cavivaraByIdProvider(cavivaraId));
@@ -212,6 +229,24 @@ void clearAllChatMessages(Ref ref) {
 Future<void> updateLastTalkedCavivaraId(Ref ref, String cavivaraId) async {
   final notifier = ref.read(lastTalkedCavivaraIdProvider.notifier);
   await notifier.updateId(cavivaraId);
+}
+
+/// 指定されたカヴィヴァラIDのサジェストリストを管理するプロバイダー
+@riverpod
+class SuggestedReplies extends _$SuggestedReplies {
+  @override
+  List<String> build(String cavivaraId) => [];
+
+  /// サジェストリストを保存
+  // ignore: use_setters_to_change_properties
+  void save(List<String> suggestions) {
+    state = suggestions;
+  }
+
+  /// サジェストをクリア
+  void clear() {
+    state = [];
+  }
 }
 
 @riverpod
