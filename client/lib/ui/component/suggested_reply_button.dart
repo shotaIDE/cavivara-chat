@@ -30,7 +30,6 @@ class SuggestedReplyButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       side: BorderSide.none,
-      padding: const EdgeInsets.all(8),
     );
   }
 }
