@@ -219,8 +219,9 @@ class AiChatService {
 
           // パースしたAiResponseを送信
           controller.add(aiResponse);
-        } on Exception catch (e) {
+        } on Exception catch (e, stackTrace) {
           _logger.warning('JSONパースに失敗、テキストとして扱います: $e');
+          unawaited(errorReportService.recordError(e, stackTrace));
           // パースに失敗した場合は、テキストをそのままcontentとして扱う
           controller.add(
             AiResponse(content: fullJsonText),
