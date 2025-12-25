@@ -29,7 +29,8 @@ class SuggestedReplyButton extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      side: BorderSide.none,
+      padding: const EdgeInsets.all(8),
     );
   }
 }
