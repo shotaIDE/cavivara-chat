@@ -93,7 +93,8 @@ class ChatMessages extends _$ChatMessages {
         conversationHistory: conversationHistory,
       );
 
-      await for (final chunk in responseStream) {
+      await for (final aiResponse in responseStream) {
+        final chunk = aiResponse.content;
         if (chunk.isEmpty) {
           continue;
         }

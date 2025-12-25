@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/cavivara_profile.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/preference_key.dart';
@@ -152,7 +153,11 @@ void main() {
               named: 'conversationHistory',
             ),
           ),
-        ).thenAnswer((_) => Stream.value('AIからの返信'));
+        ).thenAnswer(
+          (_) => Stream.value(
+            const AiResponse(content: 'AIからの返信'),
+          ),
+        );
 
         final notifier = container.read(
           chatMessagesProvider(cavivaraId).notifier,
@@ -185,7 +190,11 @@ void main() {
                 named: 'conversationHistory',
               ),
             ),
-          ).thenAnswer((_) => Stream.value('AIからの返信'));
+          ).thenAnswer(
+            (_) => Stream.value(
+              const AiResponse(content: 'AIからの返信'),
+            ),
+          );
 
           final notifier = container.read(
             chatMessagesProvider(cavivaraId).notifier,
@@ -254,9 +263,9 @@ void main() {
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
-            'AI',
-            ' から',
-            'の返信',
+            const AiResponse(content: 'AI'),
+            const AiResponse(content: ' から'),
+            const AiResponse(content: 'の返信'),
           ]),
         );
 
@@ -288,7 +297,11 @@ void main() {
               named: 'conversationHistory',
             ),
           ),
-        ).thenAnswer((_) => Stream.value('AIからの返信'));
+        ).thenAnswer(
+          (_) => Stream.value(
+            const AiResponse(content: 'AIからの返信'),
+          ),
+        );
 
         // 両方のカヴィヴァラにメッセージを追加
         final notifier1 = container.read(
