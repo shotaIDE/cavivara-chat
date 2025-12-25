@@ -41,7 +41,7 @@ class AiChatService {
         description: 'AIの返答テキスト',
       ),
       'suggestedReplies': Schema.array(
-        description: '次の返答候補のリスト（3〜5個）',
+        description: '次の返答候補のリスト（3個以下）',
         items: Schema.string(),
       ),
     },

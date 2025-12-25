@@ -10,7 +10,7 @@ abstract class AiResponse with _$AiResponse {
     /// AIの返答テキスト
     required String content,
 
-    /// 返答サジェストのリスト（3〜5個）
+    /// 返答サジェストのリスト
     @Default([]) List<String> suggestedReplies,
   }) = _AiResponse;
 
