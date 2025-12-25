@@ -382,7 +382,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
       itemBuilder: (context, index) {
         // 最後のアイテムはサジェストリスト
         if (index == messages.length) {
-          return _SuggestedReplySection(
+          return SuggestedReplyList(
             cavivaraId: widget.cavivaraId,
             onSuggestionTap: _sendSuggestion,
           );
@@ -497,25 +497,6 @@ class _ChatSuggestions extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// 動的サジェストセクション
-class _SuggestedReplySection extends StatelessWidget {
-  const _SuggestedReplySection({
-    required this.cavivaraId,
-    required this.onSuggestionTap,
-  });
-
-  final String cavivaraId;
-  final ValueChanged<String> onSuggestionTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SuggestedReplyList(
-      cavivaraId: cavivaraId,
-      onSuggestionTap: onSuggestionTap,
     );
   }
 }
