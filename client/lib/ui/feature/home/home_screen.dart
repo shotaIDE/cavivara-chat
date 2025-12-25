@@ -11,6 +11,7 @@ import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
+import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
 import 'package:house_worker/ui/feature/resume/resume_screen.dart';
@@ -377,8 +378,16 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
         top: 16,
         bottom: 8,
       ),
-      itemCount: messages.length,
+      itemCount: messages.length + 1, // サジェストリスト分を追加
       itemBuilder: (context, index) {
+        // 最後のアイテムはサジェストリスト
+        if (index == messages.length) {
+          return _SuggestedReplySection(
+            cavivaraId: widget.cavivaraId,
+            onSuggestionTap: _sendSuggestion,
+          );
+        }
+
         final message = messages[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
@@ -488,6 +497,25 @@ class _ChatSuggestions extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 動的サジェストセクション
+class _SuggestedReplySection extends StatelessWidget {
+  const _SuggestedReplySection({
+    required this.cavivaraId,
+    required this.onSuggestionTap,
+  });
+
+  final String cavivaraId;
+  final ValueChanged<String> onSuggestionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SuggestedReplyList(
+      cavivaraId: cavivaraId,
+      onSuggestionTap: onSuggestionTap,
     );
   }
 }

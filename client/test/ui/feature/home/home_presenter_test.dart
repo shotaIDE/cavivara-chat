@@ -326,4 +326,354 @@ void main() {
       });
     });
   });
+
+  group('Home Presenter - Suggested Replies', () {
+    late ProviderContainer container;
+
+    setUp(() {
+      container = ProviderContainer();
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    group('suggestedRepliesProvider', () {
+      test('初期状態では空のサジェストリストが返されること', () {
+        const cavivaraId = 'cavivara_default';
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+
+        expect(suggestions, isEmpty);
+      });
+
+      test('異なるカヴィヴァラIDに対して独立したサジェストリストが管理されること', () {
+        const cavivaraId1 = 'cavivara_default';
+        const cavivaraId2 = 'cavivara_mascot';
+
+        final suggestions1 = container.read(
+          suggestedRepliesProvider(cavivaraId1),
+        );
+        final suggestions2 = container.read(
+          suggestedRepliesProvider(cavivaraId2),
+        );
+
+        expect(suggestions1, isEmpty);
+        expect(suggestions2, isEmpty);
+        expect(identical(suggestions1, suggestions2), isFalse);
+      });
+
+      test('save メソッドでサジェストを保存できること', () {
+        const cavivaraId = 'cavivara_default';
+        final testSuggestions = ['質問1', '質問2', '質問3'];
+
+        final notifier = container.read(
+          suggestedRepliesProvider(cavivaraId).notifier,
+        );
+        notifier.save(testSuggestions);
+
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+
+        expect(suggestions, equals(testSuggestions));
+      });
+
+      test('clear メソッドでサジェストをクリアできること', () {
+        const cavivaraId = 'cavivara_default';
+        final testSuggestions = ['質問1', '質問2', '質問3'];
+
+        final notifier = container.read(
+          suggestedRepliesProvider(cavivaraId).notifier,
+        );
+        notifier.save(testSuggestions);
+
+        // 保存されていることを確認
+        expect(
+          container.read(suggestedRepliesProvider(cavivaraId)),
+          equals(testSuggestions),
+        );
+
+        // クリア
+        notifier.clear();
+
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+
+        expect(suggestions, isEmpty);
+      });
+
+      test('空のリストを保存できること', () {
+        const cavivaraId = 'cavivara_default';
+        final testSuggestions = ['質問1', '質問2'];
+
+        final notifier = container.read(
+          suggestedRepliesProvider(cavivaraId).notifier,
+        );
+
+        // 最初にサジェストを保存
+        notifier.save(testSuggestions);
+        expect(
+          container.read(suggestedRepliesProvider(cavivaraId)),
+          equals(testSuggestions),
+        );
+
+        // 空のリストで上書き
+        notifier.save([]);
+
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+
+        expect(suggestions, isEmpty);
+      });
+    });
+
+    group('sendMessage - サジェスト管理', () {
+      late MockAiChatService mockAiChatService;
+      late MockPreferenceService mockPreferenceService;
+      late TestReceivedChatStringCountRepository
+      testReceivedChatStringCountRepository;
+      late TestSentChatStringCountRepository testSentChatStringCountRepository;
+      late ProviderContainer container;
+
+      setUp(() {
+        mockAiChatService = MockAiChatService();
+        mockPreferenceService = MockPreferenceService();
+        testReceivedChatStringCountRepository =
+            TestReceivedChatStringCountRepository();
+        testSentChatStringCountRepository = TestSentChatStringCountRepository();
+
+        // モックの設定
+        when(
+          () => mockPreferenceService.getInt(any()),
+        ).thenAnswer((_) async => 0);
+        when(
+          () => mockPreferenceService.setInt(
+            any(),
+            value: any(named: 'value'),
+          ),
+        ).thenAnswer((_) async {});
+
+        container = ProviderContainer(
+          overrides: [
+            aiChatServiceProvider.overrideWith((ref) => mockAiChatService),
+            preferenceServiceProvider.overrideWith(
+              (ref) => mockPreferenceService,
+            ),
+            receivedChatStringCountRepositoryProvider.overrideWith(
+              () => testReceivedChatStringCountRepository,
+            ),
+            sentChatStringCountRepositoryProvider.overrideWith(
+              () => testSentChatStringCountRepository,
+            ),
+            cavivaraDirectoryProvider.overrideWith(
+              (ref) => [
+                const CavivaraProfile(
+                  id: 'cavivara_default',
+                  displayName: 'テストカヴィヴァラ',
+                  title: 'テスト用',
+                  description: 'テスト用のカヴィヴァラです',
+                  iconPath: 'test_icon.png',
+                  aiPrompt: 'You are a helpful assistant.',
+                  tags: ['test'],
+                  resumeSections: [],
+                ),
+              ],
+            ),
+          ],
+        );
+      });
+
+      tearDown(() {
+        container.dispose();
+      });
+
+      test('メッセージ送信開始時に既存のサジェストがクリアされること', () async {
+        const cavivaraId = 'cavivara_default';
+        final testSuggestions = ['質問1', '質問2', '質問3'];
+
+        // 事前にサジェストを保存
+        final suggestionsNotifier = container.read(
+          suggestedRepliesProvider(cavivaraId).notifier,
+        );
+        suggestionsNotifier.save(testSuggestions);
+
+        // サジェストが保存されていることを確認
+        expect(
+          container.read(suggestedRepliesProvider(cavivaraId)),
+          equals(testSuggestions),
+        );
+
+        // AIサービスのモック設定
+        when(
+          () => mockAiChatService.sendMessageStream(
+            any<String>(),
+            systemPrompt: any<String>(named: 'systemPrompt'),
+            conversationHistory: any<List<ChatMessage>?>(
+              named: 'conversationHistory',
+            ),
+          ),
+        ).thenAnswer(
+          (_) => Stream.value(
+            const AiResponse(content: 'AIからの返信'),
+          ),
+        );
+
+        // メッセージ送信
+        final notifier = container.read(
+          chatMessagesProvider(cavivaraId).notifier,
+        );
+        await notifier.sendMessage('テストメッセージ');
+
+        // サジェストがクリアされていることを確認
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+        expect(suggestions, isEmpty);
+      });
+
+      test('AIからサジェスト付きレスポンスを受信した場合、サジェストが保存されること', () async {
+        const cavivaraId = 'cavivara_default';
+        const messageText = 'テストメッセージ';
+        final testSuggestions = ['次の質問1', '次の質問2', '次の質問3'];
+
+        // AIサービスのモック設定
+        when(
+          () => mockAiChatService.sendMessageStream(
+            messageText,
+            systemPrompt: any<String>(named: 'systemPrompt'),
+            conversationHistory: any<List<ChatMessage>?>(
+              named: 'conversationHistory',
+            ),
+          ),
+        ).thenAnswer(
+          (_) => Stream.value(
+            AiResponse(
+              content: 'AIからの返信',
+              suggestedReplies: testSuggestions,
+            ),
+          ),
+        );
+
+        // メッセージ送信
+        final notifier = container.read(
+          chatMessagesProvider(cavivaraId).notifier,
+        );
+        await notifier.sendMessage(messageText);
+
+        // サジェストが保存されていることを確認
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+        expect(suggestions, equals(testSuggestions));
+      });
+
+      test('AIからサジェストなしレスポンスを受信した場合、サジェストは空のままであること', () async {
+        const cavivaraId = 'cavivara_default';
+        const messageText = 'テストメッセージ';
+
+        // AIサービスのモック設定（サジェストなし）
+        when(
+          () => mockAiChatService.sendMessageStream(
+            messageText,
+            systemPrompt: any<String>(named: 'systemPrompt'),
+            conversationHistory: any<List<ChatMessage>?>(
+              named: 'conversationHistory',
+            ),
+          ),
+        ).thenAnswer(
+          (_) => Stream.value(
+            const AiResponse(content: 'AIからの返信'),
+          ),
+        );
+
+        // メッセージ送信
+        final notifier = container.read(
+          chatMessagesProvider(cavivaraId).notifier,
+        );
+        await notifier.sendMessage(messageText);
+
+        // サジェストが空であることを確認
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+        expect(suggestions, isEmpty);
+      });
+
+      test('ストリーミング中に複数のサジェストを受信した場合、最後のサジェストが保存されること', () async {
+        const cavivaraId = 'cavivara_default';
+        const messageText = 'テストメッセージ';
+
+        // ストリーミングレスポンスのモック設定
+        when(
+          () => mockAiChatService.sendMessageStream(
+            messageText,
+            systemPrompt: any<String>(named: 'systemPrompt'),
+            conversationHistory: any<List<ChatMessage>?>(
+              named: 'conversationHistory',
+            ),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            const AiResponse(
+              content: 'AI',
+              suggestedReplies: ['質問A', '質問B'],
+            ),
+            const AiResponse(
+              content: ' から',
+              suggestedReplies: ['質問C', '質問D'],
+            ),
+            const AiResponse(
+              content: 'の返信',
+              suggestedReplies: ['最終質問1', '最終質問2', '最終質問3'],
+            ),
+          ]),
+        );
+
+        // メッセージ送信
+        final notifier = container.read(
+          chatMessagesProvider(cavivaraId).notifier,
+        );
+        await notifier.sendMessage(messageText);
+
+        // 最後のサジェストが保存されていることを確認
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+        expect(suggestions, equals(['最終質問1', '最終質問2', '最終質問3']));
+      });
+
+      test('チャットクリア時にサジェストもクリアされること', () async {
+        const cavivaraId = 'cavivara_default';
+        final testSuggestions = ['質問1', '質問2', '質問3'];
+
+        // サジェストを保存
+        final suggestionsNotifier = container.read(
+          suggestedRepliesProvider(cavivaraId).notifier,
+        );
+        suggestionsNotifier.save(testSuggestions);
+
+        // サジェストが保存されていることを確認
+        expect(
+          container.read(suggestedRepliesProvider(cavivaraId)),
+          equals(testSuggestions),
+        );
+
+        // チャットをクリア
+        final notifier = container.read(
+          chatMessagesProvider(cavivaraId).notifier,
+        );
+        notifier.clearMessages();
+
+        // サジェストがクリアされていることを確認
+        final suggestions = container.read(
+          suggestedRepliesProvider(cavivaraId),
+        );
+        expect(suggestions, isEmpty);
+      });
+    });
+  });
 }
