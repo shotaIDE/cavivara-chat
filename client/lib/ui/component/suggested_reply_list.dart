@@ -36,9 +36,15 @@ class SuggestedReplyList extends ConsumerWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Wrap(
-        spacing: 8,
-        children: buttons,
+      child: Row(
+        children: buttons
+            .map(
+              (button) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: button,
+              ),
+            )
+            .toList(),
       ),
     );
   }
