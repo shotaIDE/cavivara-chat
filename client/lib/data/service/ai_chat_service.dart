@@ -207,7 +207,6 @@ class AiChatService {
         try {
           // JSON文字列をMapとしてパース
           final jsonMap = Map<String, dynamic>.from(
-            // dart:convertを使用してJSONをパース
             const JsonDecoder().convert(fullJsonText) as Map<dynamic, dynamic>,
           );
 
