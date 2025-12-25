@@ -27,7 +27,10 @@ class SuggestedReplyList extends ConsumerWidget {
       height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.only(
+          left: 16 + MediaQuery.of(context).viewPadding.left,
+          right: 16 + MediaQuery.of(context).viewPadding.right,
+        ),
         itemBuilder: (context, index) {
           final suggestion = suggestions[index];
           return SuggestedReplyButton(

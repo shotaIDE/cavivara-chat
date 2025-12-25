@@ -372,25 +372,27 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
     return ListView.builder(
       controller: widget.controller,
-      padding: EdgeInsets.only(
-        left: 16 + MediaQuery.of(context).viewPadding.left,
-        right: 16 + MediaQuery.of(context).viewPadding.right,
-        top: 16,
-        bottom: 8,
-      ),
       itemCount: messages.length + 1, // サジェストリスト分を追加
       itemBuilder: (context, index) {
         // 最後のアイテムはサジェストリスト
         if (index == messages.length) {
-          return SuggestedReplyList(
-            cavivaraId: widget.cavivaraId,
-            onSuggestionTap: _sendSuggestion,
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: SuggestedReplyList(
+              cavivaraId: widget.cavivaraId,
+              onSuggestionTap: _sendSuggestion,
+            ),
           );
         }
 
         final message = messages[index];
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.only(
+            left: 16 + MediaQuery.of(context).viewPadding.left,
+            right: 16 + MediaQuery.of(context).viewPadding.right,
+            top: 8,
+            bottom: 8,
+          ),
           child: _ChatBubble(
             message: message,
             cavivaraId: widget.cavivaraId,
