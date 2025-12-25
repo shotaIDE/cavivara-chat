@@ -238,6 +238,7 @@ class SuggestedReplies extends _$SuggestedReplies {
   List<String> build(String cavivaraId) => [];
 
   /// サジェストリストを保存
+  // ignore: use_setters_to_change_properties
   void save(List<String> suggestions) {
     state = suggestions;
   }

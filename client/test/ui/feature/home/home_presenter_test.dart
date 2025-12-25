@@ -368,10 +368,9 @@ void main() {
         const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
-        final notifier = container.read(
-          suggestedRepliesProvider(cavivaraId).notifier,
-        );
-        notifier.save(testSuggestions);
+        container
+            .read(suggestedRepliesProvider(cavivaraId).notifier)
+            .save(testSuggestions);
 
         final suggestions = container.read(
           suggestedRepliesProvider(cavivaraId),
@@ -384,10 +383,9 @@ void main() {
         const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
-        final notifier = container.read(
-          suggestedRepliesProvider(cavivaraId).notifier,
-        );
-        notifier.save(testSuggestions);
+        container
+            .read(suggestedRepliesProvider(cavivaraId).notifier)
+            .save(testSuggestions);
 
         // 保存されていることを確認
         expect(
@@ -396,7 +394,7 @@ void main() {
         );
 
         // クリア
-        notifier.clear();
+        container.read(suggestedRepliesProvider(cavivaraId).notifier).clear();
 
         final suggestions = container.read(
           suggestedRepliesProvider(cavivaraId),
@@ -411,10 +409,9 @@ void main() {
 
         final notifier = container.read(
           suggestedRepliesProvider(cavivaraId).notifier,
-        );
+        )..save(testSuggestions);
 
-        // 最初にサジェストを保存
-        notifier.save(testSuggestions);
+        // 最初にサジェストを保存されていることを確認
         expect(
           container.read(suggestedRepliesProvider(cavivaraId)),
           equals(testSuggestions),
@@ -496,10 +493,9 @@ void main() {
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
         // 事前にサジェストを保存
-        final suggestionsNotifier = container.read(
-          suggestedRepliesProvider(cavivaraId).notifier,
-        );
-        suggestionsNotifier.save(testSuggestions);
+        container
+            .read(suggestedRepliesProvider(cavivaraId).notifier)
+            .save(testSuggestions);
 
         // サジェストが保存されていることを確認
         expect(
@@ -646,15 +642,14 @@ void main() {
         expect(suggestions, equals(['最終質問1', '最終質問2', '最終質問3']));
       });
 
-      test('チャットクリア時にサジェストもクリアされること', () async {
+      test('チャットクリア時にサジェストもクリアされること', () {
         const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
         // サジェストを保存
-        final suggestionsNotifier = container.read(
-          suggestedRepliesProvider(cavivaraId).notifier,
-        );
-        suggestionsNotifier.save(testSuggestions);
+        container
+            .read(suggestedRepliesProvider(cavivaraId).notifier)
+            .save(testSuggestions);
 
         // サジェストが保存されていることを確認
         expect(
@@ -663,10 +658,9 @@ void main() {
         );
 
         // チャットをクリア
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
-        notifier.clearMessages();
+        container
+            .read(chatMessagesProvider(cavivaraId).notifier)
+            .clearMessages();
 
         // サジェストがクリアされていることを確認
         final suggestions = container.read(

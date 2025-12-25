@@ -6,16 +6,13 @@ void main() {
   group('SuggestedReplyButton', () {
     testWidgets('テキストが表示されること', (tester) async {
       const testText = 'テスト質問';
-      var tapped = false;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SuggestedReplyButton(
               text: testText,
-              onTap: () {
-                tapped = true;
-              },
+              onTap: () {},
             ),
           ),
         ),
