@@ -48,41 +48,6 @@
 - As a **既存ユーザー**, I want **自分の興味に合ったアクション候補が表示される** so that **スムーズに会話を始められる**
 - As a **頻繁に音楽について相談するユーザー**, I want **音楽関連のアクション候補が優先的に表示される** so that **毎回同じような質問を入力する手間が省ける**
 
-## データフロー
-
-```mermaid
-sequenceDiagram
-    participant Client as Flutter Client
-    participant Auth as Firebase Auth
-    participant Firestore as Firestore
-    participant CloudFunc as Cloud Functions
-    participant AI as AI Service
-
-    Note over Client: ユーザーがホーム画面を開く
-    Client->>Auth: ユーザー認証確認
-    Auth-->>Client: uid取得
-
-    Client->>CloudFunc: getPersonalizedActions(uid)
-    CloudFunc->>Firestore: ユーザーのアクション履歴取得
-    Firestore-->>CloudFunc: 過去の選択履歴
-    CloudFunc->>Firestore: アクション候補マスター取得
-    Firestore-->>CloudFunc: 全アクション候補
-
-    Note over CloudFunc: パーソナライゼーションロジック実行
-    CloudFunc->>CloudFunc: スコアリング・ランキング
-    CloudFunc-->>Client: パーソナライズされたアクションリスト(3-5件)
-
-    Client->>Client: _ChatSuggestionsに表示
-
-    Note over Client: ユーザーがアクションを選択
-    Client->>CloudFunc: recordActionSelection(uid, actionId)
-    CloudFunc->>Firestore: 選択履歴を記録
-    Firestore-->>CloudFunc: OK
-    CloudFunc-->>Client: OK
-
-    Client->>AI: アクション内容でチャット開始
-```
-
 ## Implement Issue List
 
 ### Backend (Cloud Functions / Firebase)
