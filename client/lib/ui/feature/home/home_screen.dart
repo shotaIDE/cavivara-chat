@@ -627,41 +627,76 @@ class _AiChatBubble extends ConsumerStatefulWidget {
 }
 
 class _AiChatBubbleState extends ConsumerState<_AiChatBubble>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+    with TickerProviderStateMixin {
+  late AnimationController _bubbleAnimationController;
+  late Animation<double> _bubbleFadeAnimation;
+  late Animation<Offset> _bubbleSlideAnimation;
+
+  late AnimationController _textAnimationController;
+  late Animation<double> _textFadeAnimation;
+
+  bool _hasTextAnimated = false;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+
+    // バブル全体のアニメーション
+    _bubbleAnimationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
+    _bubbleFadeAnimation = CurvedAnimation(
+      parent: _bubbleAnimationController,
       curve: Curves.easeOut,
     );
 
-    _slideAnimation =
+    _bubbleSlideAnimation =
         Tween<Offset>(
           begin: const Offset(-0.1, 0),
           end: Offset.zero,
         ).animate(
           CurvedAnimation(
-            parent: _animationController,
+            parent: _bubbleAnimationController,
             curve: Curves.easeOutCubic,
           ),
         );
 
-    _animationController.forward();
+    // テキストのフェードインアニメーション
+    _textAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _textFadeAnimation = CurvedAnimation(
+      parent: _textAnimationController,
+      curve: Curves.easeIn,
+    );
+
+    _bubbleAnimationController.forward();
+
+    // テキストアニメーションを開始（ストリーミング中でも）
+    _textAnimationController.forward();
+  }
+
+  @override
+  void didUpdateWidget(_AiChatBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // メッセージがストリーミング完了したら、アニメーション済みとしてマーク
+    if (oldWidget.message.isStreaming && !widget.message.isStreaming) {
+      if (!_hasTextAnimated) {
+        setState(() {
+          _hasTextAnimated = true;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _bubbleAnimationController.dispose();
+    _textAnimationController.dispose();
     super.dispose();
   }
 
@@ -696,12 +731,25 @@ class _AiChatBubbleState extends ConsumerState<_AiChatBubble>
         ],
       );
     } else {
-      final textWidget = Text(
-        widget.message.content,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: textColor,
-        ),
+      final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: textColor,
       );
+
+      // まだアニメーションしていない場合はフェードイン効果（ストリーミング中も含む）
+      final shouldAnimate = !_hasTextAnimated;
+
+      final textWidget = shouldAnimate
+          ? FadeTransition(
+              opacity: _textFadeAnimation,
+              child: Text(
+                widget.message.content,
+                style: textStyle,
+              ),
+            )
+          : Text(
+              widget.message.content,
+              style: textStyle,
+            );
 
       if (widget.message.isStreaming) {
         bodyText = Row(
@@ -761,9 +809,9 @@ class _AiChatBubbleState extends ConsumerState<_AiChatBubble>
     );
 
     return FadeTransition(
-      opacity: _fadeAnimation,
+      opacity: _bubbleFadeAnimation,
       child: SlideTransition(
-        position: _slideAnimation,
+        position: _bubbleSlideAnimation,
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
