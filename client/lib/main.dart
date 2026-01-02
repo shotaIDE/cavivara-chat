@@ -21,11 +21,9 @@ import 'package:logging/logging.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-// TODO(ide): 本番環境を構築した後、_prod ファイルをインポートするように修正する
-import 'firebase_options_dev.dart' as prod;
-// import 'firebase_options_prod.dart' as prod;
 import 'firebase_options_dev.dart' as dev;
 import 'firebase_options_emulator.dart' as emulator;
+import 'firebase_options_prod.dart' as prod;
 
 final _logger = Logger('CavivaraTalk');
 
