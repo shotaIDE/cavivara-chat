@@ -5,6 +5,7 @@ import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
+import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
 
 class DebugScreen extends ConsumerWidget {
@@ -20,19 +21,39 @@ class DebugScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userProfileAsync = ref.watch(debugPresenterProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('デバッグ')),
       body: ListView(
-        children: const [
-          SectionHeader(title: 'Crashlytics'),
-          _ForceErrorTile(),
-          _ForceCrashTile(),
-          SectionHeader(title: '設定リセット'),
-          _ResetConfirmationSettingsTile(),
-          SectionHeader(title: '統計設定'),
-          _ResetReceivedChatCountAndAchievementsTile(),
-          _SetReceivedChatCountTo999Tile(),
-          _SetReceivedChatCountTo9999Tile(),
+        children: [
+          const SectionHeader(title: 'Crashlytics'),
+          const _ForceErrorTile(),
+          const _ForceCrashTile(),
+          const SectionHeader(title: '設定リセット'),
+          const _ResetConfirmationSettingsTile(),
+          const SectionHeader(title: '統計設定'),
+          const _ResetReceivedChatCountAndAchievementsTile(),
+          const _SetReceivedChatCountTo999Tile(),
+          const _SetReceivedChatCountTo9999Tile(),
+          const Divider(),
+          const SectionHeader(title: 'アカウント管理'),
+          userProfileAsync.when(
+            data: (userProfile) => Column(
+              children: [
+                const _LogoutTile(),
+                if (userProfile != null) const _DeleteAccountTile(),
+              ],
+            ),
+            loading: () => const ListTile(
+              leading: CircularProgressIndicator(),
+              title: Text('読み込み中...'),
+            ),
+            error: (error, stack) => ListTile(
+              leading: const Icon(Icons.error),
+              title: Text('エラー: $error'),
+            ),
+          ),
         ],
       ),
     );
@@ -126,6 +147,104 @@ class _SetReceivedChatCountTo9999Tile extends ConsumerWidget {
             .read(receivedChatStringCountRepositoryProvider.notifier)
             .setForDebug(9999);
       },
+    );
+  }
+}
+
+class _LogoutTile extends ConsumerWidget {
+  const _LogoutTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: const Icon(Icons.logout, color: Colors.red),
+      title: const Text('ログアウト', style: TextStyle(color: Colors.red)),
+      onTap: () => _showLogoutConfirmDialog(context, ref),
+    );
+  }
+
+  void _showLogoutConfirmDialog(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ログアウト'),
+        content: const Text('本当にログアウトしますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                await ref.read(debugPresenterProvider.notifier).logout();
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+              } on Exception catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('ログアウトに失敗しました: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('ログアウト'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeleteAccountTile extends ConsumerWidget {
+  const _DeleteAccountTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: const Icon(Icons.delete_forever, color: Colors.red),
+      title: const Text('アカウントを削除', style: TextStyle(color: Colors.red)),
+      onTap: () => _showDeleteAccountConfirmDialog(context, ref),
+    );
+  }
+
+  void _showDeleteAccountConfirmDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('アカウント削除'),
+        content: const Text('本当にアカウントを削除しますか？この操作は元に戻せません。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () async {
+              try {
+                await ref.read(debugPresenterProvider.notifier).deleteAccount();
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+              } on Exception catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('アカウント削除に失敗しました: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('削除する'),
+          ),
+        ],
+      ),
     );
   }
 }
