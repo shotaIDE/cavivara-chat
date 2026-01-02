@@ -1,14 +1,12 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
-import 'package:house_worker/data/service/auth_service.dart';
+import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
-import 'package:house_worker/ui/root_presenter.dart';
 
 class DebugScreen extends ConsumerWidget {
   const DebugScreen({super.key});
@@ -23,33 +21,40 @@ class DebugScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userProfileAsync = ref.watch(currentUserProfileProvider);
+    final userProfileAsync = ref.watch(debugPresenterProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('デバッグ')),
-      body: userProfileAsync.when(
-        data: (userProfile) {
-          return ListView(
-            children: [
-              const SectionHeader(title: 'Crashlytics'),
-              const _ForceErrorTile(),
-              const _ForceCrashTile(),
-              const SectionHeader(title: '設定リセット'),
-              const _ResetConfirmationSettingsTile(),
-              const SectionHeader(title: '統計設定'),
-              const _ResetReceivedChatCountAndAchievementsTile(),
-              const _SetReceivedChatCountTo999Tile(),
-              const _SetReceivedChatCountTo9999Tile(),
-              const Divider(),
-              const SectionHeader(title: 'アカウント管理'),
-              _LogoutTile(ref: ref),
-              if (userProfile != null)
-                _DeleteAccountTile(ref: ref, userProfile: userProfile),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('エラーが発生しました: $error')),
+      body: ListView(
+        children: [
+          const SectionHeader(title: 'Crashlytics'),
+          const _ForceErrorTile(),
+          const _ForceCrashTile(),
+          const SectionHeader(title: '設定リセット'),
+          const _ResetConfirmationSettingsTile(),
+          const SectionHeader(title: '統計設定'),
+          const _ResetReceivedChatCountAndAchievementsTile(),
+          const _SetReceivedChatCountTo999Tile(),
+          const _SetReceivedChatCountTo9999Tile(),
+          const Divider(),
+          const SectionHeader(title: 'アカウント管理'),
+          userProfileAsync.when(
+            data: (userProfile) => Column(
+              children: [
+                const _LogoutTile(),
+                if (userProfile != null) const _DeleteAccountTile(),
+              ],
+            ),
+            loading: () => const ListTile(
+              leading: CircularProgressIndicator(),
+              title: Text('読み込み中...'),
+            ),
+            error: (error, stack) => ListTile(
+              leading: const Icon(Icons.error),
+              title: Text('エラー: $error'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -146,13 +151,11 @@ class _SetReceivedChatCountTo9999Tile extends ConsumerWidget {
   }
 }
 
-class _LogoutTile extends StatelessWidget {
-  const _LogoutTile({required this.ref});
-
-  final WidgetRef ref;
+class _LogoutTile extends ConsumerWidget {
+  const _LogoutTile();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       leading: const Icon(Icons.logout, color: Colors.red),
       title: const Text('ログアウト', style: TextStyle(color: Colors.red)),
@@ -163,22 +166,24 @@ class _LogoutTile extends StatelessWidget {
   void _showLogoutConfirmDialog(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('ログアウト'),
         content: const Text('本当にログアウトしますか？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('キャンセル'),
           ),
           TextButton(
             onPressed: () async {
               try {
-                await ref.read(authServiceProvider).signOut();
-                await ref.read(currentAppSessionProvider.notifier).signOut();
+                await ref.read(debugPresenterProvider.notifier).logout();
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                }
               } on Exception catch (e) {
                 if (context.mounted) {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('ログアウトに失敗しました: $e')),
                   );
@@ -193,49 +198,43 @@ class _LogoutTile extends StatelessWidget {
   }
 }
 
-class _DeleteAccountTile extends StatelessWidget {
-  const _DeleteAccountTile({
-    required this.ref,
-    required this.userProfile,
-  });
-
-  final WidgetRef ref;
-  final UserProfile userProfile;
+class _DeleteAccountTile extends ConsumerWidget {
+  const _DeleteAccountTile();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       leading: const Icon(Icons.delete_forever, color: Colors.red),
       title: const Text('アカウントを削除', style: TextStyle(color: Colors.red)),
-      onTap: () => _showDeleteAccountConfirmDialog(context, ref, userProfile),
+      onTap: () => _showDeleteAccountConfirmDialog(context, ref),
     );
   }
 
   void _showDeleteAccountConfirmDialog(
     BuildContext context,
     WidgetRef ref,
-    UserProfile userProfile,
   ) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('アカウント削除'),
         content: const Text('本当にアカウントを削除しますか？この操作は元に戻せません。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('キャンセル'),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
               try {
-                // Firebase認証からのサインアウト
-                await ref.read(authServiceProvider).signOut();
-                await ref.read(currentAppSessionProvider.notifier).signOut();
+                await ref.read(debugPresenterProvider.notifier).deleteAccount();
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                }
               } on Exception catch (e) {
                 if (context.mounted) {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('アカウント削除に失敗しました: $e')),
                   );
