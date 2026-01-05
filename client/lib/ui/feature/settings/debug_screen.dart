@@ -21,39 +21,23 @@ class DebugScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userProfileAsync = ref.watch(debugPresenterProvider);
-
     return Scaffold(
       appBar: AppBar(title: const Text('デバッグ')),
       body: ListView(
-        children: [
-          const SectionHeader(title: 'Crashlytics'),
-          const _ForceErrorTile(),
-          const _ForceCrashTile(),
-          const SectionHeader(title: '設定リセット'),
-          const _ResetConfirmationSettingsTile(),
-          const SectionHeader(title: '統計設定'),
-          const _ResetReceivedChatCountAndAchievementsTile(),
-          const _SetReceivedChatCountTo999Tile(),
-          const _SetReceivedChatCountTo9999Tile(),
-          const Divider(),
-          const SectionHeader(title: 'アカウント管理'),
-          userProfileAsync.when(
-            data: (userProfile) => Column(
-              children: [
-                const _LogoutTile(),
-                if (userProfile != null) const _DeleteAccountTile(),
-              ],
-            ),
-            loading: () => const ListTile(
-              leading: CircularProgressIndicator(),
-              title: Text('読み込み中...'),
-            ),
-            error: (error, stack) => ListTile(
-              leading: const Icon(Icons.error),
-              title: Text('エラー: $error'),
-            ),
-          ),
+        children: const [
+          SectionHeader(title: 'Crashlytics'),
+          _ForceErrorTile(),
+          _ForceCrashTile(),
+          SectionHeader(title: '設定リセット'),
+          _ResetConfirmationSettingsTile(),
+          SectionHeader(title: '統計設定'),
+          _ResetReceivedChatCountAndAchievementsTile(),
+          _SetReceivedChatCountTo999Tile(),
+          _SetReceivedChatCountTo9999Tile(),
+          Divider(),
+          SectionHeader(title: 'アカウント'),
+          _LogoutTile(),
+          _DeleteAccountTile(),
         ],
       ),
     );
