@@ -4,6 +4,7 @@ import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/cavivara_profile.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/preference_key.dart';
+import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
@@ -214,7 +215,7 @@ void main() {
         },
       );
 
-      test('メッセージ送信エラー時に適切に処理されること', () {
+      test('メッセージ送信エラー時に適切に処理されること', () async {
         const cavivaraId = 'cavivara_default';
         const messageText = 'エラーテスト';
 
@@ -226,17 +227,18 @@ void main() {
               named: 'conversationHistory',
             ),
           ),
-        ).thenThrow(Exception('AI service error'));
+        ).thenThrow(
+          const SendMessageException.uncategorized(
+            message: 'AI service error',
+          ),
+        );
 
         final notifier = container.read(
           chatMessagesProvider(cavivaraId).notifier,
         );
 
         // エラーが発生してもメッセージリストが破綻しないことを確認
-        expect(
-          () => notifier.sendMessage(messageText),
-          returnsNormally,
-        );
+        await notifier.sendMessage(messageText);
 
         final messages = container.read(chatMessagesProvider(cavivaraId));
 
@@ -244,7 +246,7 @@ void main() {
         expect(messages, hasLength(2));
         expect(messages[0].content, equals(messageText));
         expect(messages[0].sender, equals(const ChatMessageSender.user()));
-        expect(messages[1].content, contains('エラーが発生しました'));
+        expect(messages[1].content, contains('原因不明のエラーが発生しました'));
         expect(messages[1].sender, equals(const ChatMessageSender.app()));
       });
 
