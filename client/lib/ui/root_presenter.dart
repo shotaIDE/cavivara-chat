@@ -1,5 +1,4 @@
 import 'package:house_worker/data/model/app_session.dart';
-import 'package:house_worker/data/model/root_app_not_initialized.dart';
 import 'package:house_worker/data/repository/last_talked_cavivara_id_repository.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
@@ -54,44 +53,16 @@ class CurrentAppSession extends _$CurrentAppSession {
       return AppSession.notSignedIn();
     }
 
-    // TODO(ide): RevenueCatから取得する開発用。本番リリース時には削除する
-    const isPro = false;
-
-    return AppSession.signedIn(isPro: isPro);
+    return AppSession.signedIn();
   }
 
   Future<void> signIn({required String userId}) async {
-    // TODO(ide): RevenueCatから取得する開発用。本番リリース時には削除する
-    const isPro = false;
-
     state = AsyncValue.data(
-      AppSession.signedIn(isPro: isPro),
+      AppSession.signedIn(),
     );
   }
 
   Future<void> signOut() async {
     state = AsyncValue.data(AppSession.notSignedIn());
   }
-
-  Future<void> upgradeToPro() async {
-    final currentAppSession = state.value;
-
-    if (currentAppSession case AppSessionSignedIn()) {
-      final newState = currentAppSession.copyWith(isPro: true);
-      state = AsyncValue.data(newState);
-    }
-  }
-}
-
-@riverpod
-AppSession unwrappedCurrentAppSession(Ref ref) {
-  final appSessionAsync = ref.watch(currentAppSessionProvider);
-  final appSession = appSessionAsync.whenOrNull(
-    data: (appSession) => appSession,
-  );
-  if (appSession == null) {
-    throw RootAppNotInitializedError();
-  }
-
-  return appSession;
 }

@@ -66,7 +66,7 @@ class AiChatService {
         responseSchema: _aiResponseSchema,
       ),
       systemInstruction: Content.system(systemPrompt),
-      // TODO(ide): FunctionCallingとレスポンススキーマの併用は不可なので、一旦レスポンススキーマを優先
+      // FunctionCallingとレスポンススキーマの併用は不可なので、一旦レスポンススキーマを優先
       // tools: knowledgeBase.tools,
     );
   }
