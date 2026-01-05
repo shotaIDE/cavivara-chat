@@ -1,5 +1,4 @@
 import 'package:house_worker/data/model/app_session.dart';
-import 'package:house_worker/data/model/root_app_not_initialized.dart';
 import 'package:house_worker/data/repository/last_talked_cavivara_id_repository.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
@@ -81,17 +80,4 @@ class CurrentAppSession extends _$CurrentAppSession {
       state = AsyncValue.data(newState);
     }
   }
-}
-
-@riverpod
-AppSession unwrappedCurrentAppSession(Ref ref) {
-  final appSessionAsync = ref.watch(currentAppSessionProvider);
-  final appSession = appSessionAsync.whenOrNull(
-    data: (appSession) => appSession,
-  );
-  if (appSession == null) {
-    throw RootAppNotInitializedError();
-  }
-
-  return appSession;
 }
