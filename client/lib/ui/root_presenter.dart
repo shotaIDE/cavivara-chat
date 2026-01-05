@@ -53,31 +53,16 @@ class CurrentAppSession extends _$CurrentAppSession {
       return AppSession.notSignedIn();
     }
 
-    // TODO(ide): RevenueCatから取得する開発用。本番リリース時には削除する
-    const isPro = false;
-
-    return AppSession.signedIn(isPro: isPro);
+    return AppSession.signedIn();
   }
 
   Future<void> signIn({required String userId}) async {
-    // TODO(ide): RevenueCatから取得する開発用。本番リリース時には削除する
-    const isPro = false;
-
     state = AsyncValue.data(
-      AppSession.signedIn(isPro: isPro),
+      AppSession.signedIn(),
     );
   }
 
   Future<void> signOut() async {
     state = AsyncValue.data(AppSession.notSignedIn());
-  }
-
-  Future<void> upgradeToPro() async {
-    final currentAppSession = state.value;
-
-    if (currentAppSession case AppSessionSignedIn()) {
-      final newState = currentAppSession.copyWith(isPro: true);
-      state = AsyncValue.data(newState);
-    }
   }
 }
