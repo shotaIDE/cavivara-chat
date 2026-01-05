@@ -21,7 +21,7 @@ class DebugScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userProfileAsync = ref.watch(debugPresenterProvider);
+    final debugStateAsync = ref.watch(debugPresenterProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('デバッグ')),
@@ -38,16 +38,37 @@ class DebugScreen extends ConsumerWidget {
           const _SetReceivedChatCountTo9999Tile(),
           const Divider(),
           const SectionHeader(title: 'アカウント管理'),
-          userProfileAsync.when(
-            data: (userProfile) => Column(
+          debugStateAsync.when(
+            data: (debugState) {
+              return debugState.when(
+                // 状態2: プロフィールがあることが確定（ボタン有効）
+                hasProfile: (userProfile) => const Column(
+                  children: [
+                    _LogoutTile(enabled: true),
+                    _DeleteAccountTile(enabled: true),
+                  ],
+                ),
+                // 状態3: 処理中（ボタン無効）
+                processing: (userProfile) => const Column(
+                  children: [
+                    _LogoutTile(enabled: false),
+                    _DeleteAccountTile(enabled: false),
+                  ],
+                ),
+                // プロフィールがない状態（ログアウトボタンのみ無効）
+                noProfile: () => const Column(
+                  children: [
+                    _LogoutTile(enabled: false),
+                  ],
+                ),
+              );
+            },
+            // 状態1: プロフィールがあるか未確定状態（スケルトン表示）
+            loading: () => const Column(
               children: [
-                const _LogoutTile(),
-                if (userProfile != null) const _DeleteAccountTile(),
+                _LogoutTile(enabled: false),
+                _DeleteAccountTile(enabled: false),
               ],
-            ),
-            loading: () => const ListTile(
-              leading: CircularProgressIndicator(),
-              title: Text('読み込み中...'),
             ),
             error: (error, stack) => ListTile(
               leading: const Icon(Icons.error),
@@ -152,14 +173,23 @@ class _SetReceivedChatCountTo9999Tile extends ConsumerWidget {
 }
 
 class _LogoutTile extends ConsumerWidget {
-  const _LogoutTile();
+  const _LogoutTile({required this.enabled});
+
+  final bool enabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
-      leading: const Icon(Icons.logout, color: Colors.red),
-      title: const Text('ログアウト', style: TextStyle(color: Colors.red)),
-      onTap: () => _showLogoutConfirmDialog(context, ref),
+      leading: Icon(
+        Icons.logout,
+        color: enabled ? Colors.red : Colors.grey,
+      ),
+      title: Text(
+        'ログアウト',
+        style: TextStyle(color: enabled ? Colors.red : Colors.grey),
+      ),
+      enabled: enabled,
+      onTap: enabled ? () => _showLogoutConfirmDialog(context, ref) : null,
     );
   }
 
@@ -199,14 +229,25 @@ class _LogoutTile extends ConsumerWidget {
 }
 
 class _DeleteAccountTile extends ConsumerWidget {
-  const _DeleteAccountTile();
+  const _DeleteAccountTile({required this.enabled});
+
+  final bool enabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
-      leading: const Icon(Icons.delete_forever, color: Colors.red),
-      title: const Text('アカウントを削除', style: TextStyle(color: Colors.red)),
-      onTap: () => _showDeleteAccountConfirmDialog(context, ref),
+      leading: Icon(
+        Icons.delete_forever,
+        color: enabled ? Colors.red : Colors.grey,
+      ),
+      title: Text(
+        'アカウントを削除',
+        style: TextStyle(color: enabled ? Colors.red : Colors.grey),
+      ),
+      enabled: enabled,
+      onTap: enabled
+          ? () => _showDeleteAccountConfirmDialog(context, ref)
+          : null,
     );
   }
 
