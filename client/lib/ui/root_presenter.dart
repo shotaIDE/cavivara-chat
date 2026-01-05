@@ -82,16 +82,3 @@ class CurrentAppSession extends _$CurrentAppSession {
     }
   }
 }
-
-@riverpod
-AppSession unwrappedCurrentAppSession(Ref ref) {
-  final appSessionAsync = ref.watch(currentAppSessionProvider);
-  final appSession = appSessionAsync.whenOrNull(
-    data: (appSession) => appSession,
-  );
-  if (appSession == null) {
-    throw RootAppNotInitializedError();
-  }
-
-  return appSession;
-}
