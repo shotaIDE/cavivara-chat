@@ -6,9 +6,7 @@ part 'app_session.freezed.dart';
 sealed class AppSession with _$AppSession {
   const AppSession._();
 
-  factory AppSession.signedIn({
-    required bool isPro,
-  }) = AppSessionSignedIn;
+  factory AppSession.signedIn() = AppSessionSignedIn;
 
   factory AppSession.notSignedIn() = AppSessionNotSignedIn;
 }
