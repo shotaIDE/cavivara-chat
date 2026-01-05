@@ -1,13 +1,18 @@
+import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/root_presenter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'debug_presenter.g.dart';
 
+/// デバッグ画面のPresenter
 @riverpod
 class DebugPresenter extends _$DebugPresenter {
   @override
-  void build(Ref ref) {}
+  Future<UserProfile?> build() async {
+    final userProfile = await ref.watch(currentUserProfileProvider.future);
+    return userProfile;
+  }
 
   /// ログアウト処理
   Future<void> logout() async {
