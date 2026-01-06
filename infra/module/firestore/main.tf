@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "7.14.1"
+      version = "7.15.0"
     }
   }
 }
