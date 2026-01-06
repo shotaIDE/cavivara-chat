@@ -10,17 +10,17 @@ part 'debug_presenter.g.dart';
 /// デバッグ画面の状態
 @freezed
 sealed class DebugState with _$DebugState {
-  /// プロフィールがあることが確定した状態（ボタン有効）
+  /// プロフィールがあることが確定した状態
   const factory DebugState.hasProfile({
     required UserProfile userProfile,
   }) = DebugStateHasProfile;
 
-  /// プロフィール関連の処理中（ログアウト、アカウント削除）（ボタン無効）
+  /// プロフィール関連の処理中
   const factory DebugState.processing({
     required UserProfile userProfile,
   }) = DebugStateProcessing;
 
-  /// プロフィールがない状態（ログインしていない）
+  /// プロフィールがない状態
   const factory DebugState.noProfile() = DebugStateNoProfile;
 }
 
