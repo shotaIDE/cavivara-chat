@@ -60,23 +60,15 @@ class DebugPresenter extends _$DebugPresenter {
   Future<void> deleteAccount() async {
     final currentState = await future;
 
-    // 処理中状態に設定
-    currentState.mapOrNull(
-      hasProfile: (state) {
-        this.state = AsyncData(
-          DebugState.processing(userProfile: state.userProfile),
-        );
-      },
+    final userProfile = currentState.maybeWhen(
+      hasProfile: (userProfile) => userProfile,
+      orElse: () => null,
     );
-
-    try {
-      // 現在の実装ではサインアウトのみ
-      // 将来的にはFirebase Authenticationからのアカウント削除処理を追加
-      await ref.read(authServiceProvider).signOut();
-      await ref.read(currentAppSessionProvider.notifier).signOut();
-    } finally {
-      // signOut後は画面が破棄される可能性が高いため、
-      // 状態の更新は不要
+    if (userProfile == null) {
+      return;
     }
+
+    await ref.read(authServiceProvider).signOut();
+    await ref.read(currentAppSessionProvider.notifier).signOut();
   }
 }
