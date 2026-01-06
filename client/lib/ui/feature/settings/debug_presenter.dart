@@ -40,22 +40,20 @@ class DebugPresenter extends _$DebugPresenter {
   Future<void> logout() async {
     final currentState = await future;
 
-    // 処理中状態に設定
-    currentState.mapOrNull(
-      hasProfile: (state) {
-        this.state = AsyncData(
-          DebugState.processing(userProfile: state.userProfile),
-        );
-      },
+    final userProfile = currentState.maybeWhen(
+      hasProfile: (userProfile) => userProfile,
+      orElse: () => null,
+    );
+    if (userProfile == null) {
+      return;
+    }
+
+    state = AsyncData(
+      DebugState.processing(userProfile: userProfile),
     );
 
-    try {
-      await ref.read(authServiceProvider).signOut();
-      await ref.read(currentAppSessionProvider.notifier).signOut();
-    } finally {
-      // signOut後は画面が破棄される可能性が高いため、
-      // 状態の更新は不要
-    }
+    await ref.read(authServiceProvider).signOut();
+    await ref.read(currentAppSessionProvider.notifier).signOut();
   }
 
   /// アカウント削除処理
