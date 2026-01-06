@@ -7,8 +7,9 @@ import 'package:house_worker/data/repository/received_chat_string_count_reposito
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
-class DebugScreen extends ConsumerWidget {
+class DebugScreen extends StatelessWidget {
   const DebugScreen({super.key});
 
   static const name = 'DebugScreen';
@@ -20,61 +21,24 @@ class DebugScreen extends ConsumerWidget {
       );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final debugStateAsync = ref.watch(debugPresenterProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('デバッグ')),
       body: ListView(
-        children: [
-          const SectionHeader(title: 'Crashlytics'),
-          const _ForceErrorTile(),
-          const _ForceCrashTile(),
-          const SectionHeader(title: '設定リセット'),
-          const _ResetConfirmationSettingsTile(),
-          const SectionHeader(title: '統計設定'),
-          const _ResetReceivedChatCountAndAchievementsTile(),
-          const _SetReceivedChatCountTo999Tile(),
-          const _SetReceivedChatCountTo9999Tile(),
-          const Divider(),
-          const SectionHeader(title: 'アカウント管理'),
-          debugStateAsync.when(
-            data: (debugState) {
-              return debugState.when(
-                // 状態2: プロフィールがあることが確定（ボタン有効）
-                hasProfile: (userProfile) => const Column(
-                  children: [
-                    _LogoutTile(enabled: true),
-                    _DeleteAccountTile(enabled: true),
-                  ],
-                ),
-                // 状態3: 処理中（ボタン無効）
-                processing: (userProfile) => const Column(
-                  children: [
-                    _LogoutTile(enabled: false),
-                    _DeleteAccountTile(enabled: false),
-                  ],
-                ),
-                // プロフィールがない状態（ログアウトボタンのみ無効）
-                noProfile: () => const Column(
-                  children: [
-                    _LogoutTile(enabled: false),
-                  ],
-                ),
-              );
-            },
-            // 状態1: プロフィールがあるか未確定状態（スケルトン表示）
-            loading: () => const Column(
-              children: [
-                _LogoutTile(enabled: false),
-                _DeleteAccountTile(enabled: false),
-              ],
-            ),
-            error: (error, stack) => ListTile(
-              leading: const Icon(Icons.error),
-              title: Text('エラー: $error'),
-            ),
-          ),
+        children: const [
+          SectionHeader(title: 'Crashlytics'),
+          _ForceErrorTile(),
+          _ForceCrashTile(),
+          SectionHeader(title: '設定リセット'),
+          _ResetConfirmationSettingsTile(),
+          SectionHeader(title: '統計設定'),
+          _ResetReceivedChatCountAndAchievementsTile(),
+          _SetReceivedChatCountTo999Tile(),
+          _SetReceivedChatCountTo9999Tile(),
+          Divider(),
+          SectionHeader(title: 'アカウント管理'),
+          _LogoutTile(),
+          _DeleteAccountTile(),
         ],
       ),
     );
@@ -173,23 +137,36 @@ class _SetReceivedChatCountTo9999Tile extends ConsumerWidget {
 }
 
 class _LogoutTile extends ConsumerWidget {
-  const _LogoutTile({required this.enabled});
-
-  final bool enabled;
+  const _LogoutTile();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: Icon(
-        Icons.logout,
-        color: enabled ? Colors.red : Colors.grey,
+    final state = ref.watch(debugPresenterProvider);
+    final isProcessing = state.maybeMap(
+      loading: (_) => true,
+      orElse: () => false,
+    );
+    final isEnabled =
+        state.asData?.value.maybeWhen(
+          hasProfile: (_) => true,
+          orElse: () => false,
+        ) ??
+        false;
+
+    return Skeletonizer(
+      enabled: isProcessing,
+      child: ListTile(
+        leading: Icon(
+          Icons.logout,
+          color: isEnabled ? Colors.red : Colors.grey,
+        ),
+        title: Text(
+          'ログアウト',
+          style: TextStyle(color: isEnabled ? Colors.red : Colors.grey),
+        ),
+        enabled: isEnabled,
+        onTap: isEnabled ? () => _showLogoutConfirmDialog(context, ref) : null,
       ),
-      title: Text(
-        'ログアウト',
-        style: TextStyle(color: enabled ? Colors.red : Colors.grey),
-      ),
-      enabled: enabled,
-      onTap: enabled ? () => _showLogoutConfirmDialog(context, ref) : null,
     );
   }
 
@@ -229,25 +206,38 @@ class _LogoutTile extends ConsumerWidget {
 }
 
 class _DeleteAccountTile extends ConsumerWidget {
-  const _DeleteAccountTile({required this.enabled});
-
-  final bool enabled;
+  const _DeleteAccountTile();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: Icon(
-        Icons.delete_forever,
-        color: enabled ? Colors.red : Colors.grey,
+    final state = ref.watch(debugPresenterProvider);
+    final isProcessing = state.maybeMap(
+      loading: (_) => true,
+      orElse: () => false,
+    );
+    final enabled =
+        state.asData?.value.maybeWhen(
+          hasProfile: (_) => true,
+          orElse: () => false,
+        ) ??
+        false;
+
+    return Skeletonizer(
+      enabled: isProcessing,
+      child: ListTile(
+        leading: Icon(
+          Icons.delete_forever,
+          color: enabled ? Colors.red : Colors.grey,
+        ),
+        title: Text(
+          'アカウントを削除',
+          style: TextStyle(color: enabled ? Colors.red : Colors.grey),
+        ),
+        enabled: enabled,
+        onTap: enabled
+            ? () => _showDeleteAccountConfirmDialog(context, ref)
+            : null,
       ),
-      title: Text(
-        'アカウントを削除',
-        style: TextStyle(color: enabled ? Colors.red : Colors.grey),
-      ),
-      enabled: enabled,
-      onTap: enabled
-          ? () => _showDeleteAccountConfirmDialog(context, ref)
-          : null,
     );
   }
 
