@@ -19,7 +19,6 @@ import 'package:house_worker/ui/feature/settings/section_header.dart';
 import 'package:house_worker/ui/feature/settings/submit_feedback_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
-import 'package:house_worker/ui/root_presenter.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -73,10 +72,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SectionHeader(title: 'デバッグ'),
               _buildDebugTile(context),
               const _AppVersionTile(),
-              const Divider(),
-              const SectionHeader(title: 'アカウント管理'),
-              _buildLogoutTile(context, ref),
-              _buildDeleteAccountTile(context, ref, userProfile),
             ],
           );
         },
@@ -219,26 +214,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildLogoutTile(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: const Icon(Icons.logout, color: Colors.red),
-      title: const Text('ログアウト', style: TextStyle(color: Colors.red)),
-      onTap: () => _showLogoutConfirmDialog(context, ref),
-    );
-  }
-
-  Widget _buildDeleteAccountTile(
-    BuildContext context,
-    WidgetRef ref,
-    UserProfile userProfile,
-  ) {
-    return ListTile(
-      leading: const Icon(Icons.delete_forever, color: Colors.red),
-      title: const Text('アカウントを削除', style: TextStyle(color: Colors.red)),
-      onTap: () => _showDeleteAccountConfirmDialog(context, ref, userProfile),
-    );
-  }
-
   void _showAnonymousUserInfoDialog(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -363,78 +338,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('アカウントを連携しました')));
-  }
-
-  // ログアウト確認ダイアログ
-  void _showLogoutConfirmDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ログアウト'),
-        content: const Text('本当にログアウトしますか？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                await ref.read(authServiceProvider).signOut();
-                await ref.read(currentAppSessionProvider.notifier).signOut();
-              } on Exception catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('ログアウトに失敗しました: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('ログアウト'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // アカウント削除確認ダイアログ
-  void _showDeleteAccountConfirmDialog(
-    BuildContext context,
-    WidgetRef ref,
-    UserProfile userProfile,
-  ) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('アカウント削除'),
-        content: const Text('本当にアカウントを削除しますか？この操作は元に戻せません。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () async {
-              try {
-                // Firebase認証からのサインアウト
-                await ref.read(authServiceProvider).signOut();
-                await ref.read(currentAppSessionProvider.notifier).signOut();
-              } on Exception catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('アカウント削除に失敗しました: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('削除する'),
-          ),
-        ],
-      ),
-    );
   }
 }
 
