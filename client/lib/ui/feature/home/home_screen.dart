@@ -613,7 +613,7 @@ class _UserChatBubble extends ConsumerWidget {
   }
 }
 
-class _AiChatBubble extends ConsumerWidget {
+class _AiChatBubble extends ConsumerStatefulWidget {
   const _AiChatBubble({
     required this.message,
     required this.cavivaraId,
@@ -623,15 +623,93 @@ class _AiChatBubble extends ConsumerWidget {
   final String cavivaraId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cavivaraProfile = ref.watch(cavivaraByIdProvider(cavivaraId));
+  ConsumerState<_AiChatBubble> createState() => _AiChatBubbleState();
+}
+
+class _AiChatBubbleState extends ConsumerState<_AiChatBubble>
+    with TickerProviderStateMixin {
+  late AnimationController _bubbleAnimationController;
+  late Animation<double> _bubbleFadeAnimation;
+  late Animation<Offset> _bubbleSlideAnimation;
+
+  late AnimationController _textAnimationController;
+  late Animation<double> _textFadeAnimation;
+
+  bool _hasTextAnimated = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // バブル全体のアニメーション
+    _bubbleAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _bubbleFadeAnimation = CurvedAnimation(
+      parent: _bubbleAnimationController,
+      curve: Curves.easeOut,
+    );
+
+    _bubbleSlideAnimation =
+        Tween<Offset>(
+          begin: const Offset(-0.1, 0),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _bubbleAnimationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    // テキストのフェードインアニメーション
+    _textAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _textFadeAnimation = CurvedAnimation(
+      parent: _textAnimationController,
+      curve: Curves.easeIn,
+    );
+
+    _bubbleAnimationController.forward();
+
+    // テキストアニメーションを開始（ストリーミング中でも）
+    _textAnimationController.forward();
+  }
+
+  @override
+  void didUpdateWidget(_AiChatBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // メッセージがストリーミング完了したら、アニメーション済みとしてマーク
+    if (oldWidget.message.isStreaming && !widget.message.isStreaming) {
+      if (!_hasTextAnimated) {
+        setState(() {
+          _hasTextAnimated = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _bubbleAnimationController.dispose();
+    _textAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cavivaraProfile = ref.watch(cavivaraByIdProvider(widget.cavivaraId));
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
     final textColor = Theme.of(context).colorScheme.onSurface;
     final indicatorColor = Theme.of(context).colorScheme.primary;
 
     Widget bodyText;
-    if (message.isStreaming && message.content.isEmpty) {
+    if (widget.message.isStreaming && widget.message.content.isEmpty) {
       bodyText = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -653,14 +731,27 @@ class _AiChatBubble extends ConsumerWidget {
         ],
       );
     } else {
-      final textWidget = Text(
-        message.content,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: textColor,
-        ),
+      final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: textColor,
       );
 
-      if (message.isStreaming) {
+      // まだアニメーションしていない場合はフェードイン効果（ストリーミング中も含む）
+      final shouldAnimate = !_hasTextAnimated;
+
+      final textWidget = shouldAnimate
+          ? FadeTransition(
+              opacity: _textFadeAnimation,
+              child: Text(
+                widget.message.content,
+                style: textStyle,
+              ),
+            )
+          : Text(
+              widget.message.content,
+              style: textStyle,
+            );
+
+      if (widget.message.isStreaming) {
         bodyText = Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -681,7 +772,7 @@ class _AiChatBubble extends ConsumerWidget {
       }
     }
 
-    final timeText = _TimestampText(timestamp: message.timestamp);
+    final timeText = _TimestampText(timestamp: widget.message.timestamp);
 
     final bubbleColor = Theme.of(context).colorScheme.surfaceContainer;
 
@@ -711,32 +802,39 @@ class _AiChatBubble extends ConsumerWidget {
 
     final avatar = CavivaraAvatar(
       assetPath: cavivaraProfile.iconPath,
-      cavivaraId: cavivaraId,
+      cavivaraId: widget.cavivaraId,
       onTap: () => Navigator.of(context).push(
-        ResumeScreen.route(cavivaraId),
+        ResumeScreen.route(widget.cavivaraId),
       ),
     );
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          avatar,
-          const SizedBox(width: 8),
-          Flexible(
-            child: Skeletonizer(
-              enabled: designAsync.isLoading,
-              child: bubbleWithPointer,
-            ),
+    return FadeTransition(
+      opacity: _bubbleFadeAnimation,
+      child: SlideTransition(
+        position: _bubbleSlideAnimation,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              avatar,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Skeletonizer(
+                  enabled: designAsync.isLoading,
+                  child: bubbleWithPointer,
+                ),
+              ),
+              if (!widget.message.isStreaming ||
+                  widget.message.content.isNotEmpty) ...[
+                const SizedBox(width: 4),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: timeText,
+                ),
+              ],
+            ],
           ),
-          if (!message.isStreaming || message.content.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: timeText,
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
