@@ -4,11 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/resume_viewing_duration_repository.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
-import 'package:house_worker/data/service/employment_state_service.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
-import 'package:house_worker/ui/component/fire_confirmation_dialog.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
-import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
 
 class ResumeScreen extends ConsumerStatefulWidget {
   const ResumeScreen({super.key, required this.cavivaraId});
@@ -67,8 +64,6 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cavivaraProfile = ref.watch(cavivaraByIdProvider(widget.cavivaraId));
-    final isEmployed = ref.watch(isEmployedProvider(widget.cavivaraId));
-    final employmentStateNotifier = ref.read(employmentStateProvider.notifier);
 
     Widget sectionTitle(String text) {
       return Text(
@@ -191,7 +186,7 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
               ],
             ),
           ),
-          // 画面下部に固定表示される雇用ボタン
+          // 画面下部に固定表示される会議ボタン
           Container(
             color: theme.colorScheme.surface,
             padding: EdgeInsets.only(
@@ -200,81 +195,14 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
               top: 16,
               bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 8,
-              children: [
-                if (isEmployed) ...[
-                  OutlinedButton.icon(
-                    onPressed: _navigateToChat,
-                    icon: const Icon(Icons.chat),
-                    label: const Text('会議する'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final confirmed = await _showFireConfirmationDialog();
-                      if (!confirmed) {
-                        return;
-                      }
-
-                      await _fireAndNavigateToJobMarket(
-                        employmentStateNotifier,
-                      );
-                    },
-                    icon: const Icon(Icons.work_off),
-                    label: const Text('解雇する'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.onError,
-                      backgroundColor: theme.colorScheme.error,
-                    ),
-                  ),
-                ] else ...[
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await _hireAndNavigateToChat(
-                        employmentStateNotifier,
-                      );
-                    },
-                    icon: const Icon(Icons.work),
-                    label: const Text('雇用する'),
-                  ),
-                ],
-              ],
+            child: OutlinedButton.icon(
+              onPressed: _navigateToChat,
+              icon: const Icon(Icons.chat),
+              label: const Text('会議する'),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  /// 雇用してチャット画面に遷移
-  Future<void> _hireAndNavigateToChat(
-    EmploymentState employmentStateNotifier,
-  ) async {
-    await employmentStateNotifier.hire(widget.cavivaraId);
-    if (!mounted) {
-      return;
-    }
-
-    await Navigator.of(context).pushAndRemoveUntil(
-      HomeScreen.route(widget.cavivaraId),
-      (route) => false,
-    );
-  }
-
-  /// 解雇して転職市場画面に戻る
-  Future<void> _fireAndNavigateToJobMarket(
-    EmploymentState employmentStateNotifier,
-  ) async {
-    await employmentStateNotifier.fire(widget.cavivaraId);
-    if (!mounted) {
-      return;
-    }
-
-    await Navigator.of(context).pushAndRemoveUntil(
-      JobMarketScreen.route(),
-      (route) => false,
     );
   }
 
@@ -284,18 +212,5 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
       HomeScreen.route(widget.cavivaraId),
       (route) => false,
     );
-  }
-
-  Future<bool> _showFireConfirmationDialog() async {
-    if (!mounted) {
-      return false;
-    }
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => const FireConfirmationDialog(),
-    );
-
-    return result ?? false;
   }
 }
