@@ -195,13 +195,17 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
               top: 16,
               bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _navigateToChat,
-                icon: const Icon(Icons.chat),
-                label: const Text('会議する'),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _navigateToChat,
+                  icon: const Icon(Icons.chat),
+                  label: const Text('会議する'),
+                ),
+              ],
             ),
           ),
         ],
