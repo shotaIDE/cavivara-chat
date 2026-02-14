@@ -131,6 +131,18 @@ class _CavivaraListItem extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _navigateToChat(context),
+                      icon: const Icon(Icons.chat),
+                      label: const Text('相談する'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -141,5 +153,13 @@ class _CavivaraListItem extends StatelessWidget {
   /// 履歴書画面に遷移
   void _navigateToResume(BuildContext context) {
     Navigator.of(context).push(ResumeScreen.route(cavivaraId));
+  }
+
+  /// チャット画面に遷移
+  void _navigateToChat(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      HomeScreen.route(cavivaraId),
+      (route) => false,
+    );
   }
 }
