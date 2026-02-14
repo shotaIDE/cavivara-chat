@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/resume_viewing_duration_repository.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
+import 'package:house_worker/ui/feature/home/home_screen.dart';
 
 class ResumeScreen extends ConsumerStatefulWidget {
   const ResumeScreen({super.key, required this.cavivaraId});
@@ -185,8 +186,31 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
               ],
             ),
           ),
+          // 画面下部に固定表示される会議ボタン
+          Container(
+            color: theme.colorScheme.surface,
+            padding: EdgeInsets.only(
+              left: 16 + MediaQuery.of(context).viewPadding.left,
+              right: 16 + MediaQuery.of(context).viewPadding.right,
+              top: 16,
+              bottom: 16 + MediaQuery.of(context).viewPadding.bottom,
+            ),
+            child: OutlinedButton.icon(
+              onPressed: _navigateToChat,
+              icon: const Icon(Icons.chat),
+              label: const Text('会議する'),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  /// チャット画面に遷移
+  void _navigateToChat() {
+    Navigator.of(context).pushAndRemoveUntil(
+      HomeScreen.route(widget.cavivaraId),
+      (route) => false,
     );
   }
 }
