@@ -39,23 +39,5 @@ void main() {
       // ウィジェットが正常に作成されることを確認
       expect(find.byType(ResumeScreen), findsOneWidget);
     });
-
-    testWidgets(
-      'handles valid cavivara id correctly',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(
-          const ProviderScope(
-            child: MaterialApp(
-              home: ResumeScreen(cavivaraId: testCavivaraId),
-            ),
-          ),
-        );
-
-        await tester.pumpAndSettle();
-
-        // 履歴書画面が正常に表示されることを確認
-        expect(find.byType(ResumeScreen), findsOneWidget);
-      },
-    );
   });
 }
