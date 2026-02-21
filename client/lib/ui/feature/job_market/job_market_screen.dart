@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
-import 'package:house_worker/data/service/employment_state_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
@@ -23,10 +22,7 @@ class JobMarketScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allCavivaras = ref.watch(cavivaraDirectoryProvider);
-    final employmentState = ref.watch(employmentStateProvider);
-    final defaultCavivaraId = employmentState.isNotEmpty
-        ? employmentState.first
-        : HomeScreen.defaultCavivaraId;
+    const defaultCavivaraId = HomeScreen.defaultCavivaraId;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,7 +66,6 @@ class JobMarketScreen extends ConsumerWidget {
               displayName: cavivara.displayName,
               title: cavivara.title,
               iconPath: cavivara.iconPath,
-              isEmployed: employmentState.contains(cavivara.id),
             ),
             const SizedBox(height: 16),
           ],
@@ -86,14 +81,12 @@ class _CavivaraListItem extends StatelessWidget {
     required this.displayName,
     required this.title,
     required this.iconPath,
-    required this.isEmployed,
   });
 
   final String cavivaraId;
   final String displayName;
   final String title;
   final String iconPath;
-  final bool isEmployed;
 
   @override
   Widget build(BuildContext context) {
@@ -133,44 +126,11 @@ class _CavivaraListItem extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        if (isEmployed) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '雇用中',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
                 ],
               ),
-              if (isEmployed) ...[
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _navigateToChat(context),
-                        icon: const Icon(Icons.chat),
-                        label: const Text('相談する'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
@@ -181,13 +141,5 @@ class _CavivaraListItem extends StatelessWidget {
   /// 履歴書画面に遷移
   void _navigateToResume(BuildContext context) {
     Navigator.of(context).push(ResumeScreen.route(cavivaraId));
-  }
-
-  /// チャット画面に遷移
-  void _navigateToChat(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      HomeScreen.route(cavivaraId),
-      (route) => false,
-    );
   }
 }
