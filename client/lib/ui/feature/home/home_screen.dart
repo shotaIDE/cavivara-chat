@@ -309,9 +309,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
   @override
   void dispose() {
-    widget.controller
-      ..removeListener(_onScroll)
-      ..dispose();
+    widget.controller.removeListener(_onScroll);
     super.dispose();
   }
 
