@@ -318,7 +318,7 @@ class AiChatService {
     }
 
     // 正規表現でも抽出できなかった場合は元のテキストを使用
-    _logger.warning('contentフィールドの抽出に失敗しました');
+    _logger.fine('contentフィールドの抽出に失敗しました');
     return jsonText;
   }
 
