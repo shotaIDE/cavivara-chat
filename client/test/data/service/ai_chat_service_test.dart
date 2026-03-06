@@ -41,6 +41,31 @@ void main() {
       });
     });
 
+    group('extractContentFromJson', () {
+      test('正常なJSONからcontentを抽出できること', () {
+        const json = '{"content": "こんにちは", "suggestedReplies": ["はい"]}';
+        expect(service.extractContentFromJson(json), equals('こんにちは'));
+      });
+
+      test('不完全なJSONからcontentを抽出できること', () {
+        const json = '{"content": "時短レシピですね", "suggestedReplies": [';
+        expect(service.extractContentFromJson(json), equals('時短レシピですね'));
+      });
+
+      test('エスケープ文字を正しくデコードできること', () {
+        const json = r'{"content": "改行\nタブ\tダブルクォート\""}';
+        expect(
+          service.extractContentFromJson(json),
+          equals('改行\nタブ\tダブルクォート"'),
+        );
+      });
+
+      test('contentフィールドがない場合は元のテキストを返すこと', () {
+        const json = '{"message": "テスト"}';
+        expect(service.extractContentFromJson(json), equals(json));
+      });
+    });
+
     group('Function call depth limit validation', () {
       test('深度制限の定数が適切に設定されていること', () {
         // コードレビューによる確認：
