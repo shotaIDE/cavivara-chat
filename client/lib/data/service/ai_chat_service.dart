@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_ai/firebase_ai.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
@@ -220,11 +221,13 @@ class AiChatService {
           // パースしたAiResponseを送信
           controller.add(aiResponse);
         } on Exception catch (e, stackTrace) {
-          _logger.warning('JSONパースに失敗、テキストとして扱います: $e');
+          _logger.warning('JSONパースに失敗、テキストから抽出を試みます: $e');
           unawaited(errorReportService.recordError(e, stackTrace));
-          // パースに失敗した場合は、テキストをそのままcontentとして扱う
+
+          // パースに失敗した場合、正規表現でcontentフィールドを抽出を試みる
+          final extractedContent = extractContentFromJson(fullJsonText);
           controller.add(
-            AiResponse(content: fullJsonText),
+            AiResponse(content: extractedContent),
           );
         }
       }
@@ -289,6 +292,34 @@ class AiChatService {
 
   Map<String, dynamic> _resolveFunctionArguments(FunctionCall functionCall) {
     return functionCall.args;
+  }
+
+  /// 不完全なJSONテキストからcontentフィールドの値を抽出する
+  ///
+  /// AIがResponse Schemaに従わない形式で返した場合や、
+  /// JSONが途中で切れている場合のフォールバック処理
+  @visibleForTesting
+  String extractContentFromJson(String jsonText) {
+    // "content": "..." の形式でcontentフィールドを抽出
+    // JSON文字列内のエスケープ文字を考慮
+    final contentMatch = RegExp(
+      r'"content"\s*:\s*"((?:[^"\\]|\\.)*)"',
+      dotAll: true,
+    ).firstMatch(jsonText);
+
+    if (contentMatch != null) {
+      final extractedContent = contentMatch.group(1) ?? jsonText;
+      // JSON文字列のエスケープをデコード
+      return extractedContent
+          .replaceAll(r'\n', '\n')
+          .replaceAll(r'\t', '\t')
+          .replaceAll(r'\"', '"')
+          .replaceAll(r'\\', '\\');
+    }
+
+    // 正規表現でも抽出できなかった場合は元のテキストを使用
+    _logger.warning('contentフィールドの抽出に失敗しました');
+    return jsonText;
   }
 
   /// ChatMessageのリストをFirebase AI用のContentリストに変換
