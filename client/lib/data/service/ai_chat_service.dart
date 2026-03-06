@@ -224,7 +224,7 @@ class AiChatService {
           _logger.warning('JSONパースに失敗、テキストから抽出を試みます: $e');
           unawaited(errorReportService.recordError(e, stackTrace));
 
-          // パースに失敗した場合、正規表現でcontentフィールドを抽出を試みる
+          // パースに失敗した場合、正規表現でcontentフィールドの抽出を試みる
           final extractedContent = extractContentFromJson(fullJsonText);
           controller.add(
             AiResponse(content: extractedContent),
