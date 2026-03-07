@@ -10,4 +10,5 @@ enum PreferenceKey {
   chatBubbleDesign,
   totalVivaPoint,
   supportHistoryList,
+  hasReceivedFirstMessageBonus,
 }

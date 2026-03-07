@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:characters/characters.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
+import 'package:house_worker/data/model/supporter_title.dart';
+import 'package:house_worker/data/repository/first_message_bonus_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/last_talked_cavivara_id_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
+import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
 import 'package:house_worker/ui/component/heads_up_notification_presenter.dart';
+import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -235,6 +239,60 @@ class SuggestedReplies extends _$SuggestedReplies {
   /// サジェストをクリア
   void clear() {
     state = [];
+  }
+}
+
+/// 初回メッセージボーナスのVP
+const _firstMessageBonusVP = 10;
+
+@riverpod
+class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
+  @override
+  void build() {
+    ref.listen(
+      sentChatStringCountRepositoryProvider,
+      (previous, next) {
+        final previousValue = previous?.whenOrNull(data: (value) => value);
+        final currentValue = next.whenOrNull(data: (value) => value);
+
+        // 初回メッセージ送信を検知（0から1以上への変化）
+        if (previousValue == 0 && currentValue != null && currentValue > 0) {
+          _handleFirstMessageSent();
+        }
+      },
+    );
+  }
+
+  Future<void> _handleFirstMessageSent() async {
+    // 既にボーナスを受け取っている場合はスキップ
+    final hasReceived = await ref.read(
+      firstMessageBonusRepositoryProvider.future,
+    );
+    if (hasReceived) {
+      return;
+    }
+
+    // ボーナスを付与
+    final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
+    final currentVP = await ref.read(vivaPointRepositoryProvider.future);
+    final newTotalVP = currentVP + _firstMessageBonusVP;
+    await vivaPointRepository.setPoint(newTotalVP);
+
+    // ボーナス付与済みとしてマーク
+    await ref
+        .read(firstMessageBonusRepositoryProvider.notifier)
+        .markAsReceived();
+
+    // 新しい称号を取得
+    final newTitle = SupporterTitleLogic.fromTotalVP(newTotalVP);
+
+    // 通知を表示
+    ref
+        .read(headsUpNotificationProvider.notifier)
+        .showFirstMessageBonus(
+          earnedVP: _firstMessageBonusVP,
+          newTitleName: newTitle.displayName,
+        );
   }
 }
 

@@ -14,6 +14,12 @@ sealed class HeadsUpNotificationState with _$HeadsUpNotificationState {
   const factory HeadsUpNotificationState.visible(
     CavivaraReward reward,
   ) = _Visible;
+
+  /// 初回メッセージボーナスの通知
+  const factory HeadsUpNotificationState.firstMessageBonus({
+    required int earnedVP,
+    required String newTitleName,
+  }) = _FirstMessageBonus;
 }
 
 @riverpod
@@ -31,6 +37,19 @@ class HeadsUpNotification extends _$HeadsUpNotification {
   void show(CavivaraReward reward) {
     _dismissTimer?.cancel();
     state = HeadsUpNotificationState.visible(reward);
+    _dismissTimer = Timer(const Duration(seconds: 5), hide);
+  }
+
+  /// 初回メッセージボーナスの通知を表示
+  void showFirstMessageBonus({
+    required int earnedVP,
+    required String newTitleName,
+  }) {
+    _dismissTimer?.cancel();
+    state = HeadsUpNotificationState.firstMessageBonus(
+      earnedVP: earnedVP,
+      newTitleName: newTitleName,
+    );
     _dismissTimer = Timer(const Duration(seconds: 5), hide);
   }
 
