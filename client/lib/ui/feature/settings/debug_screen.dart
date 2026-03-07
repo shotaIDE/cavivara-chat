@@ -5,6 +5,7 @@ import 'package:house_worker/data/repository/first_message_bonus_repository.dart
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
+import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
@@ -37,6 +38,7 @@ class DebugScreen extends StatelessWidget {
           _ResetReceivedChatCountAndAchievementsTile(),
           _SetReceivedChatCountTo999Tile(),
           _SetReceivedChatCountTo9999Tile(),
+          _ResetSentChatCountTile(),
           Divider(),
           SectionHeader(title: 'VP設定'),
           _ResetVPTile(),
@@ -395,6 +397,27 @@ class _SetVPToCustomValueTile extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ResetSentChatCountTile extends ConsumerWidget {
+  const _ResetSentChatCountTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      title: const Text('送信チャット文字数をリセット'),
+      onTap: () async {
+        await ref
+            .read(sentChatStringCountRepositoryProvider.notifier)
+            .resetForDebug();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('送信チャット文字数をリセットしました')),
+          );
+        }
+      },
     );
   }
 }

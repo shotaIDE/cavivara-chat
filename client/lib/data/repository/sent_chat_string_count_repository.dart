@@ -34,4 +34,18 @@ class SentChatStringCountRepository extends _$SentChatStringCountRepository {
     }
     state = AsyncValue.data(updated);
   }
+
+  /// デバッグ用リセット
+  Future<void> resetForDebug() async {
+    final preferenceService = ref.read(preferenceServiceProvider);
+    await preferenceService.setInt(
+      PreferenceKey.totalSentChatStringCount,
+      value: 0,
+    );
+
+    if (!ref.mounted) {
+      return;
+    }
+    state = const AsyncValue.data(0);
+  }
 }
