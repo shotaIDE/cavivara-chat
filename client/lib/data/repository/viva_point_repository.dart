@@ -17,10 +17,6 @@ class VivaPointRepository extends _$VivaPointRepository {
 
   /// VPを設定
   Future<void> setPoint(int point) async {
-    if (!ref.mounted) {
-      return;
-    }
-
     final preferenceService = ref.read(preferenceServiceProvider);
 
     await preferenceService.setInt(
@@ -37,10 +33,6 @@ class VivaPointRepository extends _$VivaPointRepository {
 
   /// VPをリセット (デバッグ用)
   Future<void> reset() async {
-    if (!ref.mounted) {
-      return;
-    }
-
     final preferenceService = ref.read(preferenceServiceProvider);
 
     await preferenceService.setInt(
