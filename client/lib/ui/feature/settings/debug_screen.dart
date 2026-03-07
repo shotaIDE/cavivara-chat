@@ -1,6 +1,7 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/repository/first_message_bonus_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
@@ -40,6 +41,7 @@ class DebugScreen extends StatelessWidget {
           SectionHeader(title: 'VP設定'),
           _ResetVPTile(),
           _SetVPToCustomValueTile(),
+          _ResetFirstMessageBonusTile(),
           Divider(),
           SectionHeader(title: 'アカウント管理'),
           _LogoutTile(),
@@ -393,6 +395,27 @@ class _SetVPToCustomValueTile extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ResetFirstMessageBonusTile extends ConsumerWidget {
+  const _ResetFirstMessageBonusTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      title: const Text('初回メッセージボーナス受取状態をリセット'),
+      onTap: () async {
+        await ref
+            .read(firstMessageBonusRepositoryProvider.notifier)
+            .resetForDebug();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('初回メッセージボーナスをリセットしました')),
+          );
+        }
+      },
     );
   }
 }
