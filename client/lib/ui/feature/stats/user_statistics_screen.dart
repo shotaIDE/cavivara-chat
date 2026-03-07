@@ -10,6 +10,9 @@ import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
+import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
+import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
+import 'package:house_worker/ui/feature/settings/supporter_title_badge.dart';
 import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
 
 class UserStatisticsScreen extends ConsumerWidget {
@@ -77,6 +80,7 @@ class UserStatisticsScreen extends ConsumerWidget {
         ),
         child: _buildStatisticsContent(
           context,
+          ref,
           sentCount,
           receivedCount,
           resumeDuration,
@@ -87,6 +91,7 @@ class UserStatisticsScreen extends ConsumerWidget {
 
   Widget _buildStatisticsContent(
     BuildContext context,
+    WidgetRef ref,
     AsyncValue<int> sentCount,
     AsyncValue<int> receivedCount,
     AsyncValue<Duration> resumeDuration,
@@ -115,8 +120,14 @@ class UserStatisticsScreen extends ConsumerWidget {
     final duration = resumeDuration.value ?? Duration.zero;
     final theme = Theme.of(context);
 
+    // サポーター情報を取得
+    final supporterState = ref.watch(supportCavivaraPresenterProvider);
+
     return ListView(
       children: [
+        // 累計VPとサポーター称号セクション
+        _buildSupporterSection(context, supporterState),
+        const SizedBox(height: 32),
         _StatisticsTile(
           title: 'チャットを送信した文字数',
           value: '$sent文字',
@@ -149,6 +160,52 @@ class UserStatisticsScreen extends ConsumerWidget {
           if (reward != CavivaraReward.values.last) const SizedBox(height: 12),
         ],
       ],
+    );
+  }
+
+  Widget _buildSupporterSection(
+    BuildContext context,
+    AsyncValue<SupportCavivaraState> supporterState,
+  ) {
+    final theme = Theme.of(context);
+
+    return supporterState.when(
+      data: (state) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 累計VP表示
+          Text(
+            '累計: ${state.totalVP}VP',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 現在の称号バッジ
+          SupporterTitleBadge(
+            title: state.currentTitle,
+            showDescription: true,
+          ),
+          const SizedBox(height: 16),
+
+          // 応援画面へのナビゲーションボタン
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(SupportCavivaraScreen.route());
+              },
+              icon: const Icon(Icons.favorite),
+              label: const Text('カヴィヴァラを応援する'),
+            ),
+          ),
+        ],
+      ),
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
