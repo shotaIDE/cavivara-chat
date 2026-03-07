@@ -46,6 +46,11 @@ class HeadsUpNotificationOverlay extends ConsumerWidget {
                     reward: notification,
                     onTap: onTapNotification,
                   ),
+                  firstMessageBonus: (earnedVP, newTitleName) =>
+                      _FirstMessageBonusNotificationBody(
+                        earnedVP: earnedVP,
+                        newTitleName: newTitleName,
+                      ),
                 ),
               ),
             ),
@@ -107,6 +112,59 @@ class _HeadsUpNotificationBody extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FirstMessageBonusNotificationBody extends StatelessWidget {
+  const _FirstMessageBonusNotificationBody({
+    required this.earnedVP,
+    required this.newTitleName,
+  });
+
+  final int earnedVP;
+  final String newTitleName;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = Text(
+      '称号を獲得しました',
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+
+    final message = Text(
+      '+$earnedVP VP で $newTitleName になりました！',
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
+
+    return Material(
+      elevation: 6,
+      borderRadius: BorderRadius.circular(16),
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.stars,
+              size: 28,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 4,
+                children: [
+                  title,
+                  message,
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
