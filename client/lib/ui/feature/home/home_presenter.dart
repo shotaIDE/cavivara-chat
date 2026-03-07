@@ -249,6 +249,10 @@ const _firstMessageBonusVP = 10;
 class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
   @override
   void build() {
+    // vivaPointRepositoryへの依存関係を作成し、参照を保持
+    ref.watch(vivaPointRepositoryProvider);
+    final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
+
     ref.listen(
       sentChatStringCountRepositoryProvider,
       (previous, next) {
@@ -257,13 +261,15 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
 
         // 初回メッセージ送信を検知（0から1以上への変化）
         if (previousValue == 0 && currentValue != null && currentValue > 0) {
-          _handleFirstMessageSent();
+          _handleFirstMessageSent(vivaPointRepository);
         }
       },
     );
   }
 
-  Future<void> _handleFirstMessageSent() async {
+  Future<void> _handleFirstMessageSent(
+    VivaPointRepository vivaPointRepository,
+  ) async {
     // 既にボーナスを受け取っている場合はスキップ
     final hasReceived = await ref.read(
       firstMessageBonusRepositoryProvider.future,
@@ -273,7 +279,6 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
     }
 
     // ボーナスを付与
-    final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
     final currentVP = await ref.read(vivaPointRepositoryProvider.future);
     final newTotalVP = currentVP + _firstMessageBonusVP;
     await vivaPointRepository.setPoint(newTotalVP);
