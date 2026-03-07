@@ -5,6 +5,7 @@ import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
+import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -35,6 +36,10 @@ class DebugScreen extends StatelessWidget {
           _ResetReceivedChatCountAndAchievementsTile(),
           _SetReceivedChatCountTo999Tile(),
           _SetReceivedChatCountTo9999Tile(),
+          Divider(),
+          SectionHeader(title: 'VP設定'),
+          _ResetVPTile(),
+          _SetVPToCustomValueTile(),
           Divider(),
           SectionHeader(title: 'アカウント管理'),
           _LogoutTile(),
@@ -276,6 +281,138 @@ class _DeleteAccountTile extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ResetVPTile extends ConsumerWidget {
+  const _ResetVPTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      title: const Text('VPをリセット (0に戻す)'),
+      onTap: () async {
+        await ref.read(vivaPointRepositoryProvider.notifier).reset();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('VPを0にリセットしました')),
+          );
+        }
+      },
+    );
+  }
+}
+
+class _SetVPToCustomValueTile extends ConsumerWidget {
+  const _SetVPToCustomValueTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentVP = ref.watch(vivaPointRepositoryProvider).asData?.value ?? 0;
+
+    return ListTile(
+      title: const Text('VPを任意の値に設定'),
+      subtitle: Text('現在: $currentVP VP'),
+      onTap: () => _showSetVPDialog(context, ref, currentVP),
+    );
+  }
+
+  void _showSetVPDialog(BuildContext context, WidgetRef ref, int currentVP) {
+    final controller = TextEditingController(text: currentVP.toString());
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('VPを設定'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'VP',
+                hintText: '0以上の整数を入力',
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _QuickSetButton(label: '0', value: 0, controller: controller),
+                _QuickSetButton(label: '9', value: 9, controller: controller),
+                _QuickSetButton(label: '29', value: 29, controller: controller),
+                _QuickSetButton(label: '69', value: 69, controller: controller),
+                _QuickSetButton(
+                  label: '149',
+                  value: 149,
+                  controller: controller,
+                ),
+                _QuickSetButton(
+                  label: '299',
+                  value: 299,
+                  controller: controller,
+                ),
+                _QuickSetButton(
+                  label: '500',
+                  value: 500,
+                  controller: controller,
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final value = int.tryParse(controller.text);
+              if (value == null || value < 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('0以上の整数を入力してください')),
+                );
+                return;
+              }
+              await ref
+                  .read(vivaPointRepositoryProvider.notifier)
+                  .setPoint(value);
+              if (context.mounted) {
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('VPを$valueに設定しました')),
+                );
+              }
+            },
+            child: const Text('設定'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickSetButton extends StatelessWidget {
+  const _QuickSetButton({
+    required this.label,
+    required this.value,
+    required this.controller,
+  });
+
+  final String label;
+  final int value;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () => controller.text = value.toString(),
+      child: Text(label),
     );
   }
 }
