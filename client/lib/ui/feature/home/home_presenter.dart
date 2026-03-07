@@ -4,7 +4,6 @@ import 'package:characters/characters.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
-import 'package:house_worker/data/repository/first_message_bonus_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/last_talked_cavivara_id_repository.dart';
@@ -270,23 +269,10 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
   Future<void> _handleFirstMessageSent(
     VivaPointRepository vivaPointRepository,
   ) async {
-    // 既にボーナスを受け取っている場合はスキップ
-    final hasReceived = await ref.read(
-      firstMessageBonusRepositoryProvider.future,
-    );
-    if (hasReceived) {
-      return;
-    }
-
     // ボーナスを付与
     final currentVP = await ref.read(vivaPointRepositoryProvider.future);
     final newTotalVP = currentVP + _firstMessageBonusVP;
     await vivaPointRepository.setPoint(newTotalVP);
-
-    // ボーナス付与済みとしてマーク
-    await ref
-        .read(firstMessageBonusRepositoryProvider.notifier)
-        .markAsReceived();
 
     // 新しい称号を取得
     final newTitle = SupporterTitleLogic.fromTotalVP(newTotalVP);
