@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 
 /// 個々のサジェストボタンを表示するWidget
 class SuggestedReplyButton extends StatelessWidget {
@@ -25,10 +24,7 @@ class SuggestedReplyButton extends StatelessWidget {
 
     return ActionChip(
       label: bodyText,
-      onPressed: () {
-        HapticFeedbackHelper.onSuggestionTap();
-        onTap();
-      },
+      onPressed: onTap,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),

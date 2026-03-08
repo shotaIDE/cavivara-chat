@@ -66,4 +66,16 @@ abstract final class HapticFeedbackHelper {
   static void onToggle() {
     HapticFeedback.selectionClick();
   }
+
+  /// メッセージ受信開始時のフィードバック（2回振動）
+  static Future<void> onMessageReceiveStart() async {
+    await HapticFeedback.heavyImpact();
+    await Future<void>.delayed(const Duration(milliseconds: 70));
+    await HapticFeedback.heavyImpact();
+  }
+
+  /// メッセージ受信完了時のフィードバック（1回振動）
+  static void onMessageReceiveComplete() {
+    HapticFeedback.heavyImpact();
+  }
 }
