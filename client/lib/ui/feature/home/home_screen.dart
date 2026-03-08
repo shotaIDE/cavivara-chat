@@ -310,6 +310,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
   bool _isAtBottom = true;
   int _previousMessageCount = 0;
   bool _previousHasStreamingMessages = false;
+  bool _previousStreamingMessageHadContent = false;
 
   @override
   void initState() {
@@ -354,11 +355,35 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
       (ChatMessage message) => message.isStreaming,
     );
 
+    // ストリーミング中のメッセージがコンテンツを持っているかどうか
+    final streamingMessageHasContent = messages.any(
+      (ChatMessage message) =>
+          message.isStreaming && message.content.isNotEmpty,
+    );
+
+    // コンテンツ受信開始を検知（前回コンテンツなし→今回コンテンツあり）
+    final isContentReceiveStarted =
+        !_previousStreamingMessageHadContent && streamingMessageHasContent;
+    // ストリーミング完了を検知（前回あり→今回なし）
+    final isStreamingCompleted =
+        _previousHasStreamingMessages && !hasStreamingMessages;
+    // ストリーミング完了時に初めてコンテンツを受信した場合を検知
+    // （ストリーミング中にコンテンツが一度も表示されず、完了時に初めて表示された場合）
+    final isContentReceivedOnCompletion =
+        isStreamingCompleted && !_previousStreamingMessageHadContent;
+
+    // Haptic Feedbackを発生させる
+    // 両者が同時のタイミングだったら、2回振動を優先させる
+    if (isContentReceiveStarted || isContentReceivedOnCompletion) {
+      unawaited(HapticFeedbackHelper.onMessageReceiveStart());
+    } else if (isStreamingCompleted) {
+      HapticFeedbackHelper.onMessageReceiveComplete();
+    }
+
     // メッセージ数が増えた場合、またはストリーミングが終了した場合で、ユーザーが最下部にいる場合のみ自動スクロール
     final shouldAutoScroll =
         _isAtBottom &&
-        (messages.length > _previousMessageCount ||
-            (_previousHasStreamingMessages && !hasStreamingMessages));
+        (messages.length > _previousMessageCount || isStreamingCompleted);
 
     if (shouldAutoScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -368,6 +393,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
     _previousMessageCount = messages.length;
     _previousHasStreamingMessages = hasStreamingMessages;
+    _previousStreamingMessageHadContent = streamingMessageHasContent;
 
     if (messages.isEmpty) {
       return Align(
