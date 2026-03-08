@@ -12,6 +12,7 @@ import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/color.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
@@ -136,6 +137,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       leading: const Icon(Icons.share),
       title: const Text('友達に教える'),
       onTap: () {
+        HapticFeedbackHelper.lightImpact();
         // シェア機能
         SharePlus.instance.share(
           ShareParams(
@@ -153,6 +155,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: const Text('利用規約'),
       trailing: const _OpenTrailingIcon(),
       onTap: () async {
+        HapticFeedbackHelper.lightImpact();
         // 利用規約ページへのリンク
         final url = Uri.parse('https://example.com/terms');
         if (await canLaunchUrl(url)) {
@@ -174,6 +177,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: const Text('プライバシーポリシー'),
       trailing: const _OpenTrailingIcon(),
       onTap: () async {
+        HapticFeedbackHelper.lightImpact();
         // プライバシーポリシーページへのリンク
         final url = Uri.parse('https://example.com/privacy');
         if (await canLaunchUrl(url)) {
@@ -195,6 +199,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: const Text('ライセンス'),
       trailing: const _MoveScreenTrailingIcon(),
       onTap: () {
+        HapticFeedbackHelper.lightImpact();
         // ライセンス表示画面へ遷移
         showLicensePage(
           context: context,
@@ -210,7 +215,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       leading: const Icon(Icons.bug_report),
       title: const Text('デバッグ画面'),
       trailing: const _MoveScreenTrailingIcon(),
-      onTap: () => Navigator.of(context).push(DebugScreen.route()),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        Navigator.of(context).push(DebugScreen.route());
+      },
     );
   }
 
@@ -351,8 +359,10 @@ class _ReviewAppTile extends StatelessWidget {
       title: const Text('アプリをレビューする'),
       trailing: const _OpenTrailingIcon(),
       // アプリ内レビューは表示回数に制限があるため、ストアに移動するようにしている
-      onTap: () =>
-          InAppReview.instance.openStoreListing(appStoreId: appStoreId),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        InAppReview.instance.openStoreListing(appStoreId: appStoreId);
+      },
     );
   }
 }
@@ -366,7 +376,10 @@ class _FeedbackTile extends StatelessWidget {
       leading: const Icon(Icons.feedback),
       title: const Text('ご意見・ご要望'),
       trailing: const _MoveScreenTrailingIcon(),
-      onTap: () => Navigator.of(context).push(SubmitFeedbackScreen.route()),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        Navigator.of(context).push(SubmitFeedbackScreen.route());
+      },
     );
   }
 }
@@ -411,6 +424,7 @@ class _ChatBubbleDesignTile extends ConsumerWidget {
       ),
       trailing: const _MoveScreenTrailingIcon(),
       onTap: () {
+        HapticFeedbackHelper.lightImpact();
         showDialog<void>(
           context: context,
           builder: (_) => const ChatBubbleDesignSelectionDialog(),
@@ -477,6 +491,7 @@ class _SupporterTitleDisplayTile extends ConsumerWidget {
           ),
           trailing: const _MoveScreenTrailingIcon(),
           onTap: () {
+            HapticFeedbackHelper.lightImpact();
             Navigator.of(context).push(SupportCavivaraScreen.route());
           },
         );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:house_worker/ui/feature/resume/resume_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
@@ -152,11 +153,13 @@ class _CavivaraListItem extends StatelessWidget {
 
   /// 履歴書画面に遷移
   void _navigateToResume(BuildContext context) {
+    HapticFeedbackHelper.lightImpact();
     Navigator.of(context).push(ResumeScreen.route(cavivaraId));
   }
 
   /// チャット画面に遷移
   void _navigateToChat(BuildContext context) {
+    HapticFeedbackHelper.lightImpact();
     Navigator.of(context).pushAndRemoveUntil(
       HomeScreen.route(cavivaraId),
       (route) => false,

@@ -11,6 +11,7 @@ import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
@@ -102,9 +103,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           size: 32,
           assetPath: cavivaraProfile.iconPath,
           cavivaraId: widget.cavivaraId,
-          onTap: () => Navigator.of(context).push(
-            ResumeScreen.route(widget.cavivaraId),
-          ),
+          onTap: () {
+            HapticFeedbackHelper.lightImpact();
+            Navigator.of(context).push(
+              ResumeScreen.route(widget.cavivaraId),
+            );
+          },
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -207,12 +211,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
+    HapticFeedbackHelper.onClearChat();
     ref.read(chatMessagesProvider(widget.cavivaraId).notifier).clearMessages();
   }
 
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
+      HapticFeedbackHelper.onMessageSent();
       ref
           .read(chatMessagesProvider(widget.cavivaraId).notifier)
           .sendMessage(message);
@@ -405,6 +411,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
   }
 
   void _sendSuggestion(String message) {
+    HapticFeedbackHelper.onSuggestionTap();
     ref
         .read(chatMessagesProvider(widget.cavivaraId).notifier)
         .sendMessage(message);
@@ -537,7 +544,10 @@ class _SuggestionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedbackHelper.onSuggestionTap();
+            onTap();
+          },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -714,9 +724,12 @@ class _AiChatBubble extends ConsumerWidget {
     final avatar = CavivaraAvatar(
       assetPath: cavivaraProfile.iconPath,
       cavivaraId: cavivaraId,
-      onTap: () => Navigator.of(context).push(
-        ResumeScreen.route(cavivaraId),
-      ),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        Navigator.of(context).push(
+          ResumeScreen.route(cavivaraId),
+        );
+      },
     );
 
     return IntrinsicHeight(

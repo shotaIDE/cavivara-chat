@@ -7,6 +7,7 @@ import 'package:house_worker/data/repository/resume_viewing_duration_repository.
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/service/employment_state_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
@@ -350,6 +351,7 @@ class UserStatisticsScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: () {
+                      HapticFeedbackHelper.lightImpact();
                       Navigator.of(context).push(SupportCavivaraScreen.route());
                     },
                     style: FilledButton.styleFrom(
@@ -423,7 +425,10 @@ class _RewardTile extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: () => _showRewardDetail(context, theme, isAchieved, progress),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        _showRewardDetail(context, theme, isAchieved, progress);
+      },
       child: Opacity(
         opacity: isAchieved ? 1.0 : 0.5,
         child: Container(

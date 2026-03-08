@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 
 class ChatBubbleDesignSelectionDialog extends ConsumerStatefulWidget {
   const ChatBubbleDesignSelectionDialog({super.key});
@@ -31,6 +32,7 @@ class _ChatBubbleDesignSelectionDialogState
       content: RadioGroup<ChatBubbleDesign>(
         groupValue: _selectedDesign,
         onChanged: (value) {
+          HapticFeedbackHelper.selectionClick();
           setState(() {
             _selectedDesign = value;
           });
@@ -49,11 +51,15 @@ class _ChatBubbleDesignSelectionDialogState
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            HapticFeedbackHelper.lightImpact();
+            Navigator.of(context).pop();
+          },
           child: const Text('キャンセル'),
         ),
         TextButton(
           onPressed: () async {
+            HapticFeedbackHelper.onSuccess();
             if (_selectedDesign != null) {
               await ref
                   .read(chatBubbleDesignRepositoryProvider.notifier)
