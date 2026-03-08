@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/heads_up_notification_presenter.dart';
 import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
 
@@ -87,7 +88,10 @@ class _HeadsUpNotificationBody extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       color: Theme.of(context).colorScheme.surface,
       child: InkWell(
-        onTap: () => onTap(reward),
+        onTap: () {
+          HapticFeedbackHelper.lightImpact();
+          onTap(reward);
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),

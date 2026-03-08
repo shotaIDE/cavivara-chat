@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
 import 'package:house_worker/ui/feature/settings/thank_you_dialog.dart';
@@ -127,6 +128,7 @@ class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
 
   /// プランタップ時の処理
   Future<void> _onPlanTap(ProductPackage product) async {
+    HapticFeedbackHelper.lightImpact();
     final presenter = ref.read(supportCavivaraPresenterProvider.notifier);
 
     // 購入前の称号を保存

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/resume_viewing_duration_repository.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
 
 class ResumeScreen extends ConsumerStatefulWidget {
@@ -215,6 +216,7 @@ class _ResumeScreenState extends ConsumerState<ResumeScreen> {
 
   /// チャット画面に遷移
   void _navigateToChat() {
+    HapticFeedbackHelper.lightImpact();
     Navigator.of(context).pushAndRemoveUntil(
       HomeScreen.route(widget.cavivaraId),
       (route) => false,

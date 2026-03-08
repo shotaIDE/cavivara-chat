@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 
 part 'clear_chat_confirmation_dialog.freezed.dart';
 
@@ -55,6 +56,7 @@ class _ClearChatConfirmationDialogState
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
             onChanged: (value) {
+              HapticFeedbackHelper.onToggle();
               setState(() {
                 _shouldSkipConfirmation = value ?? false;
               });
@@ -66,6 +68,7 @@ class _ClearChatConfirmationDialogState
       actions: [
         TextButton(
           onPressed: () {
+            HapticFeedbackHelper.onClearChat();
             Navigator.of(context).pop(
               ClearChatDialogResult(
                 confirmed: true,
@@ -77,6 +80,7 @@ class _ClearChatConfirmationDialogState
         ),
         TextButton(
           onPressed: () {
+            HapticFeedbackHelper.lightImpact();
             Navigator.of(context).pop(
               const ClearChatDialogResult(
                 confirmed: false,

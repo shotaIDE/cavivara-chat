@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({
@@ -64,6 +65,7 @@ class AppDrawer extends StatelessWidget {
       title: const Text('トーク'),
       selected: isTalkSelected,
       onTap: () {
+        HapticFeedbackHelper.onNavigationTap();
         Navigator.of(context).pop();
         if (!isTalkSelected) {
           onSelectTalk();
@@ -78,6 +80,7 @@ class AppDrawer extends StatelessWidget {
       title: const Text('転職市場'),
       selected: isJobMarketSelected,
       onTap: () {
+        HapticFeedbackHelper.onNavigationTap();
         Navigator.of(context).pop();
         if (!isJobMarketSelected) {
           onSelectJobMarket();
@@ -92,6 +95,7 @@ class AppDrawer extends StatelessWidget {
       title: const Text('あなたの業績'),
       selected: isAchievementSelected,
       onTap: () {
+        HapticFeedbackHelper.onNavigationTap();
         Navigator.of(context).pop();
         if (!isAchievementSelected) {
           onSelectAchievement();
@@ -105,6 +109,7 @@ class AppDrawer extends StatelessWidget {
       leading: const Icon(Icons.settings),
       title: const Text('設定'),
       onTap: () {
+        HapticFeedbackHelper.onNavigationTap();
         Navigator.of(context).pop();
         onSelectSettings();
       },

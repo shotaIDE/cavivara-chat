@@ -11,6 +11,7 @@ import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
@@ -102,9 +103,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           size: 32,
           assetPath: cavivaraProfile.iconPath,
           cavivaraId: widget.cavivaraId,
-          onTap: () => Navigator.of(context).push(
-            ResumeScreen.route(widget.cavivaraId),
-          ),
+          onTap: () {
+            HapticFeedbackHelper.lightImpact();
+            Navigator.of(context).push(
+              ResumeScreen.route(widget.cavivaraId),
+            );
+          },
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -207,12 +211,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
+    HapticFeedbackHelper.onClearChat();
     ref.read(chatMessagesProvider(widget.cavivaraId).notifier).clearMessages();
   }
 
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
+      HapticFeedbackHelper.onMessageSent();
       ref
           .read(chatMessagesProvider(widget.cavivaraId).notifier)
           .sendMessage(message);
@@ -304,6 +310,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
   bool _isAtBottom = true;
   int _previousMessageCount = 0;
   bool _previousHasStreamingMessages = false;
+  bool _previousStreamingMessageHadContent = false;
 
   @override
   void initState() {
@@ -348,11 +355,35 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
       (ChatMessage message) => message.isStreaming,
     );
 
+    // ストリーミング中のメッセージがコンテンツを持っているかどうか
+    final streamingMessageHasContent = messages.any(
+      (ChatMessage message) =>
+          message.isStreaming && message.content.isNotEmpty,
+    );
+
+    // コンテンツ受信開始を検知（前回コンテンツなし→今回コンテンツあり）
+    final isContentReceiveStarted =
+        !_previousStreamingMessageHadContent && streamingMessageHasContent;
+    // ストリーミング完了を検知（前回あり→今回なし）
+    final isStreamingCompleted =
+        _previousHasStreamingMessages && !hasStreamingMessages;
+    // ストリーミング完了時に初めてコンテンツを受信した場合を検知
+    // （ストリーミング中にコンテンツが一度も表示されず、完了時に初めて表示された場合）
+    final isContentReceivedOnCompletion =
+        isStreamingCompleted && !_previousStreamingMessageHadContent;
+
+    // Haptic Feedbackを発生させる
+    // 両者が同時のタイミングだったら、2回振動を優先させる
+    if (isContentReceiveStarted || isContentReceivedOnCompletion) {
+      unawaited(HapticFeedbackHelper.onMessageReceiveStart());
+    } else if (isStreamingCompleted) {
+      HapticFeedbackHelper.onMessageReceiveComplete();
+    }
+
     // メッセージ数が増えた場合、またはストリーミングが終了した場合で、ユーザーが最下部にいる場合のみ自動スクロール
     final shouldAutoScroll =
         _isAtBottom &&
-        (messages.length > _previousMessageCount ||
-            (_previousHasStreamingMessages && !hasStreamingMessages));
+        (messages.length > _previousMessageCount || isStreamingCompleted);
 
     if (shouldAutoScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -362,6 +393,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
     _previousMessageCount = messages.length;
     _previousHasStreamingMessages = hasStreamingMessages;
+    _previousStreamingMessageHadContent = streamingMessageHasContent;
 
     if (messages.isEmpty) {
       return Align(
@@ -405,6 +437,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
   }
 
   void _sendSuggestion(String message) {
+    HapticFeedbackHelper.onSuggestionTap();
     ref
         .read(chatMessagesProvider(widget.cavivaraId).notifier)
         .sendMessage(message);
@@ -537,7 +570,10 @@ class _SuggestionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedbackHelper.onSuggestionTap();
+            onTap();
+          },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -714,9 +750,12 @@ class _AiChatBubble extends ConsumerWidget {
     final avatar = CavivaraAvatar(
       assetPath: cavivaraProfile.iconPath,
       cavivaraId: cavivaraId,
-      onTap: () => Navigator.of(context).push(
-        ResumeScreen.route(cavivaraId),
-      ),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        Navigator.of(context).push(
+          ResumeScreen.route(cavivaraId),
+        );
+      },
     );
 
     return IntrinsicHeight(
