@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -523,27 +524,107 @@ class _ChatSuggestions extends StatefulWidget {
 
 class _ChatSuggestionsState extends State<_ChatSuggestions>
     with SingleTickerProviderStateMixin {
-  static const List<({IconData icon, String label})> _suggestions = [
+  static const List<({IconData icon, String label})> _allSuggestions = [
+    // カヴィヴァラ・マンドリン関連
     (
       icon: Icons.queue_music,
-      label: 'マンドリンの演奏会の選曲会議で何を出すか迷っています',
+      label: 'マンドリンの演奏会の選曲会議で何を出すか迷っているヴィヴァ',
     ),
     (
       icon: Icons.group,
       label: 'プレクトラム結社の最新の演奏会について教えて',
     ),
     (
+      icon: Icons.music_note,
+      label: 'マンドリンの練習方法を教えてヴィヴァ',
+    ),
+    (
+      icon: Icons.library_music,
+      label: 'マンドリンオーケストラのおすすめ曲は？',
+    ),
+    (
+      icon: Icons.piano,
+      label: 'トレモロを綺麗に弾くコツを教えて',
+    ),
+    (
+      icon: Icons.event,
+      label: '演奏会のプログラム構成のアドバイスをくださいヴィヴァ',
+    ),
+    (
+      icon: Icons.headphones,
+      label: 'マンドリンの歴史について教えて',
+    ),
+    (
+      icon: Icons.build,
+      label: 'マンドリンの弦の張り替え方を教えて',
+    ),
+    (
+      icon: Icons.album,
+      label: 'イタリアのマンドリン曲でおすすめは？',
+    ),
+    (
+      icon: Icons.people,
+      label: 'アンサンブルで合わせるコツを教えてヴィヴァ',
+    ),
+    // 一般的な質問
+    (
       icon: Icons.restaurant_menu,
       label: '今晩の夜ご飯のレシピを考えて',
     ),
+    (
+      icon: Icons.flight_takeoff,
+      label: '週末のお出かけスポットを教えてヴィヴァ',
+    ),
+    (
+      icon: Icons.fitness_center,
+      label: '家でできる簡単なストレッチを教えて',
+    ),
+    (
+      icon: Icons.book,
+      label: 'おすすめの本を紹介して',
+    ),
+    (
+      icon: Icons.lightbulb,
+      label: '集中力を高める方法を教えて',
+    ),
+    (
+      icon: Icons.wb_sunny,
+      label: '朝のルーティンのおすすめを教えてヴィヴァ',
+    ),
+    (
+      icon: Icons.movie,
+      label: '最近観た映画のおすすめを教えて',
+    ),
+    (
+      icon: Icons.language,
+      label: '効果的な語学学習の方法を教えて',
+    ),
+    (
+      icon: Icons.coffee,
+      label: 'リラックスできる休日の過ごし方は？',
+    ),
+    (
+      icon: Icons.work,
+      label: '仕事の効率を上げるコツを教えてヴィヴァ',
+    ),
   ];
+
+  /// 表示するサジェストの数
+  static const _displayCount = 3;
 
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
+  late final List<({IconData icon, String label})> _selectedSuggestions;
 
   @override
   void initState() {
     super.initState();
+
+    // ランダムに3つのサジェストをピックアップ
+    final random = Random();
+    final shuffled = List.of(_allSuggestions)..shuffle(random);
+    _selectedSuggestions = shuffled.take(_displayCount).toList();
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -595,7 +676,7 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
                   right: 16 + MediaQuery.of(context).viewPadding.right,
                 ),
                 itemBuilder: (context, index) {
-                  final suggestion = _suggestions[index];
+                  final suggestion = _selectedSuggestions[index];
                   return _SuggestionCard(
                     icon: suggestion.icon,
                     label: suggestion.label,
@@ -603,7 +684,7 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
                   );
                 },
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemCount: _suggestions.length,
+                itemCount: _selectedSuggestions.length,
               ),
             ),
           ],
