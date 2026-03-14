@@ -43,13 +43,25 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _messageFocusNode = FocusNode();
   bool _isMessageEmpty = true;
+  bool _shouldShowSuggestions = false;
+  Timer? _suggestionTimer;
 
   @override
   void initState() {
     super.initState();
 
     _messageController.addListener(_onMessageChanged);
+    _messageFocusNode.addListener(_onFocusChanged);
+
+    // ビルド完了後にテキストフィールドにフォーカスしてキーボードを表示
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _messageFocusNode.requestFocus();
+    });
 
     unawaited(
       ref.read(updateLastTalkedCavivaraIdProvider(widget.cavivaraId).future),
@@ -62,6 +74,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ..listenManual(awardFirstMessageBonusProvider, (_, _) {
         // Providerの副作用のみを利用するため、何もしない
       });
+  }
+
+  void _onFocusChanged() {
+    if (_messageFocusNode.hasFocus) {
+      // フォーカスが当たったら少し遅延してからサジェストを表示
+      _suggestionTimer?.cancel();
+      _suggestionTimer = Timer(const Duration(seconds: 1), () {
+        if (mounted && _messageFocusNode.hasFocus) {
+          setState(() {
+            _shouldShowSuggestions = true;
+          });
+        }
+      });
+    } else {
+      // フォーカスが外れたらタイマーをキャンセル
+      _suggestionTimer?.cancel();
+      _suggestionTimer = null;
+    }
   }
 
   void _onMessageChanged() {
@@ -86,10 +116,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    _suggestionTimer?.cancel();
     _messageController
       ..removeListener(_onMessageChanged)
       ..dispose();
     _scrollController.dispose();
+    _messageFocusNode
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -142,6 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               controller: _scrollController,
               onMessageSent: _onMessageSent,
               cavivaraId: widget.cavivaraId,
+              shouldShowSuggestions: _shouldShowSuggestions,
             ),
           ),
         ),
@@ -255,6 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Expanded(
             child: TextField(
               controller: _messageController,
+              focusNode: _messageFocusNode,
               decoration: InputDecoration(
                 hintText: 'メッセージを入力...',
                 filled: true,
@@ -296,11 +332,13 @@ class _ChatMessageList extends ConsumerStatefulWidget {
     required this.controller,
     required this.onMessageSent,
     required this.cavivaraId,
+    required this.shouldShowSuggestions,
   });
 
   final ScrollController controller;
   final VoidCallback onMessageSent;
   final String cavivaraId;
+  final bool shouldShowSuggestions;
 
   @override
   ConsumerState<_ChatMessageList> createState() => _ChatMessageListState();
@@ -396,6 +434,9 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     _previousStreamingMessageHadContent = streamingMessageHasContent;
 
     if (messages.isEmpty) {
+      if (!widget.shouldShowSuggestions) {
+        return const SizedBox.shrink();
+      }
       return Align(
         alignment: Alignment.bottomCenter,
         child: _ChatSuggestions(
@@ -469,13 +510,19 @@ class _ChatBubble extends ConsumerWidget {
   }
 }
 
-class _ChatSuggestions extends StatelessWidget {
+class _ChatSuggestions extends StatefulWidget {
   const _ChatSuggestions({
     required this.onSuggestionSelected,
   });
 
   final ValueChanged<String> onSuggestionSelected;
 
+  @override
+  State<_ChatSuggestions> createState() => _ChatSuggestionsState();
+}
+
+class _ChatSuggestionsState extends State<_ChatSuggestions>
+    with SingleTickerProviderStateMixin {
   static const List<({IconData icon, String label})> _suggestions = [
     (
       icon: Icons.queue_music,
@@ -491,6 +538,31 @@ class _ChatSuggestions extends StatelessWidget {
     ),
   ];
 
+  late final AnimationController _animationController;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    );
+
+    // 表示されたら即座にアニメーション開始
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = Text(
@@ -498,41 +570,44 @@ class _ChatSuggestions extends StatelessWidget {
       style: Theme.of(context).textTheme.titleMedium,
     );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 16,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(
-              left: 16 + MediaQuery.of(context).viewPadding.left,
-              right: 16 + MediaQuery.of(context).viewPadding.right,
-            ),
-            child: title,
-          ),
-          SizedBox(
-            height: 136,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              primary: false,
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 16,
+          children: [
+            Padding(
               padding: EdgeInsets.only(
                 left: 16 + MediaQuery.of(context).viewPadding.left,
                 right: 16 + MediaQuery.of(context).viewPadding.right,
               ),
-              itemBuilder: (context, index) {
-                final suggestion = _suggestions[index];
-                return _SuggestionCard(
-                  icon: suggestion.icon,
-                  label: suggestion.label,
-                  onTap: () => onSuggestionSelected(suggestion.label),
-                );
-              },
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemCount: _suggestions.length,
+              child: title,
             ),
-          ),
-        ],
+            SizedBox(
+              height: 136,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                primary: false,
+                padding: EdgeInsets.only(
+                  left: 16 + MediaQuery.of(context).viewPadding.left,
+                  right: 16 + MediaQuery.of(context).viewPadding.right,
+                ),
+                itemBuilder: (context, index) {
+                  final suggestion = _suggestions[index];
+                  return _SuggestionCard(
+                    icon: suggestion.icon,
+                    label: suggestion.label,
+                    onTap: () => widget.onSuggestionSelected(suggestion.label),
+                  );
+                },
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemCount: _suggestions.length,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
