@@ -55,6 +55,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // ビルド完了後にテキストフィールドにフォーカスしてキーボードを表示
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
       _messageFocusNode.requestFocus();
       // フォーカス後に少し遅延してからサジェストを表示
       Future.delayed(const Duration(seconds: 1), () {
