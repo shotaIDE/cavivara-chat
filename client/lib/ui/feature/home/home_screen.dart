@@ -46,12 +46,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final FocusNode _messageFocusNode = FocusNode();
   bool _isMessageEmpty = true;
   bool _shouldShowSuggestions = false;
+  Timer? _suggestionTimer;
 
   @override
   void initState() {
     super.initState();
 
     _messageController.addListener(_onMessageChanged);
+    _messageFocusNode.addListener(_onFocusChanged);
 
     // ビルド完了後にテキストフィールドにフォーカスしてキーボードを表示
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -59,14 +61,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
       _messageFocusNode.requestFocus();
-      // フォーカス後に少し遅延してからサジェストを表示
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          setState(() {
-            _shouldShowSuggestions = true;
-          });
-        }
-      });
     });
 
     unawaited(
@@ -80,6 +74,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ..listenManual(awardFirstMessageBonusProvider, (_, _) {
         // Providerの副作用のみを利用するため、何もしない
       });
+  }
+
+  void _onFocusChanged() {
+    if (_messageFocusNode.hasFocus) {
+      // フォーカスが当たったら少し遅延してからサジェストを表示
+      _suggestionTimer?.cancel();
+      _suggestionTimer = Timer(const Duration(seconds: 1), () {
+        if (mounted && _messageFocusNode.hasFocus) {
+          setState(() {
+            _shouldShowSuggestions = true;
+          });
+        }
+      });
+    } else {
+      // フォーカスが外れたらタイマーをキャンセル
+      _suggestionTimer?.cancel();
+      _suggestionTimer = null;
+    }
   }
 
   void _onMessageChanged() {
@@ -104,11 +116,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    _suggestionTimer?.cancel();
     _messageController
       ..removeListener(_onMessageChanged)
       ..dispose();
     _scrollController.dispose();
-    _messageFocusNode.dispose();
+    _messageFocusNode
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     super.dispose();
   }
 
