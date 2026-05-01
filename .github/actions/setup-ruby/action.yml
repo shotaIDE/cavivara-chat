@@ -15,7 +15,7 @@ runs:
       shell: bash
     # マシンにRubyはインストール済みだが、キャッシュとbundlerインストールのため、以下アクションを利用
     - name: Install Ruby, bundler, fastlane and other dependencies
-      uses: ruby/setup-ruby@v1
+      uses: ruby/setup-ruby@c4e5b1316158f92e3d49443a9d58b31d25ac0f8f # v1.306.0
       with:
         ruby-version: ${{ steps.get-ruby-version.outputs.ruby-version }}
         bundler-cache: true
