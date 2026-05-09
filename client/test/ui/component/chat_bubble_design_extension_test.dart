@@ -172,11 +172,11 @@ void main() {
           ),
         );
 
-        final customPaints = find.byType(CustomPaint);
-        expect(customPaints, findsWidgets);
-
-        final catFurPaint = tester.widgetList<CustomPaint>(customPaints).first;
-        expect(catFurPaint.painter, isA<CatFurBubblePainter>());
+        final catFurPaintFinder = find.byWidgetPredicate(
+          (widget) =>
+              widget is CustomPaint && widget.painter is CatFurBubblePainter,
+        );
+        expect(catFurPaintFinder, findsOneWidget);
 
         final container = tester.widget<Container>(
           find.byType(Container).first,
