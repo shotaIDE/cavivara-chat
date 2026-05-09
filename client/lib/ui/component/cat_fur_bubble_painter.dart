@@ -19,7 +19,7 @@ class CatFurBubblePainter extends CustomPainter {
       const Radius.circular(12),
     );
     final bgPaint = Paint()
-      ..color = backgroundColor
+      ..color = Colors.grey.shade200
       ..style = PaintingStyle.fill;
     canvas.drawRRect(bgRect, bgPaint);
 
@@ -155,8 +155,8 @@ class CatFurBubblePainter extends CustomPainter {
         peakStrokeWidth: peakStrokeWidth,
       );
 
-      // 次のストランドまでのギャップ（途切れを表現）
-      final gap = 3.0 + random.nextDouble() * 10.0;
+      // 次のストランドまでのギャップ（一部重なる程度の短い間隔）
+      final gap = -2.0 + random.nextDouble() * 5.0;
       pos += strandWidth + gap;
     }
   }
@@ -174,10 +174,61 @@ class CatFurBubblePainter extends CustomPainter {
     required double baseStrokeWidth,
     required double peakStrokeWidth,
   }) {
-    // ストランドを短いセグメントに分割して太さを変える
     const segments = 12;
     final halfWidth = strandWidth / 2;
 
+    // ストランドの内側を薄いグレーで塗りつぶす
+    final fillPath = Path();
+    for (var i = 0; i <= segments; i++) {
+      final t = i / segments;
+      final p = _strandPoint(
+        size,
+        edge: edge,
+        position: position,
+        halfWidth: halfWidth,
+        t: t,
+        peakHeight: peakHeight,
+        curlDirection: curlDirection,
+        curlAmount: curlAmount,
+      );
+      if (i == 0) {
+        fillPath.moveTo(p.dx, p.dy);
+      } else {
+        fillPath.lineTo(p.dx, p.dy);
+      }
+    }
+    // 辺上の基点に戻って閉じる（内側を塗るため）
+    final baseEnd = _strandPoint(
+      size,
+      edge: edge,
+      position: position,
+      halfWidth: halfWidth,
+      t: 1,
+      peakHeight: 0,
+      curlDirection: curlDirection,
+      curlAmount: 0,
+    );
+    final baseStart = _strandPoint(
+      size,
+      edge: edge,
+      position: position,
+      halfWidth: halfWidth,
+      t: 0,
+      peakHeight: 0,
+      curlDirection: curlDirection,
+      curlAmount: 0,
+    );
+    fillPath
+      ..lineTo(baseEnd.dx, baseEnd.dy)
+      ..lineTo(baseStart.dx, baseStart.dy)
+      ..close();
+
+    final fillPaint = Paint()
+      ..color = Colors.grey.shade200
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fillPath, fillPaint);
+
+    // ストランドを短いセグメントに分割して太さを変える
     for (var i = 0; i < segments; i++) {
       final t0 = i / segments;
       final t1 = (i + 1) / segments;

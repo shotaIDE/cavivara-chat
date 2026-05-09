@@ -759,7 +759,9 @@ class _UserChatBubble extends ConsumerWidget {
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
 
-    final textColor = Theme.of(context).colorScheme.onPrimaryContainer;
+    final textColor = design == ChatBubbleDesign.catFur
+        ? Colors.grey.shade800
+        : Theme.of(context).colorScheme.onPrimaryContainer;
     final bodyText = Text(
       message.content,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -821,7 +823,9 @@ class _AiChatBubble extends ConsumerWidget {
     final cavivaraProfile = ref.watch(cavivaraByIdProvider(cavivaraId));
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
-    final textColor = Theme.of(context).colorScheme.onSurface;
+    final textColor = design == ChatBubbleDesign.catFur
+        ? Colors.grey.shade800
+        : Theme.of(context).colorScheme.onSurface;
     final indicatorColor = Theme.of(context).colorScheme.primary;
 
     Widget bodyText;
