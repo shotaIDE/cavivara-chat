@@ -33,8 +33,8 @@ class CatFurBubblePainter extends CustomPainter {
       color: Colors.grey.shade600.withAlpha(180),
       baseStrokeWidth: 2,
       peakStrokeWidth: 2.8,
-      minPeakHeight: 4,
-      maxPeakHeight: 10,
+      minPeakHeight: 3,
+      maxPeakHeight: 7,
       offset: 0,
     );
   }
