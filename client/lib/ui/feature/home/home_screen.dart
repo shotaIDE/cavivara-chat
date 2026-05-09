@@ -462,12 +462,16 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
         }
 
         final message = messages[index];
+        final design =
+            ref.watch(chatBubbleDesignRepositoryProvider).value ??
+            ChatBubbleDesign.corporateStandard;
+        final verticalPadding = design == ChatBubbleDesign.catFur ? 16.0 : 8.0;
         return Padding(
           padding: EdgeInsets.only(
             left: 16 + MediaQuery.of(context).viewPadding.left,
             right: 16 + MediaQuery.of(context).viewPadding.right,
-            top: 8,
-            bottom: 8,
+            top: verticalPadding,
+            bottom: verticalPadding,
           ),
           child: _ChatBubble(
             message: message,
