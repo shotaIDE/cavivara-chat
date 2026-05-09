@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
+import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/harmonized_bubble_clipper.dart';
 
 enum MessageType {
@@ -17,6 +18,8 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
         return '次世代様式';
       case ChatBubbleDesign.harmonized:
         return '調整済様式';
+      case ChatBubbleDesign.catFur:
+        return '猫毛様式';
     }
   }
 
@@ -27,6 +30,8 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
       case ChatBubbleDesign.nextGeneration:
         return false;
       case ChatBubbleDesign.harmonized:
+        return false;
+      case ChatBubbleDesign.catFur:
         return false;
     }
   }
@@ -97,6 +102,24 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
             constraints: constraints,
             padding: padding,
             color: backgroundColor,
+            child: child,
+          ),
+        );
+
+      case ChatBubbleDesign.catFur:
+        return CustomPaint(
+          painter: CatFurBubblePainter(
+            backgroundColor: backgroundColor,
+            seed: child.hashCode,
+          ),
+          child: Container(
+            constraints: constraints,
+            padding: padding.copyWith(
+              left: padding.left + 2,
+              right: padding.right + 2,
+              top: padding.top + 2,
+              bottom: padding.bottom + 2,
+            ),
             child: child,
           ),
         );

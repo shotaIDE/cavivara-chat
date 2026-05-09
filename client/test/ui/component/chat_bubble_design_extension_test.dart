@@ -195,5 +195,10 @@ void main() {
       const design = ChatBubbleDesign.harmonized;
       expect(design.displayName, '調整済様式');
     });
+
+    test('catFur returns correct Japanese name', () {
+      const design = ChatBubbleDesign.catFur;
+      expect(design.displayName, '猫毛様式');
+    });
   });
 }
