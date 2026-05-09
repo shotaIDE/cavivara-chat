@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class CatFurBubblePainter extends CustomPainter {
-  CatFurBubblePainter({
+  const CatFurBubblePainter({
     required this.backgroundColor,
     required this.seed,
   });
+
+  static const maxOuterExtent = 10.0;
 
   final Color backgroundColor;
   final int seed;
@@ -15,7 +17,7 @@ class CatFurBubblePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // 背景の角丸矩形を描画
     final bgRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
+      Offset.zero & size,
       const Radius.circular(12),
     );
     final bgPaint = Paint()
@@ -229,6 +231,11 @@ class CatFurBubblePainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
 
     // ストランドを短いセグメントに分割して太さを変える
+    final strandPaint = Paint()
+      ..color = color
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
     for (var i = 0; i < segments; i++) {
       final t0 = i / segments;
       final t1 = (i + 1) / segments;
@@ -236,7 +243,7 @@ class CatFurBubblePainter extends CustomPainter {
       // 0→1→0 の山形パラメータ（ピークは中央）
       final tMid = (t0 + t1) / 2;
       // sin曲線で太さを変える（谷で細く、ピークで太く）
-      final thickness =
+      strandPaint.strokeWidth =
           baseStrokeWidth +
           (peakStrokeWidth - baseStrokeWidth) * sin(tMid * pi);
 
@@ -261,13 +268,7 @@ class CatFurBubblePainter extends CustomPainter {
         curlAmount: curlAmount,
       );
 
-      final paint = Paint()
-        ..color = color
-        ..strokeWidth = thickness
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
-
-      canvas.drawLine(p0, p1, paint);
+      canvas.drawLine(p0, p1, strandPaint);
     }
   }
 

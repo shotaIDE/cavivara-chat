@@ -41,6 +41,7 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
     required MessageType messageType,
     required Color backgroundColor,
     required Widget child,
+    int seed = 0,
   }) {
     const padding = EdgeInsets.symmetric(
       horizontal: 16,
@@ -110,15 +111,15 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
         return CustomPaint(
           painter: CatFurBubblePainter(
             backgroundColor: backgroundColor,
-            seed: child.hashCode,
+            seed: seed,
           ),
           child: Container(
             constraints: constraints,
             padding: padding.copyWith(
-              left: padding.left + 2,
-              right: padding.right + 2,
-              top: padding.top + 2,
-              bottom: padding.bottom + 2,
+              left: padding.left + CatFurBubblePainter.maxOuterExtent,
+              right: padding.right + CatFurBubblePainter.maxOuterExtent,
+              top: padding.top + CatFurBubblePainter.maxOuterExtent,
+              bottom: padding.bottom + CatFurBubblePainter.maxOuterExtent,
             ),
             child: child,
           ),

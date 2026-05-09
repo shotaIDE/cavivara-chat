@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
+import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 
 void main() {
@@ -145,6 +146,42 @@ void main() {
         expect(borderRadius.topRight, const Radius.circular(20));
         expect(borderRadius.bottomRight, const Radius.circular(20));
         expect(borderRadius.bottomLeft, const Radius.circular(20));
+      },
+    );
+
+    testWidgets(
+      'catFur design creates bubble with CustomPaint using CatFurBubblePainter',
+      (WidgetTester tester) async {
+        const design = ChatBubbleDesign.catFur;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return design.buildBubble(
+                    context: context,
+                    messageType: MessageType.user,
+                    backgroundColor: Colors.blue,
+                    child: const Text('User message'),
+                    seed: 42,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        final customPaints = find.byType(CustomPaint);
+        expect(customPaints, findsWidgets);
+
+        final catFurPaint = tester.widgetList<CustomPaint>(customPaints).first;
+        expect(catFurPaint.painter, isA<CatFurBubblePainter>());
+
+        final container = tester.widget<Container>(
+          find.byType(Container).first,
+        );
+        expect(container.constraints, isNotNull);
       },
     );
 

@@ -779,6 +779,7 @@ class _UserChatBubble extends ConsumerWidget {
       messageType: MessageType.user,
       backgroundColor: bubbleColor,
       child: bodyText,
+      seed: message.id.hashCode,
     );
 
     final bubbleWithPointer = design.shouldWithPointer
@@ -892,6 +893,7 @@ class _AiChatBubble extends ConsumerWidget {
       messageType: MessageType.ai,
       backgroundColor: bubbleColor,
       child: bodyText,
+      seed: message.id.hashCode,
     );
 
     final bubbleWithPointer = design.shouldWithPointer
@@ -976,6 +978,7 @@ class _AppChatBubble extends ConsumerWidget {
       messageType: MessageType.system,
       backgroundColor: bubbleColor,
       child: bodyText,
+      seed: message.id.hashCode,
     );
 
     final expanded = Expanded(
