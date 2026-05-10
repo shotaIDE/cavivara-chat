@@ -462,12 +462,16 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
         }
 
         final message = messages[index];
+        final design =
+            ref.watch(chatBubbleDesignRepositoryProvider).value ??
+            ChatBubbleDesign.corporateStandard;
+        final verticalPadding = design == ChatBubbleDesign.catFur ? 16.0 : 8.0;
         return Padding(
           padding: EdgeInsets.only(
             left: 16 + MediaQuery.of(context).viewPadding.left,
             right: 16 + MediaQuery.of(context).viewPadding.right,
-            top: 8,
-            bottom: 8,
+            top: verticalPadding,
+            bottom: verticalPadding,
           ),
           child: _ChatBubble(
             message: message,
@@ -759,7 +763,9 @@ class _UserChatBubble extends ConsumerWidget {
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
 
-    final textColor = Theme.of(context).colorScheme.onPrimaryContainer;
+    final textColor = design == ChatBubbleDesign.catFur
+        ? Colors.grey.shade800
+        : Theme.of(context).colorScheme.onPrimaryContainer;
     final bodyText = Text(
       message.content,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -773,6 +779,7 @@ class _UserChatBubble extends ConsumerWidget {
       messageType: MessageType.user,
       backgroundColor: bubbleColor,
       child: bodyText,
+      seed: message.id.hashCode,
     );
 
     final bubbleWithPointer = design.shouldWithPointer
@@ -821,7 +828,9 @@ class _AiChatBubble extends ConsumerWidget {
     final cavivaraProfile = ref.watch(cavivaraByIdProvider(cavivaraId));
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
-    final textColor = Theme.of(context).colorScheme.onSurface;
+    final textColor = design == ChatBubbleDesign.catFur
+        ? Colors.grey.shade800
+        : Theme.of(context).colorScheme.onSurface;
     final indicatorColor = Theme.of(context).colorScheme.primary;
 
     Widget bodyText;
@@ -884,6 +893,7 @@ class _AiChatBubble extends ConsumerWidget {
       messageType: MessageType.ai,
       backgroundColor: bubbleColor,
       child: bodyText,
+      seed: message.id.hashCode,
     );
 
     final bubbleWithPointer = design.shouldWithPointer
@@ -968,6 +978,7 @@ class _AppChatBubble extends ConsumerWidget {
       messageType: MessageType.system,
       backgroundColor: bubbleColor,
       child: bodyText,
+      seed: message.id.hashCode,
     );
 
     final expanded = Expanded(

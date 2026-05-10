@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
+import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 
 void main() {
@@ -149,6 +150,42 @@ void main() {
     );
 
     testWidgets(
+      'catFur design creates bubble with CustomPaint using CatFurBubblePainter',
+      (WidgetTester tester) async {
+        const design = ChatBubbleDesign.catFur;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return design.buildBubble(
+                    context: context,
+                    messageType: MessageType.user,
+                    backgroundColor: Colors.blue,
+                    child: const Text('User message'),
+                    seed: 42,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        final catFurPaintFinder = find.byWidgetPredicate(
+          (widget) =>
+              widget is CustomPaint && widget.painter is CatFurBubblePainter,
+        );
+        expect(catFurPaintFinder, findsOneWidget);
+
+        final container = tester.widget<Container>(
+          find.byType(Container).first,
+        );
+        expect(container.constraints, isNotNull);
+      },
+    );
+
+    testWidgets(
       'nextGeneration design creates bubble with uniform radius '
       'for system message',
       (WidgetTester tester) async {
@@ -194,6 +231,11 @@ void main() {
     test('harmonized returns correct Japanese name', () {
       const design = ChatBubbleDesign.harmonized;
       expect(design.displayName, '調整済様式');
+    });
+
+    test('catFur returns correct Japanese name', () {
+      const design = ChatBubbleDesign.catFur;
+      expect(design.displayName, '猫毛様式');
     });
   });
 }

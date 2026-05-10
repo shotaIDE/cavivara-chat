@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
+import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/harmonized_bubble_clipper.dart';
 
 enum MessageType {
@@ -17,6 +18,8 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
         return '次世代様式';
       case ChatBubbleDesign.harmonized:
         return '調整済様式';
+      case ChatBubbleDesign.catFur:
+        return '猫毛様式';
     }
   }
 
@@ -28,6 +31,8 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
         return false;
       case ChatBubbleDesign.harmonized:
         return false;
+      case ChatBubbleDesign.catFur:
+        return false;
     }
   }
 
@@ -36,6 +41,7 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
     required MessageType messageType,
     required Color backgroundColor,
     required Widget child,
+    int seed = 0,
   }) {
     const padding = EdgeInsets.symmetric(
       horizontal: 16,
@@ -97,6 +103,24 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
             constraints: constraints,
             padding: padding,
             color: backgroundColor,
+            child: child,
+          ),
+        );
+
+      case ChatBubbleDesign.catFur:
+        return CustomPaint(
+          painter: CatFurBubblePainter(
+            backgroundColor: backgroundColor,
+            seed: seed,
+          ),
+          child: Container(
+            constraints: constraints,
+            padding: padding.copyWith(
+              left: padding.left + CatFurBubblePainter.maxOuterExtent,
+              right: padding.right + CatFurBubblePainter.maxOuterExtent,
+              top: padding.top + CatFurBubblePainter.maxOuterExtent,
+              bottom: padding.bottom + CatFurBubblePainter.maxOuterExtent,
+            ),
             child: child,
           ),
         );
