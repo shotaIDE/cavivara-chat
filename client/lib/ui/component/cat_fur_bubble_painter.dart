@@ -163,7 +163,8 @@ class CatFurBubblePainter extends CustomPainter {
       );
 
       // 次のストランドの始点を、現在のストランドの底辺終点に合わせる
-      pos = result.end;
+      // result.end は position（= pos + offset）基準の座標なので offset を引いて戻す
+      pos = result.end - offset;
     }
   }
 
@@ -215,7 +216,6 @@ class CatFurBubblePainter extends CustomPainter {
 
     // 始点→頂点の制御点（弦の中点から辺の外側方向にオフセット）
     final ctrl1 = _bulgedControlPoint(
-      size,
       edge: edge,
       from: start,
       to: peak,
@@ -224,7 +224,6 @@ class CatFurBubblePainter extends CustomPainter {
 
     // 頂点→終点の制御点
     final ctrl2 = _bulgedControlPoint(
-      size,
       edge: edge,
       from: peak,
       to: end,
@@ -285,8 +284,7 @@ class CatFurBubblePainter extends CustomPainter {
   /// 2点を結ぶ弦の中点から、辺の外側方向に [bulge] だけオフセットした制御点を返す。
   ///
   /// [bulge] が正なら外側に膨らみ、負なら内側に凹む。
-  Offset _bulgedControlPoint(
-    Size size, {
+  Offset _bulgedControlPoint({
     required _Edge edge,
     required Offset from,
     required Offset to,

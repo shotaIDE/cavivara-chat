@@ -64,7 +64,7 @@ CatFurBubblePainter({
 | `strokeWidth` | 1.5pt | 線の太さ（均一） |
 | `_firstHalfOutwardBulgeProbability` | 0.7 | 前半曲線が外側に膨らむ確率 |
 
-**ストランド幅の分布**: `1 - x*x`（2つの乱数の積を反転）により、最大値に近い幅が出やすい偏り分布を使用。
+**ストランド幅の分布**: `1 - rand1 * rand2`（2つの独立した乱数の積を反転）により、最大値に近い幅が出やすい偏り分布を使用。
 
 **1本のストランドの描画手順** (`_drawSingleFurStrand`):
 
