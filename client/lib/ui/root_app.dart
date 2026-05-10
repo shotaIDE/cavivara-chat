@@ -86,8 +86,8 @@ class _RootAppState extends ConsumerState<RootApp> {
         );
         return _wrapByAppBanner(childWithOverlay);
       },
+      theme: getLightTheme(),
       darkTheme: getDarkTheme(),
-      themeMode: ThemeMode.dark,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
