@@ -10,6 +10,21 @@ class CatFurBubblePainter extends CustomPainter {
 
   static const maxOuterExtent = 10.0;
 
+  /// 前半の曲線が外側に膨らむ確率（1.0 = 100%）
+  static const _firstHalfOutwardBulgeProbability = 0.7;
+
+  /// ストランドの幅の最小値
+  static const _minStrandWidth = 10.0;
+
+  /// ストランドの幅の最大値
+  static const _maxStrandWidth = 18.0;
+
+  /// ストランドの高さ（外側への突き出し）の最小値
+  static const _minPeakHeight = 3.0;
+
+  /// ストランドの高さ（外側への突き出し）の最大値
+  static const _maxPeakHeight = 6.0;
+
   final Color backgroundColor;
   final int seed;
 
@@ -34,8 +49,8 @@ class CatFurBubblePainter extends CustomPainter {
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
       strokeWidth: 1.5,
-      minPeakHeight: 3,
-      maxPeakHeight: 7,
+      minPeakHeight: _minPeakHeight,
+      maxPeakHeight: _maxPeakHeight,
       offset: 0,
     );
   }
@@ -128,7 +143,9 @@ class CatFurBubblePainter extends CustomPainter {
 
     // ストランドを隙間なく敷き詰める
     // 最初のストランドの中心位置を計算（底辺の始点がcornerMarginに来るように）
-    var nextStrandWidth = 10.0 + random.nextDouble() * 8.0;
+    var nextStrandWidth =
+        _minStrandWidth +
+        random.nextDouble() * (_maxStrandWidth - _minStrandWidth);
     var pos = cornerMargin + nextStrandWidth / 2;
     while (pos < edgeLength - cornerMargin) {
       final strandWidth = nextStrandWidth;
@@ -147,7 +164,9 @@ class CatFurBubblePainter extends CustomPainter {
       );
 
       // 次のストランドの底辺始点を、現在のストランドの底辺終点に合わせる
-      nextStrandWidth = 20.0 + random.nextDouble() * 8.0;
+      nextStrandWidth =
+          _minStrandWidth +
+          random.nextDouble() * (_maxStrandWidth - _minStrandWidth);
       pos = result.end + nextStrandWidth / 2;
     }
   }
@@ -196,7 +215,8 @@ class CatFurBubblePainter extends CustomPainter {
 
     // 各曲線の膨らみ方向をランダムに決定
     final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
-    final firstBulgeSign = random.nextBool() ? 1.0 : -1.0;
+    final firstBulgeSign =
+        random.nextDouble() < _firstHalfOutwardBulgeProbability ? 1.0 : -1.0;
     final secondBulgeSign = random.nextBool() ? 1.0 : -1.0;
 
     // 始点→頂点の制御点（弦の中点から辺の外側方向にオフセット）
