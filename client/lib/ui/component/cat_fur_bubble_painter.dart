@@ -291,6 +291,7 @@ class CatFurBubblePainter extends CustomPainter {
       ..color = color
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
     canvas.drawPath(arcPath, strandPaint);
 
