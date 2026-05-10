@@ -127,6 +127,21 @@ class CatFurBubblePainter extends CustomPainter {
       offset: offset,
       edge: _Edge.right,
     );
+
+    // 四隅のコーナーストランド（隣接する辺を滑らかに接続）
+    final cornerRandom = Random(random.nextInt(100000));
+    for (final corner in _Corner.values) {
+      _drawCornerStrand(
+        canvas,
+        size,
+        corner: corner,
+        random: cornerRandom,
+        color: color,
+        strokeWidth: strokeWidth,
+        minPeakHeight: minPeakHeight,
+        maxPeakHeight: maxPeakHeight,
+      );
+    }
   }
 
   void _drawEdgeFurStrands(
@@ -310,6 +325,125 @@ class CatFurBubblePainter extends CustomPainter {
     );
   }
 
+  /// コーナー部分に毛並みのブリッジストランドを描画し、
+  /// 隣接する辺の毛並みの根本を滑らかに接続する。
+  ///
+  /// 時計回り（左上→右上→右下→左下）の流れに沿って、
+  /// 一方の辺の端から隣の辺の端へ弧を描く。
+  void _drawCornerStrand(
+    Canvas canvas,
+    Size size, {
+    required _Corner corner,
+    required Random random,
+    required Color color,
+    required double strokeWidth,
+    required double minPeakHeight,
+    required double maxPeakHeight,
+  }) {
+    const cornerMargin = 10.0;
+    final peakHeight =
+        minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
+    final diagonalPeak = peakHeight * 0.7;
+
+    final startBaseOffset = random.nextDouble() * _maxBaseOffset;
+    final endBaseOffset = random.nextDouble() * _maxBaseOffset;
+
+    // 時計回りの流れに沿った始点・終点・制御点・内側塗りつぶし点
+    final Offset start;
+    final Offset end;
+    final Offset control;
+    final Offset innerStart;
+    final Offset innerEnd;
+
+    switch (corner) {
+      // 左辺(↑) → 上辺(→)
+      case _Corner.topLeft:
+        start = Offset(startBaseOffset, cornerMargin);
+        end = Offset(cornerMargin, endBaseOffset);
+        control = Offset(-diagonalPeak, -diagonalPeak);
+        innerStart = const Offset(_maxBaseOffset, cornerMargin);
+        innerEnd = const Offset(cornerMargin, _maxBaseOffset);
+      // 上辺(→) → 右辺(↓)
+      case _Corner.topRight:
+        start = Offset(size.width - cornerMargin, startBaseOffset);
+        end = Offset(size.width - endBaseOffset, cornerMargin);
+        control = Offset(
+          size.width + diagonalPeak,
+          -diagonalPeak,
+        );
+        innerStart = Offset(
+          size.width - cornerMargin,
+          _maxBaseOffset,
+        );
+        innerEnd = Offset(
+          size.width - _maxBaseOffset,
+          cornerMargin,
+        );
+      // 右辺(↓) → 下辺(←)
+      case _Corner.bottomRight:
+        start = Offset(
+          size.width - startBaseOffset,
+          size.height - cornerMargin,
+        );
+        end = Offset(
+          size.width - cornerMargin,
+          size.height - endBaseOffset,
+        );
+        control = Offset(
+          size.width + diagonalPeak,
+          size.height + diagonalPeak,
+        );
+        innerStart = Offset(
+          size.width - _maxBaseOffset,
+          size.height - cornerMargin,
+        );
+        innerEnd = Offset(
+          size.width - cornerMargin,
+          size.height - _maxBaseOffset,
+        );
+      // 下辺(←) → 左辺(↑)
+      case _Corner.bottomLeft:
+        start = Offset(cornerMargin, size.height - startBaseOffset);
+        end = Offset(endBaseOffset, size.height - cornerMargin);
+        control = Offset(
+          -diagonalPeak,
+          size.height + diagonalPeak,
+        );
+        innerStart = Offset(
+          cornerMargin,
+          size.height - _maxBaseOffset,
+        );
+        innerEnd = Offset(
+          _maxBaseOffset,
+          size.height - cornerMargin,
+        );
+    }
+
+    final arcPath = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+
+    // 内側を背景色で塗りつぶす
+    final fillPath = Path.from(arcPath)
+      ..lineTo(innerEnd.dx, innerEnd.dy)
+      ..lineTo(innerStart.dx, innerStart.dy)
+      ..close();
+
+    final fillPaint = Paint()
+      ..color = Colors.grey.shade200
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(fillPath, fillPaint);
+
+    // 輪郭線を描画
+    final strandPaint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(arcPath, strandPaint);
+  }
+
   /// 辺上の座標を画面座標に変換する。
   ///
   /// [along] は辺に沿った位置、[outward] は辺から外側への距離。
@@ -361,6 +495,8 @@ class CatFurBubblePainter extends CustomPainter {
 }
 
 enum _Edge { top, bottom, left, right }
+
+enum _Corner { topLeft, topRight, bottomRight, bottomLeft }
 
 /// ストランドの底辺の始点・終点の辺に沿った座標。
 class _StrandBaseRange {
