@@ -14,10 +14,10 @@ class CatFurBubblePainter extends CustomPainter {
   static const _firstHalfOutwardBulgeProbability = 0.7;
 
   /// ストランドの幅の最小値
-  static const _minStrandWidth = 15.0;
+  static const _minStrandWidth = 5.0;
 
   /// ストランドの幅の最大値
-  static const _maxStrandWidth = 28.0;
+  static const _maxStrandWidth = 16.0;
 
   /// ストランドの高さ（外側への突き出し）の最小値
   static const _minPeakHeight = 3.0;
@@ -142,14 +142,12 @@ class CatFurBubblePainter extends CustomPainter {
     }
 
     // ストランドを隙間なく敷き詰める
-    // 最初のストランドの中心位置を計算（底辺の始点がcornerMarginに来るように）
-    var nextStrandWidth =
-        _minStrandWidth +
-        (1 - random.nextDouble() * random.nextDouble()) *
-            (_maxStrandWidth - _minStrandWidth);
-    var pos = cornerMargin + nextStrandWidth / 2;
+    var pos = cornerMargin;
     while (pos < edgeLength - cornerMargin) {
-      final strandWidth = nextStrandWidth;
+      final strandWidth =
+          _minStrandWidth +
+          (1 - random.nextDouble() * random.nextDouble()) *
+              (_maxStrandWidth - _minStrandWidth);
       final peakHeight =
           minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
       final result = _drawSingleFurStrand(
@@ -164,11 +162,8 @@ class CatFurBubblePainter extends CustomPainter {
         strokeWidth: strokeWidth,
       );
 
-      // 次のストランドの底辺始点を、現在のストランドの底辺終点に合わせる
-      nextStrandWidth =
-          _minStrandWidth +
-          random.nextDouble() * (_maxStrandWidth - _minStrandWidth);
-      pos = result.end + nextStrandWidth / 2;
+      // 次のストランドの始点を、現在のストランドの底辺終点に合わせる
+      pos = result.end;
     }
   }
 
@@ -197,13 +192,11 @@ class CatFurBubblePainter extends CustomPainter {
     required Color color,
     required double strokeWidth,
   }) {
-    final halfWidth = strandWidth / 2;
-
     // 始点・頂点・終点を辺座標系で算出
-    final startAlong = position - halfWidth;
-    final peakAlong = position;
+    final startAlong = position;
+    final peakAlong = position + strandWidth;
     // 終点はピーク位置から始点方向に半分だけ進んだ範囲でランダム配置
-    final endAlong = peakAlong - random.nextDouble() * halfWidth / 4;
+    final endAlong = peakAlong - random.nextDouble() * strandWidth / 2;
 
     final start = _edgePoint(size, edge: edge, along: startAlong);
     final peak = _edgePoint(
