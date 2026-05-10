@@ -33,8 +33,8 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
-      baseStrokeWidth: 2,
-      peakStrokeWidth: 2.8,
+      baseStrokeWidth: 1.2,
+      peakStrokeWidth: 1.8,
       minPeakHeight: 3,
       maxPeakHeight: 7,
       offset: 0,
@@ -133,8 +133,8 @@ class CatFurBubblePainter extends CustomPainter {
       return;
     }
 
-    // ストランドの間隔をランダムに配置
-    var pos = cornerMargin + random.nextDouble() * 6;
+    // ストランドを隙間なく敷き詰める
+    var pos = cornerMargin;
     while (pos < edgeLength - cornerMargin) {
       final strandWidth = 6.0 + random.nextDouble() * 8.0;
       final peakHeight =
@@ -157,9 +157,9 @@ class CatFurBubblePainter extends CustomPainter {
         peakStrokeWidth: peakStrokeWidth,
       );
 
-      // 次のストランドまでのギャップ（一部重なる程度の短い間隔）
-      final gap = -2.0 + random.nextDouble() * 5.0;
-      pos += strandWidth + gap;
+      // 隣のストランドと少し重なるように配置（隙間を作らない）
+      final overlap = 1.0 + random.nextDouble() * 2.0;
+      pos += strandWidth - overlap;
     }
   }
 
