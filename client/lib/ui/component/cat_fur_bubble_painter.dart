@@ -152,9 +152,13 @@ class CatFurBubblePainter extends CustomPainter {
       return;
     }
 
+    // 左上→右上→右下→左下の時計回りに毛並みを揃えるため、
+    // 下辺と左辺は逆方向に描画する
+    final reversed = edge == _Edge.bottom || edge == _Edge.left;
+
     // ストランドを隙間なく敷き詰める
-    var pos = cornerMargin;
-    while (pos < edgeLength - cornerMargin) {
+    var pos = reversed ? edgeLength - cornerMargin : cornerMargin;
+    while (reversed ? pos > cornerMargin : pos < edgeLength - cornerMargin) {
       final strandWidth =
           _minStrandWidth +
           (1 - random.nextDouble() * random.nextDouble()) *
@@ -171,6 +175,7 @@ class CatFurBubblePainter extends CustomPainter {
         random: random,
         color: color,
         strokeWidth: strokeWidth,
+        reversed: reversed,
       );
 
       // 次のストランドの始点を、現在のストランドの底辺終点に合わせる
@@ -203,13 +208,17 @@ class CatFurBubblePainter extends CustomPainter {
     required Random random,
     required Color color,
     required double strokeWidth,
+    bool reversed = false,
   }) {
     // 始点・頂点・終点を辺座標系で算出
+    // reversed の場合は along 方向を反転させる
+    final direction = reversed ? -1.0 : 1.0;
     final startAlong = position;
-    final peakAlong = position + strandWidth;
+    final peakAlong = position + strandWidth * direction;
     // 終点はピーク位置から始点方向に戻る範囲でランダム配置
     final endAlong =
-        peakAlong - random.nextDouble() * strandWidth * _endReturnRatio;
+        peakAlong -
+        random.nextDouble() * strandWidth * _endReturnRatio * direction;
 
     // 生え際のY座標をランダムにずらす
     final startBaseOffset = random.nextDouble() * _maxBaseOffset;
