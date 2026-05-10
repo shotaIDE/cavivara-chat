@@ -25,7 +25,8 @@ class CatFurBubblePainter extends CustomPainter {
   /// ストランドの高さ（外側への突き出し）の最大値
   static const _maxPeakHeight = 3.0;
 
-  /// 生え際（始点・終点）のY方向ランダムずれの最大値
+  /// 生え際（始点・終点）における辺の内側方向ずれの最大値
+  /// （top/bottom辺ではY方向、left/right辺ではX方向に影響する）
   static const _maxBaseOffset = 2.0;
 
   /// 終点が始点方向に戻る最大割合（1.0 = ストランド幅全体まで戻りうる）
@@ -47,7 +48,7 @@ class CatFurBubblePainter extends CustomPainter {
       const Radius.circular(12),
     );
     final bgPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = backgroundColor
       ..style = PaintingStyle.fill;
     canvas.drawRRect(bgRect, bgPaint);
 
@@ -306,7 +307,7 @@ class CatFurBubblePainter extends CustomPainter {
       ..close();
 
     final fillPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = backgroundColor
       ..style = PaintingStyle.fill;
     canvas.drawPath(fillPath, fillPaint);
 
@@ -430,7 +431,7 @@ class CatFurBubblePainter extends CustomPainter {
       ..close();
 
     final fillPaint = Paint()
-      ..color = Colors.grey.shade200
+      ..color = backgroundColor
       ..style = PaintingStyle.fill;
     canvas.drawPath(fillPath, fillPaint);
 
