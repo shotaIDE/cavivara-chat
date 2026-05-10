@@ -257,7 +257,7 @@ class CatFurBubblePainter extends CustomPainter {
 
     return _StrandBaseRange(
       start: startAlong,
-      end: peakAlong,
+      end: endAlong,
     );
   }
 
