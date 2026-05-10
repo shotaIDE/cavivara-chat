@@ -33,8 +33,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
-      baseStrokeWidth: 1.5,
-      peakStrokeWidth: 1.5,
+      strokeWidth: 1.5,
       minPeakHeight: 3,
       maxPeakHeight: 7,
       offset: 0,
@@ -46,8 +45,7 @@ class CatFurBubblePainter extends CustomPainter {
     Size size, {
     required Random random,
     required Color color,
-    required double baseStrokeWidth,
-    required double peakStrokeWidth,
+    required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
     required double offset,
@@ -58,8 +56,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -72,8 +69,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: Random(random.nextInt(100000)),
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -86,8 +82,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: Random(random.nextInt(100000)),
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -100,8 +95,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: Random(random.nextInt(100000)),
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -114,8 +108,7 @@ class CatFurBubblePainter extends CustomPainter {
     Size size, {
     required Random random,
     required Color color,
-    required double baseStrokeWidth,
-    required double peakStrokeWidth,
+    required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
     required double offset,
@@ -155,8 +148,7 @@ class CatFurBubblePainter extends CustomPainter {
         curlDirection: curlDirection,
         curlAmount: curlAmount,
         color: color,
-        baseStrokeWidth: baseStrokeWidth,
-        peakStrokeWidth: peakStrokeWidth,
+        strokeWidth: strokeWidth,
       );
 
       // 次のストランドの底辺始点を、現在のストランドの底辺終点に合わせる
@@ -176,9 +168,7 @@ class CatFurBubblePainter extends CustomPainter {
   ///    これにより下に重なった毛束の線を隠し、手前に見える効果を出す。
   ///
   /// 2. **ストローク描画**:
-  ///    毛束の輪郭線を、太さを変えながらセグメントごとに描画する。
-  ///    `sin(tMid * π)` により根元と先端は [baseStrokeWidth] で細く、
-  ///    ピーク（`t=0.5`）は [peakStrokeWidth] で太くなる。
+  ///    二次ベジェ曲線で滑らかな弧を描き、[strokeWidth] の均一な太さで描画する。
   ///
   /// [_strandPoint] では以下の効果で自然な毛並みを表現する:
   /// - **along**: 辺に沿った位置（`-halfWidth` → `halfWidth`）
@@ -199,43 +189,56 @@ class CatFurBubblePainter extends CustomPainter {
     required double curlDirection,
     required double curlAmount,
     required Color color,
-    required double baseStrokeWidth,
-    required double peakStrokeWidth,
+    required double strokeWidth,
   }) {
-    const segments = 12;
     final halfWidth = strandWidth / 2;
 
-    // ストランドの内側を薄いグレーで塗りつぶす
-    final fillPath = Path();
-    for (var i = 0; i <= segments; i++) {
-      final t = i / segments;
-      final p = _strandPoint(
-        size,
-        edge: edge,
-        position: position,
-        halfWidth: halfWidth,
-        t: t,
-        peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
-      );
-      if (i == 0) {
-        fillPath.moveTo(p.dx, p.dy);
-      } else {
-        fillPath.lineTo(p.dx, p.dy);
-      }
-    }
-    // 辺上の基点に戻って閉じる（内側を塗るため）
-    final baseEnd = _strandPoint(
+    // 弧の始点・ピーク・終点を算出
+    final start = _strandPoint(
+      size,
+      edge: edge,
+      position: position,
+      halfWidth: halfWidth,
+      t: 0,
+      peakHeight: peakHeight,
+      curlDirection: curlDirection,
+      curlAmount: curlAmount,
+    );
+    final peak = _strandPoint(
+      size,
+      edge: edge,
+      position: position,
+      halfWidth: halfWidth,
+      t: 0.5,
+      peakHeight: peakHeight,
+      curlDirection: curlDirection,
+      curlAmount: curlAmount,
+    );
+    final end = _strandPoint(
       size,
       edge: edge,
       position: position,
       halfWidth: halfWidth,
       t: 1,
-      peakHeight: 0,
+      peakHeight: peakHeight,
       curlDirection: curlDirection,
-      curlAmount: 0,
+      curlAmount: curlAmount,
     );
+
+    // 二次ベジェ曲線の制御点を算出（t=0.5でpeakを通るように）
+    // B(0.5) = 0.25*start + 0.5*control + 0.25*end = peak
+    // control = 2*peak - 0.5*(start + end)
+    final control = Offset(
+      2 * peak.dx - 0.5 * (start.dx + end.dx),
+      2 * peak.dy - 0.5 * (start.dy + end.dy),
+    );
+
+    // 弧の描画パス
+    final arcPath = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+
+    // ストランドの内側を背景色で塗りつぶす（下に重なる毛束の線を隠す）
     final baseStart = _strandPoint(
       size,
       edge: edge,
@@ -246,8 +249,7 @@ class CatFurBubblePainter extends CustomPainter {
       curlDirection: curlDirection,
       curlAmount: 0,
     );
-    fillPath
-      ..lineTo(baseEnd.dx, baseEnd.dy)
+    final fillPath = Path.from(arcPath)
       ..lineTo(baseStart.dx, baseStart.dy)
       ..close();
 
@@ -256,46 +258,13 @@ class CatFurBubblePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(fillPath, fillPaint);
 
-    // ストランドを短いセグメントに分割して太さを変える
+    // ストランドの輪郭線を描画
     final strandPaint = Paint()
       ..color = color
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-
-    for (var i = 0; i < segments; i++) {
-      final t0 = i / segments;
-      final t1 = (i + 1) / segments;
-
-      // 0→1→0 の山形パラメータ（ピークは中央）
-      final tMid = (t0 + t1) / 2;
-      // sin曲線で太さを変える（谷で細く、ピークで太く）
-      strandPaint.strokeWidth =
-          baseStrokeWidth +
-          (peakStrokeWidth - baseStrokeWidth) * sin(tMid * pi);
-
-      final p0 = _strandPoint(
-        size,
-        edge: edge,
-        position: position,
-        halfWidth: halfWidth,
-        t: t0,
-        peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
-      );
-      final p1 = _strandPoint(
-        size,
-        edge: edge,
-        position: position,
-        halfWidth: halfWidth,
-        t: t1,
-        peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
-      );
-
-      canvas.drawLine(p0, p1, strandPaint);
-    }
+    canvas.drawPath(arcPath, strandPaint);
 
     return _StrandBaseRange(
       start: position - halfWidth,
