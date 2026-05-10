@@ -163,6 +163,26 @@ class CatFurBubblePainter extends CustomPainter {
     }
   }
 
+  /// 1本の毛束（ストランド）を描画する。
+  ///
+  /// 描画は2つのパートで構成される:
+  ///
+  /// 1. **塗りつぶし**:
+  ///    毛束の輪郭を [Path] で構築し、内側を背景色で塗りつぶす。
+  ///    [_strandPoint] で `t=0→1` のセグメント分の点を算出して
+  ///    sin曲線のアーチ形状を描き、辺上の基点に戻してパスを閉じる。
+  ///    これにより下に重なった毛束の線を隠し、手前に見える効果を出す。
+  ///
+  /// 2. **ストローク描画**:
+  ///    毛束の輪郭線を、太さを変えながらセグメントごとに描画する。
+  ///    `sin(tMid * π)` により根元と先端は [baseStrokeWidth] で細く、
+  ///    ピーク（`t=0.5`）は [peakStrokeWidth] で太くなる。
+  ///
+  /// [_strandPoint] では以下の効果で自然な毛並みを表現する:
+  /// - **along**: 辺に沿った位置（`-halfWidth` → `halfWidth`）
+  /// - **height**: `sin(t * π)` で山形に外側へ突き出す高さ
+  /// - **sharpCurl**: ピーク付近で辺方向にカール（[curlDirection] で左右ランダム）
+  /// - **curlHeight**: ピーク付近で高さを内側に引き戻し、毛先が巻き込む効果
   void _drawSingleFurStrand(
     Canvas canvas,
     Size size, {
