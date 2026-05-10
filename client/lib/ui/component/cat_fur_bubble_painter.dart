@@ -10,6 +10,21 @@ class CatFurBubblePainter extends CustomPainter {
 
   static const maxOuterExtent = 10.0;
 
+  /// 前半の曲線が外側に膨らむ確率（1.0 = 100%）
+  static const _firstHalfOutwardBulgeProbability = 0.7;
+
+  /// ストランドの幅の最小値
+  static const _minStrandWidth = 5.0;
+
+  /// ストランドの幅の最大値
+  static const _maxStrandWidth = 16.0;
+
+  /// ストランドの高さ（外側への突き出し）の最小値
+  static const _minPeakHeight = 3.0;
+
+  /// ストランドの高さ（外側への突き出し）の最大値
+  static const _maxPeakHeight = 6.0;
+
   final Color backgroundColor;
   final int seed;
 
@@ -33,10 +48,9 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
-      baseStrokeWidth: 2,
-      peakStrokeWidth: 2.8,
-      minPeakHeight: 3,
-      maxPeakHeight: 7,
+      strokeWidth: 1.5,
+      minPeakHeight: _minPeakHeight,
+      maxPeakHeight: _maxPeakHeight,
       offset: 0,
     );
   }
@@ -46,8 +60,7 @@ class CatFurBubblePainter extends CustomPainter {
     Size size, {
     required Random random,
     required Color color,
-    required double baseStrokeWidth,
-    required double peakStrokeWidth,
+    required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
     required double offset,
@@ -58,8 +71,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -72,8 +84,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: Random(random.nextInt(100000)),
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -86,8 +97,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: Random(random.nextInt(100000)),
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -100,8 +110,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: Random(random.nextInt(100000)),
       color: color,
-      baseStrokeWidth: baseStrokeWidth,
-      peakStrokeWidth: peakStrokeWidth,
+      strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
       offset: offset,
@@ -114,8 +123,7 @@ class CatFurBubblePainter extends CustomPainter {
     Size size, {
     required Random random,
     required Color color,
-    required double baseStrokeWidth,
-    required double peakStrokeWidth,
+    required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
     required double offset,
@@ -127,102 +135,110 @@ class CatFurBubblePainter extends CustomPainter {
     };
 
     // 角丸部分を避けるマージン
-    const cornerMargin = 14.0;
+    const cornerMargin = 10.0;
     final drawableLength = edgeLength - cornerMargin * 2;
     if (drawableLength <= 0) {
       return;
     }
 
-    // ストランドの間隔をランダムに配置
-    var pos = cornerMargin + random.nextDouble() * 6;
+    // ストランドを隙間なく敷き詰める
+    var pos = cornerMargin;
     while (pos < edgeLength - cornerMargin) {
-      final strandWidth = 6.0 + random.nextDouble() * 8.0;
+      final strandWidth =
+          _minStrandWidth +
+          (1 - random.nextDouble() * random.nextDouble()) *
+              (_maxStrandWidth - _minStrandWidth);
       final peakHeight =
           minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
-      // 巻き込み方向（左右ランダム）
-      final curlDirection = random.nextBool() ? 1.0 : -1.0;
-      final curlAmount = 2.0 + random.nextDouble() * 3.0;
-
-      _drawSingleFurStrand(
+      final result = _drawSingleFurStrand(
         canvas,
         size,
         edge: edge,
         position: pos + offset,
         strandWidth: strandWidth,
         peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
+        random: random,
         color: color,
-        baseStrokeWidth: baseStrokeWidth,
-        peakStrokeWidth: peakStrokeWidth,
+        strokeWidth: strokeWidth,
       );
 
-      // 次のストランドまでのギャップ（一部重なる程度の短い間隔）
-      final gap = -2.0 + random.nextDouble() * 5.0;
-      pos += strandWidth + gap;
+      // 次のストランドの始点を、現在のストランドの底辺終点に合わせる
+      // result.end は position（= pos + offset）基準の座標なので offset を引いて戻す
+      pos = result.end - offset;
     }
   }
 
-  void _drawSingleFurStrand(
+  /// 1本の毛束（ストランド）を描画する。
+  ///
+  /// 描画は以下の手順で行われる:
+  ///
+  /// 1. 始点・頂点・終点の3点を辺上の座標として算出する。
+  /// 2. 始点→頂点、頂点→終点の2本の二次ベジェ曲線で弧を描く。
+  ///    各曲線の制御点は弦の中点から辺の外側方向にオフセットし、
+  ///    膨らむか凹むかはランダムに決定する。
+  /// 3. 弧の内側を背景色で塗りつぶし、下に重なる毛束の線を隠す。
+  /// 4. 弧の輪郭線を [strokeWidth] の均一な太さで描画する。
+  ///
+  /// 戻り値としてストランドの底辺の始点・終点の辺に沿った座標を返す。
+  /// 呼び出し側は [_StrandBaseRange.end] を次のストランドの始点として使うことで、
+  /// 隙間なく毛並みを敷き詰めることができる。
+  _StrandBaseRange _drawSingleFurStrand(
     Canvas canvas,
     Size size, {
     required _Edge edge,
     required double position,
     required double strandWidth,
     required double peakHeight,
-    required double curlDirection,
-    required double curlAmount,
+    required Random random,
     required Color color,
-    required double baseStrokeWidth,
-    required double peakStrokeWidth,
+    required double strokeWidth,
   }) {
-    const segments = 12;
-    final halfWidth = strandWidth / 2;
+    // 始点・頂点・終点を辺座標系で算出
+    final startAlong = position;
+    final peakAlong = position + strandWidth;
+    // 終点はピーク位置から始点方向に半分だけ進んだ範囲でランダム配置
+    final endAlong = peakAlong - random.nextDouble() * strandWidth / 2;
 
-    // ストランドの内側を薄いグレーで塗りつぶす
-    final fillPath = Path();
-    for (var i = 0; i <= segments; i++) {
-      final t = i / segments;
-      final p = _strandPoint(
-        size,
-        edge: edge,
-        position: position,
-        halfWidth: halfWidth,
-        t: t,
-        peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
-      );
-      if (i == 0) {
-        fillPath.moveTo(p.dx, p.dy);
-      } else {
-        fillPath.lineTo(p.dx, p.dy);
-      }
-    }
-    // 辺上の基点に戻って閉じる（内側を塗るため）
-    final baseEnd = _strandPoint(
+    final start = _edgePoint(size, edge: edge, along: startAlong);
+    final peak = _edgePoint(
       size,
       edge: edge,
-      position: position,
-      halfWidth: halfWidth,
-      t: 1,
-      peakHeight: 0,
-      curlDirection: curlDirection,
-      curlAmount: 0,
+      along: peakAlong,
+      outward: peakHeight,
     );
-    final baseStart = _strandPoint(
-      size,
+    final end = _edgePoint(size, edge: edge, along: endAlong);
+
+    // 各曲線の膨らみ方向をランダムに決定（後半は前半と同じ方向）
+    final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
+    final bulgeSign = random.nextDouble() < _firstHalfOutwardBulgeProbability
+        ? 1.0
+        : -1.0;
+
+    // 始点→頂点の制御点（弦の中点から辺の外側方向にオフセット）
+    final ctrl1 = _bulgedControlPoint(
       edge: edge,
-      position: position,
-      halfWidth: halfWidth,
-      t: 0,
-      peakHeight: 0,
-      curlDirection: curlDirection,
-      curlAmount: 0,
+      from: start,
+      to: peak,
+      bulge: bulgeAmount * bulgeSign,
     );
-    fillPath
-      ..lineTo(baseEnd.dx, baseEnd.dy)
-      ..lineTo(baseStart.dx, baseStart.dy)
+
+    // 頂点→終点の制御点
+    final ctrl2 = _bulgedControlPoint(
+      edge: edge,
+      from: peak,
+      to: end,
+      bulge: bulgeAmount * bulgeSign,
+    );
+
+    // 2本のベジェ曲線で弧を構成
+    final arcPath = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(ctrl1.dx, ctrl1.dy, peak.dx, peak.dy)
+      ..quadraticBezierTo(ctrl2.dx, ctrl2.dy, end.dx, end.dy);
+
+    // 内側を背景色で塗りつぶす（下に重なる毛束の線を隠す）
+    final fillPath = Path.from(arcPath)
+      ..lineTo(start.dx, start.dy)
       ..close();
 
     final fillPaint = Paint()
@@ -230,99 +246,60 @@ class CatFurBubblePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(fillPath, fillPaint);
 
-    // ストランドを短いセグメントに分割して太さを変える
+    // 輪郭線を描画
     final strandPaint = Paint()
       ..color = color
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
+    canvas.drawPath(arcPath, strandPaint);
 
-    for (var i = 0; i < segments; i++) {
-      final t0 = i / segments;
-      final t1 = (i + 1) / segments;
+    return _StrandBaseRange(
+      start: startAlong,
+      end: endAlong,
+    );
+  }
 
-      // 0→1→0 の山形パラメータ（ピークは中央）
-      final tMid = (t0 + t1) / 2;
-      // sin曲線で太さを変える（谷で細く、ピークで太く）
-      strandPaint.strokeWidth =
-          baseStrokeWidth +
-          (peakStrokeWidth - baseStrokeWidth) * sin(tMid * pi);
-
-      final p0 = _strandPoint(
-        size,
-        edge: edge,
-        position: position,
-        halfWidth: halfWidth,
-        t: t0,
-        peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
-      );
-      final p1 = _strandPoint(
-        size,
-        edge: edge,
-        position: position,
-        halfWidth: halfWidth,
-        t: t1,
-        peakHeight: peakHeight,
-        curlDirection: curlDirection,
-        curlAmount: curlAmount,
-      );
-
-      canvas.drawLine(p0, p1, strandPaint);
+  /// 辺上の座標を画面座標に変換する。
+  ///
+  /// [along] は辺に沿った位置、[outward] は辺から外側への距離。
+  Offset _edgePoint(
+    Size size, {
+    required _Edge edge,
+    required double along,
+    double outward = 0,
+  }) {
+    switch (edge) {
+      case _Edge.top:
+        return Offset(along, -outward);
+      case _Edge.bottom:
+        return Offset(along, size.height + outward);
+      case _Edge.left:
+        return Offset(-outward, along);
+      case _Edge.right:
+        return Offset(size.width + outward, along);
     }
   }
 
-  /// t: 0.0(始点) → 0.5(ピーク) → 1.0(終点) のパラメータ
-  /// ピーク付近で先端がくるんと内側に巻き込む
-  Offset _strandPoint(
-    Size size, {
+  /// 2点を結ぶ弦の中点から、辺の外側方向に [bulge] だけオフセットした制御点を返す。
+  ///
+  /// [bulge] が正なら外側に膨らみ、負なら内側に凹む。
+  Offset _bulgedControlPoint({
     required _Edge edge,
-    required double position,
-    required double halfWidth,
-    required double t,
-    required double peakHeight,
-    required double curlDirection,
-    required double curlAmount,
+    required Offset from,
+    required Offset to,
+    required double bulge,
   }) {
-    // along: 辺に沿った方向の位置（-halfWidth → 0 → halfWidth）
-    final along = (t - 0.5) * 2 * halfWidth;
-
-    // 高さ: sin曲線で0→peakHeight→0
-    final height = sin(t * pi) * peakHeight;
-
-    // 巻き込み: ピーク付近(t≈0.5)で辺方向にカールする
-    // t=0.5で最大カール、t=0,1でカール0
-    final curlFactor = sin(t * pi);
-    // ピーク付近でさらに強いカール（t=0.4〜0.6で急激に巻く）
-    final sharpCurl =
-        pow(curlFactor, 3).toDouble() * curlAmount * curlDirection;
-
-    // ピーク付近で高さを内側に引き戻す（巻き込み効果）
-    final curlHeight = t > 0.4 && t < 0.6
-        ? -curlAmount * 0.5 * sin((t - 0.4) / 0.2 * pi)
-        : 0.0;
-
+    final mid = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
     switch (edge) {
       case _Edge.top:
-        return Offset(
-          position + along + sharpCurl,
-          -height - curlHeight,
-        );
+        return Offset(mid.dx, mid.dy - bulge);
       case _Edge.bottom:
-        return Offset(
-          position + along + sharpCurl,
-          size.height + height + curlHeight,
-        );
+        return Offset(mid.dx, mid.dy + bulge);
       case _Edge.left:
-        return Offset(
-          -height - curlHeight,
-          position + along + sharpCurl,
-        );
+        return Offset(mid.dx - bulge, mid.dy);
       case _Edge.right:
-        return Offset(
-          size.width + height + curlHeight,
-          position + along + sharpCurl,
-        );
+        return Offset(mid.dx + bulge, mid.dy);
     }
   }
 
@@ -334,3 +311,11 @@ class CatFurBubblePainter extends CustomPainter {
 }
 
 enum _Edge { top, bottom, left, right }
+
+/// ストランドの底辺の始点・終点の辺に沿った座標。
+class _StrandBaseRange {
+  const _StrandBaseRange({required this.start, required this.end});
+
+  final double start;
+  final double end;
+}
