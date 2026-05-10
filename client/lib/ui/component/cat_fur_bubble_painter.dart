@@ -33,8 +33,8 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
-      baseStrokeWidth: 1.2,
-      peakStrokeWidth: 1.8,
+      baseStrokeWidth: 1.5,
+      peakStrokeWidth: 1.5,
       minPeakHeight: 3,
       maxPeakHeight: 7,
       offset: 0,
@@ -134,16 +134,18 @@ class CatFurBubblePainter extends CustomPainter {
     }
 
     // ストランドを隙間なく敷き詰める
-    var pos = cornerMargin;
+    // 最初のストランドの中心位置を計算（底辺の始点がcornerMarginに来るように）
+    var nextStrandWidth = 6.0 + random.nextDouble() * 8.0;
+    var pos = cornerMargin + nextStrandWidth / 2;
     while (pos < edgeLength - cornerMargin) {
-      final strandWidth = 6.0 + random.nextDouble() * 8.0;
+      final strandWidth = nextStrandWidth;
       final peakHeight =
           minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
       // 巻き込み方向（左右ランダム）
       final curlDirection = random.nextBool() ? 1.0 : -1.0;
       final curlAmount = 2.0 + random.nextDouble() * 3.0;
 
-      _drawSingleFurStrand(
+      final result = _drawSingleFurStrand(
         canvas,
         size,
         edge: edge,
@@ -157,9 +159,9 @@ class CatFurBubblePainter extends CustomPainter {
         peakStrokeWidth: peakStrokeWidth,
       );
 
-      // 隣のストランドと少し重なるように配置（隙間を作らない）
-      final overlap = 1.0 + random.nextDouble() * 2.0;
-      pos += strandWidth - overlap;
+      // 次のストランドの底辺始点を、現在のストランドの底辺終点に合わせる
+      nextStrandWidth = 6.0 + random.nextDouble() * 8.0;
+      pos = result.end + nextStrandWidth / 2;
     }
   }
 
@@ -183,7 +185,11 @@ class CatFurBubblePainter extends CustomPainter {
   /// - **height**: `sin(t * π)` で山形に外側へ突き出す高さ
   /// - **sharpCurl**: ピーク付近で辺方向にカール（[curlDirection] で左右ランダム）
   /// - **curlHeight**: ピーク付近で高さを内側に引き戻し、毛先が巻き込む効果
-  void _drawSingleFurStrand(
+  ///
+  /// 戻り値としてストランドの底辺の始点・終点の辺に沿った座標を返す。
+  /// 呼び出し側は [_StrandBaseRange.end] を次のストランドの始点として使うことで、
+  /// 隙間なく毛並みを敷き詰めることができる。
+  _StrandBaseRange _drawSingleFurStrand(
     Canvas canvas,
     Size size, {
     required _Edge edge,
@@ -290,6 +296,11 @@ class CatFurBubblePainter extends CustomPainter {
 
       canvas.drawLine(p0, p1, strandPaint);
     }
+
+    return _StrandBaseRange(
+      start: position - halfWidth,
+      end: position + halfWidth,
+    );
   }
 
   /// t: 0.0(始点) → 0.5(ピーク) → 1.0(終点) のパラメータ
@@ -354,3 +365,11 @@ class CatFurBubblePainter extends CustomPainter {
 }
 
 enum _Edge { top, bottom, left, right }
+
+/// ストランドの底辺の始点・終点の辺に沿った座標。
+class _StrandBaseRange {
+  const _StrandBaseRange({required this.start, required this.end});
+
+  final double start;
+  final double end;
+}
