@@ -28,6 +28,9 @@ class CatFurBubblePainter extends CustomPainter {
   /// 生え際（始点・終点）のY方向ランダムずれの最大値
   static const _maxBaseOffset = 2.0;
 
+  /// 終点が始点方向に戻る最大割合（1.0 = ストランド幅全体まで戻りうる）
+  static const _endReturnRatio = 0.25;
+
   final Color backgroundColor;
   final int seed;
 
@@ -56,7 +59,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
-      strokeWidth: 2,
+      strokeWidth: 1.5,
       minPeakHeight: _minPeakHeight,
       maxPeakHeight: _maxPeakHeight,
       offset: 0,
@@ -204,8 +207,9 @@ class CatFurBubblePainter extends CustomPainter {
     // 始点・頂点・終点を辺座標系で算出
     final startAlong = position;
     final peakAlong = position + strandWidth;
-    // 終点はピーク位置から始点方向に半分だけ進んだ範囲でランダム配置
-    final endAlong = peakAlong - random.nextDouble() * strandWidth / 2;
+    // 終点はピーク位置から始点方向に戻る範囲でランダム配置
+    final endAlong =
+        peakAlong - random.nextDouble() * strandWidth * _endReturnRatio;
 
     // 生え際のY座標をランダムにずらす
     final startBaseOffset = random.nextDouble() * _maxBaseOffset;
