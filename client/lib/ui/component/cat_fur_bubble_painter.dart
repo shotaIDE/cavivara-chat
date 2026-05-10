@@ -14,10 +14,10 @@ class CatFurBubblePainter extends CustomPainter {
   static const _firstHalfOutwardBulgeProbability = 0.7;
 
   /// ストランドの幅の最小値
-  static const _minStrandWidth = 10.0;
+  static const _minStrandWidth = 15.0;
 
   /// ストランドの幅の最大値
-  static const _maxStrandWidth = 18.0;
+  static const _maxStrandWidth = 28.0;
 
   /// ストランドの高さ（外側への突き出し）の最小値
   static const _minPeakHeight = 3.0;
@@ -145,7 +145,7 @@ class CatFurBubblePainter extends CustomPainter {
     // 最初のストランドの中心位置を計算（底辺の始点がcornerMarginに来るように）
     var nextStrandWidth =
         _minStrandWidth +
-        random.nextDouble() * (_maxStrandWidth - _minStrandWidth);
+        sqrt(random.nextDouble()) * (_maxStrandWidth - _minStrandWidth);
     var pos = cornerMargin + nextStrandWidth / 2;
     while (pos < edgeLength - cornerMargin) {
       final strandWidth = nextStrandWidth;
