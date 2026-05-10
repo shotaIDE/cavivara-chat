@@ -20,10 +20,13 @@ class CatFurBubblePainter extends CustomPainter {
   static const _maxStrandWidth = 16.0;
 
   /// ストランドの高さ（外側への突き出し）の最小値
-  static const _minPeakHeight = 3.0;
+  static const _minPeakHeight = 2.0;
 
   /// ストランドの高さ（外側への突き出し）の最大値
-  static const _maxPeakHeight = 6.0;
+  static const _maxPeakHeight = 4.0;
+
+  /// 生え際（始点・終点）のY方向ランダムずれの最大値
+  static const _maxBaseOffset = 4.0;
 
   final Color backgroundColor;
   final int seed;
@@ -32,7 +35,12 @@ class CatFurBubblePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // 背景の角丸矩形を描画
     final bgRect = RRect.fromRectAndRadius(
-      Offset.zero & size,
+      Rect.fromLTRB(
+        _maxBaseOffset,
+        _maxBaseOffset,
+        size.width - _maxBaseOffset,
+        size.height - _maxBaseOffset,
+      ),
       const Radius.circular(12),
     );
     final bgPaint = Paint()
@@ -199,14 +207,28 @@ class CatFurBubblePainter extends CustomPainter {
     // 終点はピーク位置から始点方向に半分だけ進んだ範囲でランダム配置
     final endAlong = peakAlong - random.nextDouble() * strandWidth / 2;
 
-    final start = _edgePoint(size, edge: edge, along: startAlong);
+    // 生え際のY座標をランダムにずらす
+    final startBaseOffset = random.nextDouble() * _maxBaseOffset;
+    final endBaseOffset = random.nextDouble() * _maxBaseOffset;
+
+    final start = _edgePoint(
+      size,
+      edge: edge,
+      along: startAlong,
+      outward: -startBaseOffset,
+    );
     final peak = _edgePoint(
       size,
       edge: edge,
       along: peakAlong,
       outward: peakHeight,
     );
-    final end = _edgePoint(size, edge: edge, along: endAlong);
+    final end = _edgePoint(
+      size,
+      edge: edge,
+      along: endAlong,
+      outward: -endBaseOffset,
+    );
 
     // 各曲線の膨らみ方向をランダムに決定（後半は前半と同じ方向）
     final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
@@ -237,8 +259,22 @@ class CatFurBubblePainter extends CustomPainter {
       ..quadraticBezierTo(ctrl2.dx, ctrl2.dy, end.dx, end.dy);
 
     // 内側を背景色で塗りつぶす（下に重なる毛束の線を隠す）
+    // 生え際の内側まで十分に塗りつぶし、背景矩形の端を覆う
+    final innerEnd = _edgePoint(
+      size,
+      edge: edge,
+      along: endAlong,
+      outward: -_maxBaseOffset,
+    );
+    final innerStart = _edgePoint(
+      size,
+      edge: edge,
+      along: startAlong,
+      outward: -_maxBaseOffset,
+    );
     final fillPath = Path.from(arcPath)
-      ..lineTo(start.dx, start.dy)
+      ..lineTo(innerEnd.dx, innerEnd.dy)
+      ..lineTo(innerStart.dx, innerStart.dy)
       ..close();
 
     final fillPaint = Paint()
