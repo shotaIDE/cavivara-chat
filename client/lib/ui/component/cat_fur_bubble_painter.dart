@@ -135,7 +135,7 @@ class CatFurBubblePainter extends CustomPainter {
     };
 
     // 角丸部分を避けるマージン
-    const cornerMargin = 14.0;
+    const cornerMargin = 10.0;
     final drawableLength = edgeLength - cornerMargin * 2;
     if (drawableLength <= 0) {
       return;
@@ -145,7 +145,8 @@ class CatFurBubblePainter extends CustomPainter {
     // 最初のストランドの中心位置を計算（底辺の始点がcornerMarginに来るように）
     var nextStrandWidth =
         _minStrandWidth +
-        sqrt(random.nextDouble()) * (_maxStrandWidth - _minStrandWidth);
+        (1 - random.nextDouble() * random.nextDouble()) *
+            (_maxStrandWidth - _minStrandWidth);
     var pos = cornerMargin + nextStrandWidth / 2;
     while (pos < edgeLength - cornerMargin) {
       final strandWidth = nextStrandWidth;
