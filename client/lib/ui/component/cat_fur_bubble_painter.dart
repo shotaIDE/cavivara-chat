@@ -214,11 +214,11 @@ class CatFurBubblePainter extends CustomPainter {
     );
     final end = _edgePoint(size, edge: edge, along: endAlong);
 
-    // 各曲線の膨らみ方向をランダムに決定
+    // 各曲線の膨らみ方向をランダムに決定（後半は前半と同じ方向）
     final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
-    final firstBulgeSign =
-        random.nextDouble() < _firstHalfOutwardBulgeProbability ? 1.0 : -1.0;
-    final secondBulgeSign = random.nextBool() ? 1.0 : -1.0;
+    final bulgeSign = random.nextDouble() < _firstHalfOutwardBulgeProbability
+        ? 1.0
+        : -1.0;
 
     // 始点→頂点の制御点（弦の中点から辺の外側方向にオフセット）
     final ctrl1 = _bulgedControlPoint(
@@ -226,7 +226,7 @@ class CatFurBubblePainter extends CustomPainter {
       edge: edge,
       from: start,
       to: peak,
-      bulge: bulgeAmount * firstBulgeSign,
+      bulge: bulgeAmount * bulgeSign,
     );
 
     // 頂点→終点の制御点
@@ -235,7 +235,7 @@ class CatFurBubblePainter extends CustomPainter {
       edge: edge,
       from: peak,
       to: end,
-      bulge: bulgeAmount * secondBulgeSign,
+      bulge: bulgeAmount * bulgeSign,
     );
 
     // 2本のベジェ曲線で弧を構成
