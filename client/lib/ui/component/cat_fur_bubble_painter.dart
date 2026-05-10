@@ -20,13 +20,13 @@ class CatFurBubblePainter extends CustomPainter {
   static const _maxStrandWidth = 16.0;
 
   /// ストランドの高さ（外側への突き出し）の最小値
-  static const _minPeakHeight = 2.0;
+  static const _minPeakHeight = 1.0;
 
   /// ストランドの高さ（外側への突き出し）の最大値
-  static const _maxPeakHeight = 4.0;
+  static const _maxPeakHeight = 3.0;
 
   /// 生え際（始点・終点）のY方向ランダムずれの最大値
-  static const _maxBaseOffset = 4.0;
+  static const _maxBaseOffset = 2.0;
 
   final Color backgroundColor;
   final int seed;
@@ -56,7 +56,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       random: random,
       color: Colors.grey.shade600.withAlpha(180),
-      strokeWidth: 1.5,
+      strokeWidth: 2,
       minPeakHeight: _minPeakHeight,
       maxPeakHeight: _maxPeakHeight,
       offset: 0,
