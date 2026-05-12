@@ -54,7 +54,7 @@ dev_dependencies:
   mocktail: ^1.0.4
   pedantic_mono: ^1.33.0
   riverpod_generator: 4.0.3
-  riverpod_lint: 3.0.3
+  riverpod_lint: 4.0.3
   shared_preferences_platform_interface: ^2.0.0
 
 flutter:
