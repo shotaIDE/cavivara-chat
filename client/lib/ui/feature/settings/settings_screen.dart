@@ -112,7 +112,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         displayName: final displayName,
         email: final email,
       ):
-        leading = const Icon(FontAwesomeIcons.apple);
+        leading = const FaIcon(FontAwesomeIcons.apple);
         titleText = displayName ?? '名前未設定';
         subtitle = email != null ? Text(email) : null;
         onTap = null;
@@ -228,13 +228,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context) {
         final linkWithGoogleButton = TextButton.icon(
           onPressed: _linkWithGoogle,
-          icon: const Icon(FontAwesomeIcons.google),
+          icon: const FaIcon(FontAwesomeIcons.google),
           label: const Text('Googleと連携'),
         );
 
         final linkWithAppleButton = TextButton.icon(
           onPressed: _linkWithApple,
-          icon: const Icon(FontAwesomeIcons.apple),
+          icon: const FaIcon(FontAwesomeIcons.apple),
           style: TextButton.styleFrom(
             backgroundColor: signInWithAppleBackgroundColor(context),
             foregroundColor: signInWithAppleForegroundColor(context),
