@@ -31,7 +31,7 @@ dependencies:
   font_awesome_flutter: 11.0.0
   freezed_annotation: 3.1.0
   google_sign_in: 7.1.1
-  in_app_review: 2.0.10
+  in_app_review: 2.0.11
   logging: 1.3.0
   package_info_plus: 10.1.0
   purchases_flutter: 10.1.0
