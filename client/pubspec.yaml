@@ -14,7 +14,7 @@ dependencies:
   cloud_firestore: 6.4.1
   cloud_functions: 6.3.1
   collection: 1.19.1
-  cupertino_icons: 1.0.8
+  cupertino_icons: 1.0.9
   dio: 5.9.2
   email_validator: 3.0.0
   firebase_ai: 3.12.1
