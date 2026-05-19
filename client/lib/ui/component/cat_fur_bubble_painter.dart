@@ -10,6 +10,9 @@ class CatFurBubblePainter extends CustomPainter {
 
   static const maxOuterExtent = 10.0;
 
+  /// 角丸部分を避けるマージン
+  static const _cornerMargin = 10.0;
+
   /// 前半の曲線が外側に膨らむ確率（1.0 = 100%）
   static const _firstHalfOutwardBulgeProbability = 0.7;
 
@@ -63,7 +66,6 @@ class CatFurBubblePainter extends CustomPainter {
       strokeWidth: 1.5,
       minPeakHeight: _minPeakHeight,
       maxPeakHeight: _maxPeakHeight,
-      offset: 0,
     );
   }
 
@@ -75,10 +77,9 @@ class CatFurBubblePainter extends CustomPainter {
     required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
-    required double offset,
   }) {
     // 上辺のファーストランド
-    _drawEdgeFurStrands(
+    final topEndpoints = _drawEdgeFurStrands(
       canvas,
       size,
       random: random,
@@ -86,12 +87,11 @@ class CatFurBubblePainter extends CustomPainter {
       strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
-      offset: offset,
       edge: _Edge.top,
     );
 
     // 下辺
-    _drawEdgeFurStrands(
+    final bottomEndpoints = _drawEdgeFurStrands(
       canvas,
       size,
       random: Random(random.nextInt(100000)),
@@ -99,12 +99,11 @@ class CatFurBubblePainter extends CustomPainter {
       strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
-      offset: offset,
       edge: _Edge.bottom,
     );
 
     // 左辺
-    _drawEdgeFurStrands(
+    final leftEndpoints = _drawEdgeFurStrands(
       canvas,
       size,
       random: Random(random.nextInt(100000)),
@@ -112,12 +111,11 @@ class CatFurBubblePainter extends CustomPainter {
       strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
-      offset: offset,
       edge: _Edge.left,
     );
 
     // 右辺
-    _drawEdgeFurStrands(
+    final rightEndpoints = _drawEdgeFurStrands(
       canvas,
       size,
       random: Random(random.nextInt(100000)),
@@ -125,17 +123,36 @@ class CatFurBubblePainter extends CustomPainter {
       strokeWidth: strokeWidth,
       minPeakHeight: minPeakHeight,
       maxPeakHeight: maxPeakHeight,
-      offset: offset,
       edge: _Edge.right,
     );
 
-    // 四隅のコーナーストランド（隣接する辺を滑らかに接続）
+    // 四隅のコーナーストランド（隣接する辺の端点を時計回りに繋ぐ）
     final cornerRandom = Random(random.nextInt(100000));
-    for (final corner in _Corner.values) {
+    final cornerConnections = <_Corner, ({Offset start, Offset end})>{
+      _Corner.topLeft: (
+        start: leftEndpoints.lastEnd,
+        end: topEndpoints.firstStart,
+      ),
+      _Corner.topRight: (
+        start: topEndpoints.lastEnd,
+        end: rightEndpoints.firstStart,
+      ),
+      _Corner.bottomRight: (
+        start: rightEndpoints.lastEnd,
+        end: bottomEndpoints.firstStart,
+      ),
+      _Corner.bottomLeft: (
+        start: bottomEndpoints.lastEnd,
+        end: leftEndpoints.firstStart,
+      ),
+    };
+    for (final entry in cornerConnections.entries) {
       _drawCornerStrand(
         canvas,
         size,
-        corner: corner,
+        corner: entry.key,
+        start: entry.value.start,
+        end: entry.value.end,
         random: cornerRandom,
         color: color,
         strokeWidth: strokeWidth,
@@ -145,7 +162,7 @@ class CatFurBubblePainter extends CustomPainter {
     }
   }
 
-  void _drawEdgeFurStrands(
+  _EdgeEndpoints _drawEdgeFurStrands(
     Canvas canvas,
     Size size, {
     required Random random,
@@ -153,7 +170,6 @@ class CatFurBubblePainter extends CustomPainter {
     required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
-    required double offset,
     required _Edge edge,
   }) {
     final edgeLength = switch (edge) {
@@ -161,11 +177,11 @@ class CatFurBubblePainter extends CustomPainter {
       _Edge.left || _Edge.right => size.height,
     };
 
-    // 角丸部分を避けるマージン
-    const cornerMargin = 10.0;
-    final drawableLength = edgeLength - cornerMargin * 2;
+    final drawableLength = edgeLength - _cornerMargin * 2;
     if (drawableLength <= 0) {
-      return;
+      // ストランドを敷ける長さがない場合は、辺の中央の点をフォールバックとして返す
+      final fallback = _edgePoint(size, edge: edge, along: edgeLength / 2);
+      return _EdgeEndpoints(firstStart: fallback, lastEnd: fallback);
     }
 
     // 左上→右上→右下→左下の時計回りに毛並みを揃えるため、
@@ -173,8 +189,10 @@ class CatFurBubblePainter extends CustomPainter {
     final reversed = edge == _Edge.bottom || edge == _Edge.left;
 
     // ストランドを隙間なく敷き詰める
-    var pos = reversed ? edgeLength - cornerMargin : cornerMargin;
-    while (reversed ? pos > cornerMargin : pos < edgeLength - cornerMargin) {
+    var pos = reversed ? edgeLength - _cornerMargin : _cornerMargin;
+    Offset? firstStart;
+    late Offset lastEnd;
+    while (reversed ? pos > _cornerMargin : pos < edgeLength - _cornerMargin) {
       final strandWidth =
           _minStrandWidth +
           (1 - random.nextDouble() * random.nextDouble()) *
@@ -185,7 +203,7 @@ class CatFurBubblePainter extends CustomPainter {
         canvas,
         size,
         edge: edge,
-        position: pos + offset,
+        position: pos,
         strandWidth: strandWidth,
         peakHeight: peakHeight,
         random: random,
@@ -194,10 +212,17 @@ class CatFurBubblePainter extends CustomPainter {
         reversed: reversed,
       );
 
+      firstStart ??= result.start;
+      lastEnd = result.end;
+
       // 次のストランドの始点を、現在のストランドの底辺終点に合わせる
-      // result.end は position（= pos + offset）基準の座標なので offset を引いて戻す
-      pos = result.end - offset;
+      pos = switch (edge) {
+        _Edge.top || _Edge.bottom => result.end.dx,
+        _Edge.left || _Edge.right => result.end.dy,
+      };
     }
+
+    return _EdgeEndpoints(firstStart: firstStart!, lastEnd: lastEnd);
   }
 
   /// 1本の毛束（ストランド）を描画する。
@@ -211,10 +236,10 @@ class CatFurBubblePainter extends CustomPainter {
   /// 3. 弧の内側を背景色で塗りつぶし、下に重なる毛束の線を隠す。
   /// 4. 弧の輪郭線を [strokeWidth] の均一な太さで描画する。
   ///
-  /// 戻り値としてストランドの底辺の始点・終点の辺に沿った座標を返す。
-  /// 呼び出し側は [_StrandBaseRange.end] を次のストランドの始点として使うことで、
+  /// 戻り値として始点・終点のキャンバス座標を返す。
+  /// 呼び出し側は終点の辺方向成分を次のストランドの始点として使うことで、
   /// 隙間なく毛並みを敷き詰めることができる。
-  _StrandBaseRange _drawSingleFurStrand(
+  ({Offset start, Offset end}) _drawSingleFurStrand(
     Canvas canvas,
     Size size, {
     required _Edge edge,
@@ -320,104 +345,51 @@ class CatFurBubblePainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     canvas.drawPath(arcPath, strandPaint);
 
-    return _StrandBaseRange(
-      start: startAlong,
-      end: endAlong,
-    );
+    return (start: start, end: end);
   }
 
   /// コーナー部分に毛並みのブリッジストランドを描画し、
-  /// 隣接する辺の毛並みの根本を滑らかに接続する。
+  /// 隣接する辺の毛並みの末端と先端を滑らかに接続する。
   ///
-  /// 時計回り（左上→右上→右下→左下）の流れに沿って、
-  /// 一方の辺の端から隣の辺の端へ弧を描く。
+  /// [start] は前の辺の最後のストランドの終点、[end] は次の辺の最初の
+  /// ストランドの始点（いずれもキャンバス座標）。これを始終点とすることで、
+  /// 角部分でストランドの輪郭線が途切れないようにする。
   void _drawCornerStrand(
     Canvas canvas,
     Size size, {
     required _Corner corner,
+    required Offset start,
+    required Offset end,
     required Random random,
     required Color color,
     required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
   }) {
-    const cornerMargin = 10.0;
     final peakHeight =
         minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
     final diagonalPeak = peakHeight * 0.7;
 
-    final startBaseOffset = random.nextDouble() * _maxBaseOffset;
-    final endBaseOffset = random.nextDouble() * _maxBaseOffset;
-
-    // 時計回りの流れに沿った始点・終点・制御点・内側塗りつぶし点
-    final Offset start;
-    final Offset end;
+    // 制御点はコーナー外側へ斜めにオフセット。
+    // フィルを閉じる内側の点はバブル内部に取り、塗りつぶし領域がはみ出さないようにする。
     final Offset control;
-    final Offset innerStart;
-    final Offset innerEnd;
-
+    final Offset cornerInner;
     switch (corner) {
-      // 左辺(↑) → 上辺(→)
       case _Corner.topLeft:
-        start = Offset(startBaseOffset, cornerMargin);
-        end = Offset(cornerMargin, endBaseOffset);
         control = Offset(-diagonalPeak, -diagonalPeak);
-        innerStart = const Offset(_maxBaseOffset, cornerMargin);
-        innerEnd = const Offset(cornerMargin, _maxBaseOffset);
-      // 上辺(→) → 右辺(↓)
+        cornerInner = const Offset(_cornerMargin, _cornerMargin);
       case _Corner.topRight:
-        start = Offset(size.width - cornerMargin, startBaseOffset);
-        end = Offset(size.width - endBaseOffset, cornerMargin);
-        control = Offset(
-          size.width + diagonalPeak,
-          -diagonalPeak,
-        );
-        innerStart = Offset(
-          size.width - cornerMargin,
-          _maxBaseOffset,
-        );
-        innerEnd = Offset(
-          size.width - _maxBaseOffset,
-          cornerMargin,
-        );
-      // 右辺(↓) → 下辺(←)
+        control = Offset(size.width + diagonalPeak, -diagonalPeak);
+        cornerInner = Offset(size.width - _cornerMargin, _cornerMargin);
       case _Corner.bottomRight:
-        start = Offset(
-          size.width - startBaseOffset,
-          size.height - cornerMargin,
+        control = Offset(size.width + diagonalPeak, size.height + diagonalPeak);
+        cornerInner = Offset(
+          size.width - _cornerMargin,
+          size.height - _cornerMargin,
         );
-        end = Offset(
-          size.width - cornerMargin,
-          size.height - endBaseOffset,
-        );
-        control = Offset(
-          size.width + diagonalPeak,
-          size.height + diagonalPeak,
-        );
-        innerStart = Offset(
-          size.width - _maxBaseOffset,
-          size.height - cornerMargin,
-        );
-        innerEnd = Offset(
-          size.width - cornerMargin,
-          size.height - _maxBaseOffset,
-        );
-      // 下辺(←) → 左辺(↑)
       case _Corner.bottomLeft:
-        start = Offset(cornerMargin, size.height - startBaseOffset);
-        end = Offset(endBaseOffset, size.height - cornerMargin);
-        control = Offset(
-          -diagonalPeak,
-          size.height + diagonalPeak,
-        );
-        innerStart = Offset(
-          cornerMargin,
-          size.height - _maxBaseOffset,
-        );
-        innerEnd = Offset(
-          _maxBaseOffset,
-          size.height - cornerMargin,
-        );
+        control = Offset(-diagonalPeak, size.height + diagonalPeak);
+        cornerInner = Offset(_cornerMargin, size.height - _cornerMargin);
     }
 
     final arcPath = Path()
@@ -426,8 +398,7 @@ class CatFurBubblePainter extends CustomPainter {
 
     // 内側を背景色で塗りつぶす
     final fillPath = Path.from(arcPath)
-      ..lineTo(innerEnd.dx, innerEnd.dy)
-      ..lineTo(innerStart.dx, innerStart.dy)
+      ..lineTo(cornerInner.dx, cornerInner.dy)
       ..close();
 
     final fillPaint = Paint()
@@ -499,10 +470,11 @@ enum _Edge { top, bottom, left, right }
 
 enum _Corner { topLeft, topRight, bottomRight, bottomLeft }
 
-/// ストランドの底辺の始点・終点の辺に沿った座標。
-class _StrandBaseRange {
-  const _StrandBaseRange({required this.start, required this.end});
+/// 辺に沿って敷き詰めたストランド群の、最初のストランドの始点と
+/// 最後のストランドの終点（いずれもキャンバス座標）。
+class _EdgeEndpoints {
+  const _EdgeEndpoints({required this.firstStart, required this.lastEnd});
 
-  final double start;
-  final double end;
+  final Offset firstStart;
+  final Offset lastEnd;
 }
