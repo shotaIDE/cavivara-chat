@@ -108,22 +108,80 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
         );
 
       case ChatBubbleDesign.catFur:
-        return CustomPaint(
-          painter: CatFurBubblePainter(
-            backgroundColor: backgroundColor,
-            seed: seed,
+        return _CatFurBubble(
+          backgroundColor: backgroundColor,
+          seed: seed,
+          constraints: constraints,
+          padding: padding.copyWith(
+            left: padding.left + CatFurBubblePainter.maxOuterExtent,
+            right: padding.right + CatFurBubblePainter.maxOuterExtent,
+            top: padding.top + CatFurBubblePainter.maxOuterExtent,
+            bottom: padding.bottom + CatFurBubblePainter.maxOuterExtent,
           ),
-          child: Container(
-            constraints: constraints,
-            padding: padding.copyWith(
-              left: padding.left + CatFurBubblePainter.maxOuterExtent,
-              right: padding.right + CatFurBubblePainter.maxOuterExtent,
-              top: padding.top + CatFurBubblePainter.maxOuterExtent,
-              bottom: padding.bottom + CatFurBubblePainter.maxOuterExtent,
-            ),
-            child: child,
-          ),
+          child: child,
         );
     }
+  }
+}
+
+/// 猫毛様式の吹き出し本体。
+///
+/// 毛先が風に靡くアニメーションを駆動するため、独立した [StatefulWidget] として
+/// [AnimationController] を保持し、その値を [CatFurBubblePainter] に渡す。
+class _CatFurBubble extends StatefulWidget {
+  const _CatFurBubble({
+    required this.backgroundColor,
+    required this.seed,
+    required this.constraints,
+    required this.padding,
+    required this.child,
+  });
+
+  /// 1サイクルの周期。値が長いほど毛先がゆっくり靡く。
+  static const _windPeriod = Duration(milliseconds: 4200);
+
+  final Color backgroundColor;
+  final int seed;
+  final BoxConstraints constraints;
+  final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  @override
+  State<_CatFurBubble> createState() => _CatFurBubbleState();
+}
+
+class _CatFurBubbleState extends State<_CatFurBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _windController;
+
+  @override
+  void initState() {
+    super.initState();
+    _windController = AnimationController(
+      vsync: this,
+      duration: _CatFurBubble._windPeriod,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _windController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: CatFurBubblePainter(
+        backgroundColor: widget.backgroundColor,
+        seed: widget.seed,
+        windAnimation: _windController,
+      ),
+      child: Container(
+        constraints: widget.constraints,
+        padding: widget.padding,
+        child: widget.child,
+      ),
+    );
   }
 }

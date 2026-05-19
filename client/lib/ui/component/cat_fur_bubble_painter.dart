@@ -3,10 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class CatFurBubblePainter extends CustomPainter {
-  const CatFurBubblePainter({
+  CatFurBubblePainter({
     required this.backgroundColor,
     required this.seed,
-  });
+    this.windAnimation,
+  }) : super(repaint: windAnimation);
 
   static const maxOuterExtent = 10.0;
 
@@ -41,8 +42,27 @@ class CatFurBubblePainter extends CustomPainter {
   /// 終点が始点方向に戻る最大割合（1.0 = ストランド幅全体まで戻りうる）
   static const _endReturnRatio = 0.25;
 
+  /// 風によって全ての毛先がスクリーン水平方向に揃って揺れる最大変位（px）
+  static const _maxWindHorizontalAmplitude = 1.2;
+
+  /// 風によって全ての毛先がスクリーン垂直方向に揃って揺れる最大変位（px）。
+  /// 水平成分との比率で風が吹いていく向きが決まる。
+  static const _maxWindVerticalAmplitude = 0.5;
+
+  /// ストランドごとに揺れ幅を ±この割合の範囲で変化させる。
+  /// 方向は揃ったまま、毛束ごとに振れ幅をズラして自然な揺らぎを出す。
+  static const _windAmplitudeVariation = 0.7;
+
+  /// ストランドごとに揺れのタイミングを ±このラジアン分だけ位相シフトさせる。
+  /// 全体としては揃って揺れて見える程度の小さな値（1サイクル = 2π）にする。
+  static const _windPhaseVariation = 0.45;
+
   final Color backgroundColor;
   final int seed;
+
+  /// 風のアニメーション。0..1 で1サイクルとして扱う。
+  /// null の場合は揺れずに静止状態で描画する。
+  final Animation<double>? windAnimation;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -277,12 +297,16 @@ class CatFurBubblePainter extends CustomPainter {
       along: startAlong,
       outward: -startBaseOffset,
     );
-    final peak = _edgePoint(
+    final rawPeak = _edgePoint(
       size,
       edge: edge,
       along: peakAlong,
       outward: peakHeight,
     );
+    // 風による毛先の揺れを加える。全ストランド共通のオフセットを使うため、
+    // 全ての毛先が同じ方向に同じタイミングで揺れる。
+    // 根本 (start/end) は動かさず、頂点のみを揺らすことで「毛が風に靡く」表現になる。
+    final peak = rawPeak + _windOffset(rawPeak);
     final end = _edgePoint(
       size,
       edge: edge,
@@ -465,9 +489,12 @@ class CatFurBubblePainter extends CustomPainter {
       final peakHeightVal =
           minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
       final peakR = baseRadius + peakHeightVal;
-      final peak =
+      final rawPeak =
           arcCenter +
           Offset(cos(strandPeakAngle), sin(strandPeakAngle)) * peakR;
+      // 風による毛先の揺れを加える。辺のストランドと同じ全ストランド共通の
+      // オフセットを使い、コーナーも他の毛と同じ方向に同じタイミングで揺れる。
+      final peak = rawPeak + _windOffset(rawPeak);
 
       // ベジェ制御点（弦の中点から放射状に外側へオフセット）
       final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
@@ -592,10 +619,57 @@ class CatFurBubblePainter extends CustomPainter {
     }
   }
 
+  /// 指定された毛先位置における、風による毛先のオフセット（スクリーン座標系）。
+  ///
+  /// 方向は全ストランドで揃っており、水平・垂直の両成分が同じ sin 波で駆動される
+  /// ため、毛先は固定された対角方向の直線上を行き来する。
+  /// 振れ幅と位相だけ [peak] 位置から決定論的に算出した倍率/オフセットで少しだけ
+  /// 変化させており、機械的になりすぎず自然な揺らぎが出る。
+  /// [windAnimation] が null の場合は [Offset.zero] を返し、静止状態と同じ描画になる。
+  Offset _windOffset(Offset peak) {
+    final animation = windAnimation;
+    if (animation == null) {
+      return Offset.zero;
+    }
+    final phase = 2 * pi * animation.value + _windPhaseOffset(peak);
+    final magnitude = sin(phase) * _windAmplitudeFactor(peak);
+    return Offset(
+      _maxWindHorizontalAmplitude * magnitude,
+      _maxWindVerticalAmplitude * magnitude,
+    );
+  }
+
+  /// 毛先位置から `[1 - _windAmplitudeVariation, 1 + _windAmplitudeVariation]` の
+  /// 範囲の倍率を決定論的に返す。
+  ///
+  /// 位置に対して周期の異なる sin 波を 2 本合成しただけのゆるい疑似ノイズで、
+  /// 隣接ストランドでは値がなだらかに変わる。これにより、揺れの方向とタイミングは
+  /// 揃ったまま、毛束ごとに振れ幅が少しずつズレて自然に見える。
+  double _windAmplitudeFactor(Offset peak) {
+    final noise =
+        (sin(peak.dx * 0.31 + peak.dy * 0.17) +
+            sin(peak.dx * 0.13 + peak.dy * 0.43 + 1.7)) /
+        2;
+    return 1.0 + _windAmplitudeVariation * noise;
+  }
+
+  /// 毛先位置から `±_windPhaseVariation` 範囲の位相シフト（ラジアン）を返す。
+  ///
+  /// 振れ幅と同じく位置ベースの疑似ノイズだが、別の係数を使うことで振れ幅と
+  /// タイミングのズレが連動しないようにしている。
+  double _windPhaseOffset(Offset peak) {
+    final noise =
+        (sin(peak.dx * 0.21 + peak.dy * 0.29 + 0.5) +
+            sin(peak.dx * 0.47 + peak.dy * 0.11 + 2.3)) /
+        2;
+    return _windPhaseVariation * noise;
+  }
+
   @override
   bool shouldRepaint(covariant CatFurBubblePainter oldDelegate) {
     return oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.seed != seed;
+        oldDelegate.seed != seed ||
+        oldDelegate.windAnimation != windAnimation;
   }
 }
 
