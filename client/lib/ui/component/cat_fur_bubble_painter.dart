@@ -13,6 +13,12 @@ class CatFurBubblePainter extends CustomPainter {
   /// 角丸部分を避けるマージン
   static const _cornerMargin = 10.0;
 
+  /// コーナーストランドの生え際の仮想弧の中心点を、キャンバスの各角からどれだけ
+  /// 内側に置くか。値を大きくするほど弧の半径が大きくなり、緩やかな角丸になる。
+  /// 隣接辺の端点（角から約 `_cornerMargin` の位置にある）までの距離が弧の半径と
+  /// なるため、半径 ≈ √((offset - baseOffset)² + (offset - cornerMargin)²)。
+  static const _cornerArcCenterOffset = 18.0;
+
   /// 前半の曲線が外側に膨らむ確率（1.0 = 100%）
   static const _firstHalfOutwardBulgeProbability = 0.7;
 
@@ -368,20 +374,29 @@ class CatFurBubblePainter extends CustomPainter {
     required double minPeakHeight,
     required double maxPeakHeight,
   }) {
-    // 角丸の弧の中心点（バブル内部）
+    // 生え際の仮想弧の中心点（バブル内部）
     final Offset arcCenter;
     switch (corner) {
       case _Corner.topLeft:
-        arcCenter = const Offset(_cornerMargin, _cornerMargin);
+        arcCenter = const Offset(
+          _cornerArcCenterOffset,
+          _cornerArcCenterOffset,
+        );
       case _Corner.topRight:
-        arcCenter = Offset(size.width - _cornerMargin, _cornerMargin);
+        arcCenter = Offset(
+          size.width - _cornerArcCenterOffset,
+          _cornerArcCenterOffset,
+        );
       case _Corner.bottomRight:
         arcCenter = Offset(
-          size.width - _cornerMargin,
-          size.height - _cornerMargin,
+          size.width - _cornerArcCenterOffset,
+          size.height - _cornerArcCenterOffset,
         );
       case _Corner.bottomLeft:
-        arcCenter = Offset(_cornerMargin, size.height - _cornerMargin);
+        arcCenter = Offset(
+          _cornerArcCenterOffset,
+          size.height - _cornerArcCenterOffset,
+        );
     }
 
     // 始点・終点の中心からの角度
