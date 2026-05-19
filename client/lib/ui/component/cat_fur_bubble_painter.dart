@@ -147,12 +147,12 @@ class CatFurBubblePainter extends CustomPainter {
       ),
     };
     for (final entry in cornerConnections.entries) {
-      _drawCornerStrand(
+      _drawCornerFurStrands(
         canvas,
         size,
         corner: entry.key,
-        start: entry.value.start,
-        end: entry.value.end,
+        edgeStart: entry.value.start,
+        edgeEnd: entry.value.end,
         random: cornerRandom,
         color: color,
         strokeWidth: strokeWidth,
@@ -348,72 +348,190 @@ class CatFurBubblePainter extends CustomPainter {
     return (start: start, end: end);
   }
 
-  /// コーナー部分に毛並みのブリッジストランドを描画し、
-  /// 隣接する辺の毛並みの末端と先端を滑らかに接続する。
+  /// 四隅の角丸領域に、弧に沿って毛束（ストランド）を敷き詰める。
   ///
-  /// [start] は前の辺の最後のストランドの終点、[end] は次の辺の最初の
-  /// ストランドの始点（いずれもキャンバス座標）。これを始終点とすることで、
-  /// 角部分でストランドの輪郭線が途切れないようにする。
-  void _drawCornerStrand(
+  /// [edgeStart] は前の辺の最後のストランドの終点、[edgeEnd] は次の辺の最初の
+  /// ストランドの始点（いずれもキャンバス座標）。これらを通る円弧をストランドの
+  /// 生え際の仮想線として扱い、辺と同じ要領で複数のストランドを敷き詰めることで、
+  /// 四隅の生え際を角丸にする。
+  ///
+  /// 各ストランドのピークは、コーナーの内側中心点から放射状に外側へ突き出す。
+  void _drawCornerFurStrands(
     Canvas canvas,
     Size size, {
     required _Corner corner,
-    required Offset start,
-    required Offset end,
+    required Offset edgeStart,
+    required Offset edgeEnd,
     required Random random,
     required Color color,
     required double strokeWidth,
     required double minPeakHeight,
     required double maxPeakHeight,
   }) {
-    final peakHeight =
-        minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
-    final diagonalPeak = peakHeight * 0.7;
-
-    // 制御点はコーナー外側へ斜めにオフセット。
-    // フィルを閉じる内側の点はバブル内部に取り、塗りつぶし領域がはみ出さないようにする。
-    final Offset control;
-    final Offset cornerInner;
+    // 角丸の弧の中心点（バブル内部）
+    final Offset arcCenter;
     switch (corner) {
       case _Corner.topLeft:
-        control = Offset(-diagonalPeak, -diagonalPeak);
-        cornerInner = const Offset(_cornerMargin, _cornerMargin);
+        arcCenter = const Offset(_cornerMargin, _cornerMargin);
       case _Corner.topRight:
-        control = Offset(size.width + diagonalPeak, -diagonalPeak);
-        cornerInner = Offset(size.width - _cornerMargin, _cornerMargin);
+        arcCenter = Offset(size.width - _cornerMargin, _cornerMargin);
       case _Corner.bottomRight:
-        control = Offset(size.width + diagonalPeak, size.height + diagonalPeak);
-        cornerInner = Offset(
+        arcCenter = Offset(
           size.width - _cornerMargin,
           size.height - _cornerMargin,
         );
       case _Corner.bottomLeft:
-        control = Offset(-diagonalPeak, size.height + diagonalPeak);
-        cornerInner = Offset(_cornerMargin, size.height - _cornerMargin);
+        arcCenter = Offset(_cornerMargin, size.height - _cornerMargin);
     }
 
-    final arcPath = Path()
-      ..moveTo(start.dx, start.dy)
-      ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+    // 始点・終点の中心からの角度
+    final startAngle = atan2(
+      edgeStart.dy - arcCenter.dy,
+      edgeStart.dx - arcCenter.dx,
+    );
+    final endAngleRaw = atan2(
+      edgeEnd.dy - arcCenter.dy,
+      edgeEnd.dx - arcCenter.dx,
+    );
+    // 全コーナーで時計回り（数学的にはCCW、つまり角度を増加させる方向）に90度進む
+    var totalDelta = endAngleRaw - startAngle;
+    if (totalDelta <= 0) {
+      totalDelta += 2 * pi;
+    }
 
-    // 内側を背景色で塗りつぶす
-    final fillPath = Path.from(arcPath)
-      ..lineTo(cornerInner.dx, cornerInner.dy)
-      ..close();
+    final startRadius = (edgeStart - arcCenter).distance;
+    final endRadius = (edgeEnd - arcCenter).distance;
+    final baseRadius = (startRadius + endRadius) / 2;
 
-    final fillPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(fillPath, fillPaint);
+    // 弧が極端に小さい場合（バブルが極端に小さい場合）はストランドを描画しない
+    if (baseRadius <= 0) {
+      return;
+    }
 
-    // 輪郭線を描画
-    final strandPaint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(arcPath, strandPaint);
+    // ストランドを敷き詰める
+    var currentAngle = startAngle;
+    var currentPoint = edgeStart;
+
+    while (true) {
+      final remaining = (startAngle + totalDelta) - currentAngle;
+
+      // 弧長基準のストランド幅 → 角度幅に変換
+      final desiredArcLength =
+          _minStrandWidth +
+          (1 - random.nextDouble() * random.nextDouble()) *
+              (_maxStrandWidth - _minStrandWidth);
+      final strandAngularWidth = desiredArcLength / baseRadius;
+
+      // 残り角度を上回りそうなら、これを最後のストランドとして edgeEnd で終わらせる
+      final isLast = strandAngularWidth >= remaining * 0.7;
+
+      final Offset strandEnd;
+      final double strandEndAngle;
+      final double strandPeakAngle;
+      if (isLast) {
+        strandEnd = edgeEnd;
+        strandEndAngle = startAngle + totalDelta;
+        // ピーク位置は終点寄りに少しずらす
+        strandPeakAngle = currentAngle + (strandEndAngle - currentAngle) * 0.6;
+      } else {
+        final peakAngle = currentAngle + strandAngularWidth;
+        strandEndAngle =
+            peakAngle -
+            random.nextDouble() * strandAngularWidth * _endReturnRatio;
+        strandPeakAngle = peakAngle;
+        // 終点は弧上にランダムな小さい内側オフセットを付けて配置
+        final endRadialOffset = random.nextDouble() * _maxBaseOffset;
+        final endR = baseRadius - endRadialOffset;
+        strandEnd =
+            arcCenter + Offset(cos(strandEndAngle), sin(strandEndAngle)) * endR;
+      }
+
+      // ピーク（生え際から放射状に外側へ突き出す）
+      final peakHeightVal =
+          minPeakHeight + random.nextDouble() * (maxPeakHeight - minPeakHeight);
+      final peakR = baseRadius + peakHeightVal;
+      final peak =
+          arcCenter +
+          Offset(cos(strandPeakAngle), sin(strandPeakAngle)) * peakR;
+
+      // ベジェ制御点（弦の中点から放射状に外側へオフセット）
+      final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
+      final bulgeSign = random.nextDouble() < _firstHalfOutwardBulgeProbability
+          ? 1.0
+          : -1.0;
+      final ctrl1 = _radiallyBulgedControlPoint(
+        center: arcCenter,
+        from: currentPoint,
+        to: peak,
+        bulge: bulgeAmount * bulgeSign,
+      );
+      final ctrl2 = _radiallyBulgedControlPoint(
+        center: arcCenter,
+        from: peak,
+        to: strandEnd,
+        bulge: bulgeAmount * bulgeSign,
+      );
+
+      final arcPath = Path()
+        ..moveTo(currentPoint.dx, currentPoint.dy)
+        ..quadraticBezierTo(ctrl1.dx, ctrl1.dy, peak.dx, peak.dy)
+        ..quadraticBezierTo(ctrl2.dx, ctrl2.dy, strandEnd.dx, strandEnd.dy);
+
+      // 弧の内側を背景色で塗りつぶす（下に重なる毛束の線を隠す）
+      final innerR = baseRadius - _maxBaseOffset;
+      final innerStart =
+          arcCenter + Offset(cos(currentAngle), sin(currentAngle)) * innerR;
+      final innerEnd =
+          arcCenter + Offset(cos(strandEndAngle), sin(strandEndAngle)) * innerR;
+      final fillPath = Path.from(arcPath)
+        ..lineTo(innerEnd.dx, innerEnd.dy)
+        ..lineTo(innerStart.dx, innerStart.dy)
+        ..close();
+
+      final fillPaint = Paint()
+        ..color = backgroundColor
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(fillPath, fillPaint);
+
+      // 輪郭線を描画
+      final strandPaint = Paint()
+        ..color = color
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+      canvas.drawPath(arcPath, strandPaint);
+
+      if (isLast) {
+        break;
+      }
+      currentPoint = strandEnd;
+      currentAngle = strandEndAngle;
+    }
+  }
+
+  /// 中心点を基準に、2点を結ぶ弦の中点から放射状方向（中心→中点方向）へ
+  /// [bulge] だけオフセットした制御点を返す。
+  ///
+  /// [bulge] が正なら中心から離れる方向（外側）、負なら近づく方向（内側）に
+  /// 膨らむ。
+  Offset _radiallyBulgedControlPoint({
+    required Offset center,
+    required Offset from,
+    required Offset to,
+    required double bulge,
+  }) {
+    final mid = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
+    final dx = mid.dx - center.dx;
+    final dy = mid.dy - center.dy;
+    final dist = sqrt(dx * dx + dy * dy);
+    if (dist == 0) {
+      return mid;
+    }
+    return Offset(
+      mid.dx + dx / dist * bulge,
+      mid.dy + dy / dist * bulge,
+    );
   }
 
   /// 辺上の座標を画面座標に変換する。
