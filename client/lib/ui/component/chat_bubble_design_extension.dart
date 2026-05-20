@@ -109,7 +109,6 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
 
       case ChatBubbleDesign.catFur:
         return _CatFurBubble(
-          backgroundColor: backgroundColor,
           seed: seed,
           constraints: constraints,
           padding: padding.copyWith(
@@ -130,7 +129,6 @@ extension ChatBubbleDesignExtension on ChatBubbleDesign {
 /// [AnimationController] を保持し、その値を [CatFurBubblePainter] に渡す。
 class _CatFurBubble extends StatefulWidget {
   const _CatFurBubble({
-    required this.backgroundColor,
     required this.seed,
     required this.constraints,
     required this.padding,
@@ -140,7 +138,6 @@ class _CatFurBubble extends StatefulWidget {
   /// 1サイクルの周期。値が長いほど毛先がゆっくり靡く。
   static const _windPeriod = Duration(milliseconds: 4200);
 
-  final Color backgroundColor;
   final int seed;
   final BoxConstraints constraints;
   final EdgeInsetsGeometry padding;
@@ -173,7 +170,6 @@ class _CatFurBubbleState extends State<_CatFurBubble>
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: CatFurBubblePainter(
-        backgroundColor: widget.backgroundColor,
         seed: widget.seed,
         windAnimation: _windController,
       ),

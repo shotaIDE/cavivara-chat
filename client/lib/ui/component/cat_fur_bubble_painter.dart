@@ -7,11 +7,8 @@ import 'package:flutter/material.dart';
 /// 各辺と四隅の輪郭に沿って2次ベジェ曲線で構成した毛束を敷き詰め、
 /// [windAnimation] が指定されている場合は毛先を風揺れさせる。
 class CatFurBubblePainter extends CustomPainter {
-  CatFurBubblePainter({
-    required this.backgroundColor,
-    required this.seed,
-    this.windAnimation,
-  }) : super(repaint: windAnimation);
+  CatFurBubblePainter({required this.seed, this.windAnimation})
+    : super(repaint: windAnimation);
 
   /// 描画される毛先が背景矩形の外側に突き出しうる最大距離（px）。
   /// 親ウィジェットに余白として確保してもらうための公開定数。
@@ -75,7 +72,6 @@ class CatFurBubblePainter extends CustomPainter {
   /// 全体としては揃って揺れて見える程度の小さな値（1サイクル = 2π）にする。
   static const _windPhaseVariation = 0.45;
 
-  final Color backgroundColor;
   final int seed;
 
   /// 風のアニメーション。0..1 で1サイクルとして扱う。
@@ -90,8 +86,7 @@ class CatFurBubblePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CatFurBubblePainter oldDelegate) {
-    return oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.seed != seed ||
+    return oldDelegate.seed != seed ||
         oldDelegate.windAnimation != windAnimation;
   }
 
@@ -109,7 +104,7 @@ class CatFurBubblePainter extends CustomPainter {
     canvas.drawRRect(
       bgRect,
       Paint()
-        ..color = backgroundColor
+        ..color = Colors.white
         ..style = PaintingStyle.fill,
     );
   }
@@ -149,7 +144,7 @@ class CatFurBubblePainter extends CustomPainter {
       layerSeed: seed,
       inset: 0,
       strokeColor: Colors.grey.shade600.withAlpha(180),
-      fillColor: backgroundColor,
+      fillColor: Colors.white,
     );
 
     // 第2レイヤーは、内側に敷き詰められるだけの幅・高さがある場合だけ描く。
