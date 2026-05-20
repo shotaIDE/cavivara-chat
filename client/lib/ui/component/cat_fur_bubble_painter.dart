@@ -7,11 +7,8 @@ import 'package:flutter/material.dart';
 /// 各辺と四隅の輪郭に沿って2次ベジェ曲線で構成した毛束を敷き詰め、
 /// [windAnimation] が指定されている場合は毛先を風揺れさせる。
 class CatFurBubblePainter extends CustomPainter {
-  CatFurBubblePainter({
-    required this.backgroundColor,
-    required this.seed,
-    this.windAnimation,
-  }) : super(repaint: windAnimation);
+  CatFurBubblePainter({required this.seed, this.windAnimation})
+    : super(repaint: windAnimation);
 
   /// 描画される毛先が背景矩形の外側に突き出しうる最大距離（px）。
   /// 親ウィジェットに余白として確保してもらうための公開定数。
@@ -27,6 +24,14 @@ class CatFurBubblePainter extends CustomPainter {
   /// 隣接辺の端点（角から約 `_cornerMargin` の位置にある）までの距離が弧の半径と
   /// なるため、半径 ≈ √((offset - baseOffset)² + (offset - cornerMargin)²)。
   static const _cornerArcCenterOffset = 18.0;
+
+  /// 外側ストランドの生え際から、内側に重ねる第2レイヤーの生え際までの距離（px）。
+  /// 第2レイヤーは外側と同じ形状のストランドを、吹き出しの内側にもう一周分敷く。
+  static const _innerLayerInset = 5.0;
+
+  /// 背景の角丸半径。内側の塗りつぶし矩形と外側の背景矩形で
+  /// コーナー中心が同心になるよう、内側半径はここから派生して算出する。
+  static const _backgroundCornerRadius = 12.0;
 
   /// 前半の曲線が外側に膨らむ確率（1.0 = 100%）
   static const _firstHalfOutwardBulgeProbability = 0.7;
@@ -50,6 +55,14 @@ class CatFurBubblePainter extends CustomPainter {
   /// 終点が始点方向に戻る最大割合（1.0 = ストランド幅全体まで戻りうる）
   static const _endReturnRatio = 0.25;
 
+  /// ストランドの膨らみ量（ベジェ制御点の弦中点からのオフセット）の最小値・最大値。
+  static const _minBulgeAmount = 1.5;
+  static const _maxBulgeAmount = 4.0;
+
+  /// 辺・四隅ごとにサブ乱数列を派生させるときに使う `nextInt` の上限。
+  /// 全レイヤーで共通の seed 空間から、各辺・四隅へ独立した乱数列を割り当てる。
+  static const _subRandomSeedSpace = 100000;
+
   // ===== 風アニメーション定数 =====
 
   /// 風によって全ての毛先がスクリーン水平方向に揃って揺れる最大変位（px）
@@ -67,7 +80,6 @@ class CatFurBubblePainter extends CustomPainter {
   /// 全体としては揃って揺れて見える程度の小さな値（1サイクル = 2π）にする。
   static const _windPhaseVariation = 0.45;
 
-  final Color backgroundColor;
   final int seed;
 
   /// 風のアニメーション。0..1 で1サイクルとして扱う。
@@ -82,8 +94,7 @@ class CatFurBubblePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CatFurBubblePainter oldDelegate) {
-    return oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.seed != seed ||
+    return oldDelegate.seed != seed ||
         oldDelegate.windAnimation != windAnimation;
   }
 
@@ -96,96 +107,171 @@ class CatFurBubblePainter extends CustomPainter {
         size.width - _maxBaseOffset,
         size.height - _maxBaseOffset,
       ),
-      const Radius.circular(12),
+      const Radius.circular(_backgroundCornerRadius),
     );
     canvas.drawRRect(
       bgRect,
       Paint()
-        ..color = backgroundColor
+        ..color = Colors.white
         ..style = PaintingStyle.fill,
     );
   }
 
-  /// 4辺と4隅の全てに毛束を敷き詰める1レイヤー分の描画。
+  /// 内側ストランドより内側の領域（文字が乗る領域）を [color] で塗りつぶす。
+  ///
+  /// 矩形は背景矩形より `_innerLayerInset - _maxBaseOffset` だけ内側に置き、
+  /// 半径もその分だけ縮めることで、外側背景とコーナー中心が同心になる。
+  void _drawInnerBackground(Canvas canvas, Size size, Color color) {
+    const innerRadius =
+        _backgroundCornerRadius - (_innerLayerInset - _maxBaseOffset);
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTRB(
+        _innerLayerInset,
+        _innerLayerInset,
+        size.width - _innerLayerInset,
+        size.height - _innerLayerInset,
+      ),
+      const Radius.circular(innerRadius),
+    );
+    canvas.drawRRect(
+      rect,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  /// 4辺と4隅の全てに毛束を敷き詰める。
+  ///
+  /// 外側レイヤーに加えて、内側に十分なスペースがある場合は同じ形状のストランドを
+  /// `_innerLayerInset` だけ内側に重ねる。
   void _drawFurLayer(Canvas canvas, Size size) {
-    final random = Random(seed);
+    _drawSingleStrandLayer(
+      canvas,
+      size,
+      layerSeed: seed,
+      inset: 0,
+      strokeColor: Colors.grey.shade600.withAlpha(180),
+      fillColor: Colors.white,
+    );
+
+    // 第2レイヤーは、内側に敷き詰められるだけの幅・高さがある場合だけ描く。
+    final innerFits =
+        size.width > 2 * (_innerLayerInset + _cornerMargin) &&
+        size.height > 2 * (_innerLayerInset + _cornerMargin);
+    if (innerFits) {
+      // 枠線・塗りつぶしともに薄いグレーで揃え、奥側に控えめなシルエットとして敷く。
+      // 文字が乗る内側の領域も同色で塗り、内側ストランドと一体のシルエットに見せる。
+      final innerColor = Colors.grey.shade200;
+      _drawInnerBackground(canvas, size, innerColor);
+      _drawSingleStrandLayer(
+        canvas,
+        size,
+        layerSeed: seed + 1,
+        inset: _innerLayerInset,
+        strokeColor: innerColor,
+        fillColor: innerColor,
+      );
+    }
+  }
+
+  /// 4辺と4隅の全てに毛束を敷き詰める1レイヤー分の描画。
+  ///
+  /// [inset] が正なら、生え際全体を吹き出しの内側方向にその分だけ平行移動した位置に
+  /// 同じ形状のストランドを敷く。[layerSeed] でレイヤー固有の乱数列を分離する。
+  /// [strokeColor]/[fillColor] でレイヤーごとに枠線色と塗りつぶし色を切り替えられる。
+  void _drawSingleStrandLayer(
+    Canvas canvas,
+    Size size, {
+    required int layerSeed,
+    required double inset,
+    required Color strokeColor,
+    required Color fillColor,
+  }) {
+    final random = Random(layerSeed);
     final style = _FurLayerStyle(
-      color: Colors.grey.shade600.withAlpha(180),
+      color: strokeColor,
       strokeWidth: 1.5,
       minPeakHeight: _minPeakHeight,
       maxPeakHeight: _maxPeakHeight,
     );
-    final paints = _StrandPaints.from(
-      fillColor: backgroundColor,
-      style: style,
-    );
+    final paints = _StrandPaints.from(fillColor: fillColor, style: style);
 
-    // 4辺：それぞれ独立した乱数列で敷き詰める。
-    final topEndpoints = _drawEdgeFurStrands(
-      canvas,
-      size,
-      edge: _Edge.top,
-      random: random,
-      style: style,
-      paints: paints,
-    );
-    final bottomEndpoints = _drawEdgeFurStrands(
-      canvas,
-      size,
-      edge: _Edge.bottom,
-      random: Random(random.nextInt(100000)),
-      style: style,
-      paints: paints,
-    );
-    final leftEndpoints = _drawEdgeFurStrands(
-      canvas,
-      size,
-      edge: _Edge.left,
-      random: Random(random.nextInt(100000)),
-      style: style,
-      paints: paints,
-    );
-    final rightEndpoints = _drawEdgeFurStrands(
-      canvas,
-      size,
-      edge: _Edge.right,
-      random: Random(random.nextInt(100000)),
-      style: style,
-      paints: paints,
-    );
+    // 4辺：先頭の辺だけは layerSeed の乱数列をそのまま使い、残りの辺は
+    // それぞれ独立したサブ乱数列を派生させて敷き詰める。
+    final edgeEndpoints = <_Edge, _EdgeEndpoints>{};
+    for (final edge in _Edge.values) {
+      final edgeRandom = edgeEndpoints.isEmpty
+          ? random
+          : Random(random.nextInt(_subRandomSeedSpace));
+      edgeEndpoints[edge] = _drawEdgeFurStrands(
+        canvas,
+        size,
+        edge: edge,
+        random: edgeRandom,
+        style: style,
+        paints: paints,
+        inset: inset,
+      );
+    }
 
     // 四隅：隣接辺の端点を時計回りに繋ぐ円弧上に毛束を敷き詰める。
-    final cornerRandom = Random(random.nextInt(100000));
-    final cornerConnections = <_Corner, ({Offset start, Offset end})>{
-      _Corner.topLeft: (
-        start: leftEndpoints.lastEnd,
-        end: topEndpoints.firstStart,
-      ),
-      _Corner.topRight: (
-        start: topEndpoints.lastEnd,
-        end: rightEndpoints.firstStart,
-      ),
-      _Corner.bottomRight: (
-        start: rightEndpoints.lastEnd,
-        end: bottomEndpoints.firstStart,
-      ),
-      _Corner.bottomLeft: (
-        start: bottomEndpoints.lastEnd,
-        end: leftEndpoints.firstStart,
-      ),
-    };
-    for (final entry in cornerConnections.entries) {
+    // 各タプルは (角, 一つ手前の辺, 一つ後の辺)。手前の辺の `lastEnd` と
+    // 後の辺の `firstStart` を弧で結ぶことで毛並みを連続させる。
+    const cornerEdgePairs = [
+      (_Corner.topLeft, _Edge.left, _Edge.top),
+      (_Corner.topRight, _Edge.top, _Edge.right),
+      (_Corner.bottomRight, _Edge.right, _Edge.bottom),
+      (_Corner.bottomLeft, _Edge.bottom, _Edge.left),
+    ];
+    final cornerRandom = Random(random.nextInt(_subRandomSeedSpace));
+    for (final (corner, prevEdge, nextEdge) in cornerEdgePairs) {
       _drawCornerFurStrands(
         canvas,
         size,
-        corner: entry.key,
-        edgeStart: entry.value.start,
-        edgeEnd: entry.value.end,
+        corner: corner,
+        edgeStart: edgeEndpoints[prevEdge]!.lastEnd,
+        edgeEnd: edgeEndpoints[nextEdge]!.firstStart,
         random: cornerRandom,
         style: style,
         paints: paints,
+        inset: inset,
       );
     }
+  }
+
+  // ===== ストランド乱数ヘルパー =====
+  //
+  // 辺と四隅のどちらでも同じ分布のパラメータが必要なので共通化する。
+  // 各関数は内部で固定回数 `random.nextDouble()` を消費するため、
+  // 呼び出し側はこれらを並べる順序で seed に対する描画結果を制御する。
+
+  /// ストランド幅をランダムに返す。`nextDouble()` を 2 回消費する。
+  ///
+  /// `1 - r1 * r2` のバイアス（大きい値が出やすい）をかけることで、
+  /// 細いストランドより太いストランドの方がやや多くなる。
+  static double _randomStrandWidth(Random random) {
+    return _minStrandWidth +
+        (1 - random.nextDouble() * random.nextDouble()) *
+            (_maxStrandWidth - _minStrandWidth);
+  }
+
+  /// ピーク高さ（外側への突き出し）をランダムに返す。`nextDouble()` を 1 回消費する。
+  static double _randomPeakHeight(Random random, _FurLayerStyle style) {
+    return style.minPeakHeight +
+        random.nextDouble() * (style.maxPeakHeight - style.minPeakHeight);
+  }
+
+  /// 膨らみ量をランダムに返す。`nextDouble()` を 1 回消費する。
+  static double _randomBulgeAmount(Random random) {
+    return _minBulgeAmount +
+        random.nextDouble() * (_maxBulgeAmount - _minBulgeAmount);
+  }
+
+  /// 膨らみの符号（外側=+1.0 / 内側=-1.0）をランダムに返す。
+  /// `nextDouble()` を 1 回消費する。
+  static double _randomBulgeSign(Random random) {
+    return random.nextDouble() < _firstHalfOutwardBulgeProbability ? 1.0 : -1.0;
   }
 
   // ===== 辺のストランド =====
@@ -201,16 +287,20 @@ class CatFurBubblePainter extends CustomPainter {
     required Random random,
     required _FurLayerStyle style,
     required _StrandPaints paints,
+    double inset = 0,
   }) {
-    final edgeLength = switch (edge) {
+    final canvasEdgeLength = switch (edge) {
       _Edge.top || _Edge.bottom => size.width,
       _Edge.left || _Edge.right => size.height,
     };
-    final baseline = _EdgeBaseline(size: size, edge: edge);
+    // 内側レイヤーは inset 分だけ短い辺の上にストランドを敷く。
+    final rangeStart = inset + _cornerMargin;
+    final rangeEnd = canvasEdgeLength - inset - _cornerMargin;
+    final baseline = _EdgeBaseline(size: size, edge: edge, inset: inset);
 
-    if (edgeLength - _cornerMargin * 2 <= 0) {
+    if (rangeEnd - rangeStart <= 0) {
       // 敷き詰める長さがない場合は辺の中央点をフォールバックとして返す
-      final fallback = baseline.point(edgeLength / 2);
+      final fallback = baseline.point((rangeStart + rangeEnd) / 2);
       return _EdgeEndpoints(firstStart: fallback, lastEnd: fallback);
     }
 
@@ -219,21 +309,15 @@ class CatFurBubblePainter extends CustomPainter {
     final reversed = edge == _Edge.bottom || edge == _Edge.left;
     final direction = reversed ? -1.0 : 1.0;
 
-    var pos = reversed ? edgeLength - _cornerMargin : _cornerMargin;
+    var pos = reversed ? rangeEnd : rangeStart;
     Offset? firstStart;
     late Offset lastEnd;
 
-    while (reversed ? pos > _cornerMargin : pos < edgeLength - _cornerMargin) {
-      // 乱数消費順序を変えると seed に対する描画結果が変わるため固定する：
-      // strandWidth(2), peakHeight(1), endParam(1),
-      // startBase(1), endBase(1), bulgeAmount(1), bulgeSign(1)
-      final strandWidth =
-          _minStrandWidth +
-          (1 - random.nextDouble() * random.nextDouble()) *
-              (_maxStrandWidth - _minStrandWidth);
-      final peakHeight =
-          style.minPeakHeight +
-          random.nextDouble() * (style.maxPeakHeight - style.minPeakHeight);
+    while (reversed ? pos > rangeStart : pos < rangeEnd) {
+      // 乱数消費順序を変えると seed に対する描画結果が変わるため、
+      // 以下の呼び出し順序を固定する。
+      final strandWidth = _randomStrandWidth(random);
+      final peakHeight = _randomPeakHeight(random, style);
 
       final startParam = pos;
       final peakParam = pos + strandWidth * direction;
@@ -242,10 +326,8 @@ class CatFurBubblePainter extends CustomPainter {
           random.nextDouble() * strandWidth * _endReturnRatio * direction;
       final startBaseOffset = random.nextDouble() * _maxBaseOffset;
       final endBaseOffset = random.nextDouble() * _maxBaseOffset;
-      final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
-      final bulgeSign = random.nextDouble() < _firstHalfOutwardBulgeProbability
-          ? 1.0
-          : -1.0;
+      final bulgeAmount = _randomBulgeAmount(random);
+      final bulgeSign = _randomBulgeSign(random);
 
       final start = baseline.point(startParam, outward: -startBaseOffset);
       final rawPeak = baseline.point(peakParam, outward: peakHeight);
@@ -292,8 +374,9 @@ class CatFurBubblePainter extends CustomPainter {
     required Random random,
     required _FurLayerStyle style,
     required _StrandPaints paints,
+    double inset = 0,
   }) {
-    final arcCenter = _arcCenterFor(corner, size);
+    final arcCenter = _arcCenterFor(corner, size, inset);
 
     // 始点・終点の中心からの角度
     final startAngle = atan2(
@@ -325,13 +408,9 @@ class CatFurBubblePainter extends CustomPainter {
     while (true) {
       final remaining = (startAngle + totalDelta) - currentAngle;
 
-      // 乱数消費順序を変えると seed に対する描画結果が変わるため固定する：
-      // arcLen(2), [!last → endParam(1), endRadial(1)],
-      // peakHeight(1), bulgeAmount(1), bulgeSign(1)
-      final desiredArcLength =
-          _minStrandWidth +
-          (1 - random.nextDouble() * random.nextDouble()) *
-              (_maxStrandWidth - _minStrandWidth);
+      // 乱数消費順序を変えると seed に対する描画結果が変わるため、
+      // 以下の呼び出し順序を固定する（isLast でない場合のみ endParam/endRadial 用に 2 回追加消費）。
+      final desiredArcLength = _randomStrandWidth(random);
       final strandAngularWidth = desiredArcLength / baseRadius;
 
       // 残り角度を上回りそうなら、これを最後のストランドとして edgeEnd で終わらせる
@@ -354,13 +433,9 @@ class CatFurBubblePainter extends CustomPainter {
         strandEnd = baseline.point(endParam, outward: -endRadialOffset);
       }
 
-      final peakHeight =
-          style.minPeakHeight +
-          random.nextDouble() * (style.maxPeakHeight - style.minPeakHeight);
-      final bulgeAmount = 1.5 + random.nextDouble() * 2.5;
-      final bulgeSign = random.nextDouble() < _firstHalfOutwardBulgeProbability
-          ? 1.0
-          : -1.0;
+      final peakHeight = _randomPeakHeight(random, style);
+      final bulgeAmount = _randomBulgeAmount(random);
+      final bulgeSign = _randomBulgeSign(random);
 
       final rawPeak = baseline.point(peakParam, outward: peakHeight);
       final peak = rawPeak + _windOffset(rawPeak);
@@ -386,29 +461,15 @@ class CatFurBubblePainter extends CustomPainter {
   }
 
   /// [corner] の生え際の仮想弧の中心点（バブル内部）。
-  Offset _arcCenterFor(_Corner corner, Size size) {
-    switch (corner) {
-      case _Corner.topLeft:
-        return const Offset(
-          _cornerArcCenterOffset,
-          _cornerArcCenterOffset,
-        );
-      case _Corner.topRight:
-        return Offset(
-          size.width - _cornerArcCenterOffset,
-          _cornerArcCenterOffset,
-        );
-      case _Corner.bottomRight:
-        return Offset(
-          size.width - _cornerArcCenterOffset,
-          size.height - _cornerArcCenterOffset,
-        );
-      case _Corner.bottomLeft:
-        return Offset(
-          _cornerArcCenterOffset,
-          size.height - _cornerArcCenterOffset,
-        );
-    }
+  ///
+  /// [inset] が正の場合は、四隅の角からさらに内側へ移動した位置を返す。
+  /// 内側に重ねる第2レイヤーで利用する。
+  Offset _arcCenterFor(_Corner corner, Size size, double inset) {
+    final offset = _cornerArcCenterOffset + inset;
+    return Offset(
+      corner.isLeft ? offset : size.width - offset,
+      corner.isTop ? offset : size.height - offset,
+    );
   }
 
   /// 1本の毛束（ストランド）を描画する。
@@ -552,23 +613,27 @@ abstract class _StrandBaseline {
 }
 
 /// 直線辺に沿った生え際。
+///
+/// [inset] を指定すると、生え際自体をキャンバス端から内側に平行移動する。
+/// 内側に重ねる第2レイヤーの描画に使う。`inset` が0の場合はキャンバス端と一致する。
 class _EdgeBaseline implements _StrandBaseline {
-  _EdgeBaseline({required this.size, required this.edge});
+  _EdgeBaseline({required this.size, required this.edge, this.inset = 0});
 
   final Size size;
   final _Edge edge;
+  final double inset;
 
   @override
   Offset point(double along, {double outward = 0}) {
     switch (edge) {
       case _Edge.top:
-        return Offset(along, -outward);
+        return Offset(along, inset - outward);
       case _Edge.bottom:
-        return Offset(along, size.height + outward);
+        return Offset(along, size.height - inset + outward);
       case _Edge.left:
-        return Offset(-outward, along);
+        return Offset(inset - outward, along);
       case _Edge.right:
-        return Offset(size.width + outward, along);
+        return Offset(size.width - inset + outward, along);
     }
   }
 
@@ -619,7 +684,16 @@ class _ArcBaseline implements _StrandBaseline {
 
 enum _Edge { top, bottom, left, right }
 
-enum _Corner { topLeft, topRight, bottomRight, bottomLeft }
+enum _Corner {
+  topLeft,
+  topRight,
+  bottomRight,
+  bottomLeft
+  ;
+
+  bool get isLeft => this == _Corner.topLeft || this == _Corner.bottomLeft;
+  bool get isTop => this == _Corner.topLeft || this == _Corner.topRight;
+}
 
 /// 辺に沿って敷き詰めたストランド群の、最初のストランドの始点と
 /// 最後のストランドの終点（いずれもキャンバス座標）。
