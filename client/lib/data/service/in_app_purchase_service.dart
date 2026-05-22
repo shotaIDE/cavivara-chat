@@ -59,8 +59,8 @@ InAppPurchaseService inAppPurchaseService(Ref ref) {
 
 class InAppPurchaseService {
   InAppPurchaseService({
-    required ErrorReportService errorReportService,
-  }) : _errorReportService = errorReportService;
+    required this._errorReportService,
+  });
 
   final ErrorReportService _errorReportService;
   final _logger = Logger('InAppPurchaseService');
