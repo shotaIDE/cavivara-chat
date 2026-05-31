@@ -187,14 +187,15 @@ class CatFurBubblePainter extends CustomPainter {
     }
   }
 
-  /// キャンバス下半分に濃いグレーのシャドーを敷き、外側ストランドの内端から
-  /// シルエットの外端までの帯（角の隙間を含む）を綺麗に塗りつぶす。
+  /// 左辺は下 1/3・右辺は下 2/3・下辺は全幅にわたって濃いグレーのシャドーを
+  /// 敷き、外側ストランドの内端からシルエットの外端までの帯（角の隙間を
+  /// 含む）を綺麗に塗りつぶす。
   ///
   /// 単純に矩形を上塗りすると、その前に描かれた外側ストランドの白塗りが
   /// 残り、ストランド枠線とシャドー帯の間に白の隙間が見えてしまう。これを
   /// 解消するため、以下の 2 段階で描画する:
   ///
-  /// 1. 下半分を覆う矩形を影色で塗り、背景の白と外側ストランドの塗りつぶし
+  /// 1. クリップ領域内を影色で塗り、背景の白と外側ストランドの塗りつぶし
   ///    白・枠線を一旦すべて上書きする。
   /// 2. 同じ seed で外側ストランドレイヤーを再描画する。塗りつぶしを影色に
   ///    切り替えることでストランドの塗りつぶし領域も影色で揃い、外へはみ出した
@@ -203,26 +204,39 @@ class CatFurBubblePainter extends CustomPainter {
   ///
   /// シルエット塗りつぶし・内側ストランドは本関数の後で描画されるため、
   /// 影色が最終的に残るのはシルエットの外側、すなわち外側ストランドの内端と
-  /// シルエット外端の間の領域だけになる。
+  /// シルエット外端の間の領域だけになる。クリップ領域は左右で高さが異なる
+  /// 矩形を 2 枚（x の境界はキャンバス中央）並べて構成しているが、上端の
+  /// 段差はシルエット内側に隠れて見えない。
   ///
-  /// 影色 `Colors.grey.shade400` は、外側ストランドの枠線色
+  /// 影色 `Colors.grey.shade300` は、外側ストランドの枠線色
   /// （`shade600` の alpha 180、白との実効ブレンドで `shade500` 相当の輝度）
   /// よりは薄く、シルエット（`shade200`）よりは濃くなるよう選定している。
   void _drawShadowOverlay(Canvas canvas, Size size) {
-    // 毛先がキャンバス外にも伸びる分、左右・下方向は [maxOuterExtent] ぶん
-    // 余裕を持たせる。上端は size.height / 2 で固定して上半分のストランドには
-    // 触らない。
-    final clipRect = Rect.fromLTRB(
-      -maxOuterExtent,
-      size.height / 2,
-      size.width + maxOuterExtent,
-      size.height + maxOuterExtent,
-    );
-    final shadowColor = Colors.grey.shade400;
+    // 毛先がキャンバス外にも伸びる分、外周方向には [maxOuterExtent] ぶん
+    // 余裕を持たせる。上端は左半分が下 1/3 (y >= 2H/3)、右半分が下 2/3
+    // (y >= H/3) になるように非対称に切る。
+    final clipPath = Path()
+      ..addRect(
+        Rect.fromLTRB(
+          -maxOuterExtent,
+          size.height * 2 / 3,
+          size.width / 2,
+          size.height + maxOuterExtent,
+        ),
+      )
+      ..addRect(
+        Rect.fromLTRB(
+          size.width / 2,
+          size.height / 3,
+          size.width + maxOuterExtent,
+          size.height + maxOuterExtent,
+        ),
+      );
+    final shadowColor = Colors.grey.shade300;
 
     canvas
       ..save()
-      ..clipRect(clipRect)
+      ..clipPath(clipPath)
       ..drawRect(
         Rect.fromLTRB(0, 0, size.width, size.height),
         Paint()
