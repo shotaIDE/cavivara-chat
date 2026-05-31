@@ -167,6 +167,11 @@ class CatFurBubblePainter extends CustomPainter {
         size.width > 2 * (_cornerMargin + _silhouetteInset) &&
         size.height > 2 * (_cornerMargin + _silhouetteInset);
     if (innerFits) {
+      // 立体感のためのシャドーをシルエットより手前で敷き、上方から光が
+      // 当たって下側に影が落ちているように見せる。シルエットを後段で重ねる
+      // ことで、シルエットの上から影が描かれないようにする。
+      _drawShadowOverlay(canvas, size);
+
       // 枠線・塗りつぶしともに薄いグレーで揃え、奥側に控えめなシルエットとして敷く。
       // 文字が乗る中央領域も同色で塗り、内側ストランドと一体のシルエットに見せる。
       final silhouetteColor = Colors.grey.shade200;
@@ -180,6 +185,59 @@ class CatFurBubblePainter extends CustomPainter {
         fillColor: silhouetteColor,
       );
     }
+  }
+
+  /// キャンバス下半分に濃いグレーのシャドーを敷き、外側ストランドの内端から
+  /// シルエットの外端までの帯（角の隙間を含む）を綺麗に塗りつぶす。
+  ///
+  /// 単純に矩形を上塗りすると、その前に描かれた外側ストランドの白塗りが
+  /// 残り、ストランド枠線とシャドー帯の間に白の隙間が見えてしまう。これを
+  /// 解消するため、以下の 2 段階で描画する:
+  ///
+  /// 1. 下半分を覆う矩形を影色で塗り、背景の白と外側ストランドの塗りつぶし
+  ///    白・枠線を一旦すべて上書きする。
+  /// 2. 同じ seed で外側ストランドレイヤーを再描画する。塗りつぶしを影色に
+  ///    切り替えることでストランドの塗りつぶし領域も影色で揃い、外へはみ出した
+  ///    毛先（キャンバス外側）も影色で再ペイントされる。枠線（半透明グレー）は
+  ///    影色の上に再度乗る。
+  ///
+  /// シルエット塗りつぶし・内側ストランドは本関数の後で描画されるため、
+  /// 影色が最終的に残るのはシルエットの外側、すなわち外側ストランドの内端と
+  /// シルエット外端の間の領域だけになる。
+  ///
+  /// 影色 `Colors.grey.shade400` は、外側ストランドの枠線色
+  /// （`shade600` の alpha 180、白との実効ブレンドで `shade500` 相当の輝度）
+  /// よりは薄く、シルエット（`shade200`）よりは濃くなるよう選定している。
+  void _drawShadowOverlay(Canvas canvas, Size size) {
+    // 毛先がキャンバス外にも伸びる分、左右・下方向は [maxOuterExtent] ぶん
+    // 余裕を持たせる。上端は size.height / 2 で固定して上半分のストランドには
+    // 触らない。
+    final clipRect = Rect.fromLTRB(
+      -maxOuterExtent,
+      size.height / 2,
+      size.width + maxOuterExtent,
+      size.height + maxOuterExtent,
+    );
+    final shadowColor = Colors.grey.shade400;
+
+    canvas
+      ..save()
+      ..clipRect(clipRect)
+      ..drawRect(
+        Rect.fromLTRB(0, 0, size.width, size.height),
+        Paint()
+          ..color = shadowColor
+          ..style = PaintingStyle.fill,
+      );
+    _drawSingleStrandLayer(
+      canvas,
+      size,
+      layerSeed: seed,
+      inset: 0,
+      strokeColor: Colors.grey.shade600.withAlpha(180),
+      fillColor: shadowColor,
+    );
+    canvas.restore();
   }
 
   /// 外側レイヤー [outerSeed] と同じ乱数列で内側のストランドを生成して描画する。
