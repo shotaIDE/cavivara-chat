@@ -25,9 +25,10 @@ class CatFurBubblePainter extends CustomPainter {
   /// なるため、半径 ≈ √((offset - baseOffset)² + (offset - cornerMargin)²)。
   static const _cornerArcCenterOffset = 18.0;
 
-  /// 外側ストランドの生え際から、内側に重ねる第2レイヤーの生え際までの距離（px）。
-  /// 第2レイヤーは外側と同じ形状のストランドを、吹き出しの内側にもう一周分敷く。
-  static const _innerLayerInset = 5.0;
+  /// 外側ストランドの生え際から、奥側に敷くシルエット層の生え際までの距離（px）。
+  /// シルエット層は外側と同形状のストランドを吹き出しの内側にもう一周分敷き、
+  /// 薄いグレーの輪郭として奥行きを与える。
+  static const _silhouetteInset = 5.0;
 
   /// 背景の角丸半径。内側の塗りつぶし矩形と外側の背景矩形で
   /// コーナー中心が同心になるよう、内側半径はここから派生して算出する。
@@ -117,19 +118,21 @@ class CatFurBubblePainter extends CustomPainter {
     );
   }
 
-  /// 内側ストランドより内側の領域（文字が乗る領域）を [color] で塗りつぶす。
+  /// シルエット層の内側（文字が乗る中央領域）を [color] で塗りつぶす。
   ///
-  /// 矩形は背景矩形より `_innerLayerInset - _maxBaseOffset` だけ内側に置き、
+  /// この塗りつぶしと内側ストランドが繋がることで、奥側に敷いた薄いグレーの
+  /// 一体的なシルエットとして見えるようになる。
+  /// 矩形は背景矩形より `_silhouetteInset - _maxBaseOffset` だけ内側に置き、
   /// 半径もその分だけ縮めることで、外側背景とコーナー中心が同心になる。
-  void _drawInnerBackground(Canvas canvas, Size size, Color color) {
+  void _drawSilhouetteFill(Canvas canvas, Size size, Color color) {
     const innerRadius =
-        _backgroundCornerRadius - (_innerLayerInset - _maxBaseOffset);
+        _backgroundCornerRadius - (_silhouetteInset - _maxBaseOffset);
     final rect = RRect.fromRectAndRadius(
       Rect.fromLTRB(
-        _innerLayerInset,
-        _innerLayerInset,
-        size.width - _innerLayerInset,
-        size.height - _innerLayerInset,
+        _silhouetteInset,
+        _silhouetteInset,
+        size.width - _silhouetteInset,
+        size.height - _silhouetteInset,
       ),
       const Radius.circular(innerRadius),
     );
@@ -143,8 +146,10 @@ class CatFurBubblePainter extends CustomPainter {
 
   /// 4辺と4隅の全てに毛束を敷き詰める。
   ///
-  /// 外側レイヤーに加えて、内側に十分なスペースがある場合は同じ形状のストランドを
-  /// `_innerLayerInset` だけ内側に重ねる。
+  /// 外側レイヤーに加えて、内側に十分なスペースがある場合は、外側の各辺のストランド
+  /// と沿走軸方向の位置を完全に揃えた内側ストランドを `_silhouetteInset` だけ内側に
+  /// 重ねる。コーナー領域と辺の左右端 `_silhouetteInset` px 分は内側ストランドの
+  /// 描画を省略し、シルエット塗りつぶし矩形にシャドーを任せる。
   void _drawFurLayer(Canvas canvas, Size size) {
     _drawSingleStrandLayer(
       canvas,
@@ -155,23 +160,221 @@ class CatFurBubblePainter extends CustomPainter {
       fillColor: Colors.white,
     );
 
-    // 第2レイヤーは、内側に敷き詰められるだけの幅・高さがある場合だけ描く。
+    // 内側ストランドが少しでも描かれるのは、辺の中央部に余白を含めた長さが
+    // 残っているとき。コーナー（_cornerMargin）に加えて両端の余白
+    // （_silhouetteInset）を引いた長さが正である必要がある。
     final innerFits =
-        size.width > 2 * (_innerLayerInset + _cornerMargin) &&
-        size.height > 2 * (_innerLayerInset + _cornerMargin);
+        size.width > 2 * (_cornerMargin + _silhouetteInset) &&
+        size.height > 2 * (_cornerMargin + _silhouetteInset);
     if (innerFits) {
+      // 立体感のためのシャドーをシルエットより手前で敷き、上方から光が
+      // 当たって下側に影が落ちているように見せる。シルエットを後段で重ねる
+      // ことで、シルエットの上から影が描かれないようにする。
+      _drawShadowOverlay(canvas, size);
+
       // 枠線・塗りつぶしともに薄いグレーで揃え、奥側に控えめなシルエットとして敷く。
-      // 文字が乗る内側の領域も同色で塗り、内側ストランドと一体のシルエットに見せる。
-      final innerColor = Colors.grey.shade200;
-      _drawInnerBackground(canvas, size, innerColor);
-      _drawSingleStrandLayer(
+      // 文字が乗る中央領域も同色で塗り、内側ストランドと一体のシルエットに見せる。
+      final silhouetteColor = Colors.grey.shade200;
+      _drawSilhouetteFill(canvas, size, silhouetteColor);
+      _drawAlignedInnerStrandLayer(
         canvas,
         size,
-        layerSeed: seed + 1,
-        inset: _innerLayerInset,
-        strokeColor: innerColor,
-        fillColor: innerColor,
+        outerSeed: seed,
+        inset: _silhouetteInset,
+        strokeColor: silhouetteColor,
+        fillColor: silhouetteColor,
       );
+    }
+  }
+
+  /// 左辺は下 1/3・右辺は下 2/3・下辺は全幅にわたって濃いグレーのシャドーを
+  /// 敷き、外側ストランドの内端からシルエットの外端までの帯（角の隙間を
+  /// 含む）を綺麗に塗りつぶす。
+  ///
+  /// 単純に矩形を上塗りすると、その前に描かれた外側ストランドの白塗りが
+  /// 残り、ストランド枠線とシャドー帯の間に白の隙間が見えてしまう。これを
+  /// 解消するため、以下の 2 段階で描画する:
+  ///
+  /// 1. クリップ領域内を影色で塗り、背景の白と外側ストランドの塗りつぶし
+  ///    白・枠線を一旦すべて上書きする。
+  /// 2. 同じ seed で外側ストランドレイヤーを再描画する。塗りつぶしを影色に
+  ///    切り替えることでストランドの塗りつぶし領域も影色で揃い、外へはみ出した
+  ///    毛先（キャンバス外側）も影色で再ペイントされる。枠線（半透明グレー）は
+  ///    影色の上に再度乗る。
+  ///
+  /// シルエット塗りつぶし・内側ストランドは本関数の後で描画されるため、
+  /// 影色が最終的に残るのはシルエットの外側、すなわち外側ストランドの内端と
+  /// シルエット外端の間の領域だけになる。クリップ領域は左右で高さが異なる
+  /// 矩形を 2 枚（x の境界はキャンバス中央）並べて構成しているが、上端の
+  /// 段差はシルエット内側に隠れて見えない。
+  ///
+  /// 影色 `Colors.grey.shade300` は、外側ストランドの枠線色
+  /// （`shade600` の alpha 180、白との実効ブレンドで `shade500` 相当の輝度）
+  /// よりは薄く、シルエット（`shade200`）よりは濃くなるよう選定している。
+  void _drawShadowOverlay(Canvas canvas, Size size) {
+    // 毛先がキャンバス外にも伸びる分、外周方向には [maxOuterExtent] ぶん
+    // 余裕を持たせる。上端は左半分が下 1/3 (y >= 2H/3)、右半分が下 2/3
+    // (y >= H/3) になるように非対称に切る。
+    final clipPath = Path()
+      ..addRect(
+        Rect.fromLTRB(
+          -maxOuterExtent,
+          size.height * 2 / 3,
+          size.width / 2,
+          size.height + maxOuterExtent,
+        ),
+      )
+      ..addRect(
+        Rect.fromLTRB(
+          size.width / 2,
+          size.height / 3,
+          size.width + maxOuterExtent,
+          size.height + maxOuterExtent,
+        ),
+      );
+    final shadowColor = Colors.grey.shade300;
+
+    canvas
+      ..save()
+      ..clipPath(clipPath)
+      ..drawRect(
+        Rect.fromLTRB(0, 0, size.width, size.height),
+        Paint()
+          ..color = shadowColor
+          ..style = PaintingStyle.fill,
+      );
+    _drawSingleStrandLayer(
+      canvas,
+      size,
+      layerSeed: seed,
+      inset: 0,
+      strokeColor: Colors.grey.shade600.withAlpha(180),
+      fillColor: shadowColor,
+    );
+    canvas.restore();
+  }
+
+  /// 外側レイヤー [outerSeed] と同じ乱数列で内側のストランドを生成して描画する。
+  ///
+  /// 各辺で外側 [_drawSingleStrandLayer] と同じ順序・同じ消費数で乱数を消費する
+  /// ため、ストランドの沿走軸方向の位置（top 辺なら x 位置）は外側と完全に一致し、
+  /// 内側のストランドは外側のストランドの直下に「影」のように並ぶ。
+  ///
+  /// 四隅は描画せず、各辺の左右端から [inset] px 以内に入るストランドも
+  /// 描画をスキップする（乱数列のアラインメントは保つために消費は継続する）。
+  /// コーナー領域・両端の余白部分のシャドーは [_drawSilhouetteFill] が描いた
+  /// 塗りつぶし矩形に任せる。
+  void _drawAlignedInnerStrandLayer(
+    Canvas canvas,
+    Size size, {
+    required int outerSeed,
+    required double inset,
+    required Color strokeColor,
+    required Color fillColor,
+  }) {
+    final random = Random(outerSeed);
+    final style = _FurLayerStyle(
+      color: strokeColor,
+      strokeWidth: 1.5,
+      minPeakHeight: _minPeakHeight,
+      maxPeakHeight: _maxPeakHeight,
+    );
+    final paints = _StrandPaints.from(fillColor: fillColor, style: style);
+
+    var isFirstEdge = true;
+    for (final edge in _Edge.values) {
+      final edgeRandom = isFirstEdge
+          ? random
+          : Random(random.nextInt(_subRandomSeedSpace));
+      isFirstEdge = false;
+      _drawAlignedInnerEdgeStrands(
+        canvas,
+        size,
+        edge: edge,
+        random: edgeRandom,
+        style: style,
+        paints: paints,
+        inset: inset,
+      );
+    }
+    // 四隅は描かない。コーナー用 sub-seed は外側との位相を揃える必要が
+    // ないため消費しない。
+  }
+
+  /// 辺 [edge] に沿って、外側ストランドと同じ沿走軸位置にあるストランドだけを
+  /// 内側の生え際で描画する。
+  ///
+  /// 反復範囲は外側 [_drawEdgeFurStrands] と同じ `[_cornerMargin, edge - _cornerMargin]`
+  /// にして、各ストランドで外側と全く同じ乱数を消費する。実際の描画はそこから
+  /// さらに両端 [inset] px の余白を除いた範囲に入るストランドだけで行う。
+  void _drawAlignedInnerEdgeStrands(
+    Canvas canvas,
+    Size size, {
+    required _Edge edge,
+    required Random random,
+    required _FurLayerStyle style,
+    required _StrandPaints paints,
+    required double inset,
+  }) {
+    final canvasEdgeLength = switch (edge) {
+      _Edge.top || _Edge.bottom => size.width,
+      _Edge.left || _Edge.right => size.height,
+    };
+    // 外側と同じ反復範囲。乱数列を完全に一致させるために必須。
+    const iterStart = _cornerMargin;
+    final iterEnd = canvasEdgeLength - _cornerMargin;
+    if (iterEnd - iterStart <= 0) {
+      return;
+    }
+    // 外側ストランドのコーナー境界から [inset] の余白を残して描画をスキップ。
+    final drawStart = iterStart + inset;
+    final drawEnd = iterEnd - inset;
+    final baseline = _EdgeBaseline(size: size, edge: edge, inset: inset);
+
+    final reversed = edge == _Edge.bottom || edge == _Edge.left;
+    final direction = reversed ? -1.0 : 1.0;
+
+    var pos = reversed ? iterEnd : iterStart;
+
+    while (reversed ? pos > iterStart : pos < iterEnd) {
+      // 外側 [_drawEdgeFurStrands] と消費順序・回数を完全に一致させる。
+      final strandWidth = _randomStrandWidth(random);
+      final peakHeight = _randomPeakHeight(random, style);
+
+      final startParam = pos;
+      final peakParam = pos + strandWidth * direction;
+      final endParam =
+          peakParam -
+          random.nextDouble() * strandWidth * _endReturnRatio * direction;
+      final startBaseOffset = random.nextDouble() * _maxBaseOffset;
+      final endBaseOffset = random.nextDouble() * _maxBaseOffset;
+      final bulgeAmount = _randomBulgeAmount(random);
+      final bulgeSign = _randomBulgeSign(random);
+
+      final strandLow = startParam < peakParam ? startParam : peakParam;
+      final strandHigh = startParam > peakParam ? startParam : peakParam;
+      final inDrawRange = strandLow >= drawStart && strandHigh <= drawEnd;
+
+      if (inDrawRange) {
+        final start = baseline.point(startParam, outward: -startBaseOffset);
+        final rawPeak = baseline.point(peakParam, outward: peakHeight);
+        final peak = rawPeak + _windOffset(rawPeak);
+        final end = baseline.point(endParam, outward: -endBaseOffset);
+
+        _drawStrand(
+          canvas,
+          baseline: baseline,
+          start: start,
+          peak: peak,
+          end: end,
+          innerStart: baseline.point(startParam, outward: -_maxBaseOffset),
+          innerEnd: baseline.point(endParam, outward: -_maxBaseOffset),
+          signedBulge: bulgeAmount * bulgeSign,
+          paints: paints,
+        );
+      }
+
+      pos = endParam;
     }
   }
 
@@ -293,7 +496,6 @@ class CatFurBubblePainter extends CustomPainter {
       _Edge.top || _Edge.bottom => size.width,
       _Edge.left || _Edge.right => size.height,
     };
-    // 内側レイヤーは inset 分だけ短い辺の上にストランドを敷く。
     final rangeStart = inset + _cornerMargin;
     final rangeEnd = canvasEdgeLength - inset - _cornerMargin;
     final baseline = _EdgeBaseline(size: size, edge: edge, inset: inset);
@@ -461,9 +663,6 @@ class CatFurBubblePainter extends CustomPainter {
   }
 
   /// [corner] の生え際の仮想弧の中心点（バブル内部）。
-  ///
-  /// [inset] が正の場合は、四隅の角からさらに内側へ移動した位置を返す。
-  /// 内側に重ねる第2レイヤーで利用する。
   Offset _arcCenterFor(_Corner corner, Size size, double inset) {
     final offset = _cornerArcCenterOffset + inset;
     return Offset(
@@ -688,8 +887,7 @@ enum _Corner {
   topLeft,
   topRight,
   bottomRight,
-  bottomLeft
-  ;
+  bottomLeft;
 
   bool get isLeft => this == _Corner.topLeft || this == _Corner.bottomLeft;
   bool get isTop => this == _Corner.topLeft || this == _Corner.topRight;
