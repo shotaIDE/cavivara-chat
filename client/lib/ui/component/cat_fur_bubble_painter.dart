@@ -30,6 +30,13 @@ class CatFurBubblePainter extends CustomPainter {
   /// 薄いグレーの輪郭として奥行きを与える。
   static const _silhouetteInset = 5.0;
 
+  /// 2段目シルエット層の生え際を、外側ストランドの生え際からどれだけ内側に置くか（px）。
+  /// 1段目シルエットとの余白を視認できるよう `_silhouetteInset` よりだいぶ大きい値
+  /// を取り、より薄いグレーで塗ることで奥行きを強調する。`_backgroundCornerRadius
+  /// + _maxBaseOffset = 14` を超えると同心円コーナーの半径が負になるため、その範囲
+  /// 内に収める。
+  static const double _innerSilhouetteInset = 13;
+
   /// 背景の角丸半径。内側の塗りつぶし矩形と外側の背景矩形で
   /// コーナー中心が同心になるよう、内側半径はここから派生して算出する。
   static const _backgroundCornerRadius = 12.0;
@@ -122,19 +129,23 @@ class CatFurBubblePainter extends CustomPainter {
   ///
   /// この塗りつぶしと内側ストランドが繋がることで、奥側に敷いた薄いグレーの
   /// 一体的なシルエットとして見えるようになる。
-  /// 矩形は背景矩形より `_silhouetteInset - _maxBaseOffset` だけ内側に置き、
-  /// 半径もその分だけ縮めることで、外側背景とコーナー中心が同心になる。
-  void _drawSilhouetteFill(Canvas canvas, Size size, Color color) {
-    const innerRadius =
-        _backgroundCornerRadius - (_silhouetteInset - _maxBaseOffset);
+  /// 矩形は背景矩形より `inset - _maxBaseOffset` だけ内側に置き、半径もその分だけ
+  /// 縮めることで、外側背景とコーナー中心が同心になる。
+  void _drawSilhouetteFill(
+    Canvas canvas,
+    Size size,
+    Color color,
+    double inset,
+  ) {
+    final innerRadius = _backgroundCornerRadius - (inset - _maxBaseOffset);
     final rect = RRect.fromRectAndRadius(
       Rect.fromLTRB(
-        _silhouetteInset,
-        _silhouetteInset,
-        size.width - _silhouetteInset,
-        size.height - _silhouetteInset,
+        inset,
+        inset,
+        size.width - inset,
+        size.height - inset,
       ),
-      const Radius.circular(innerRadius),
+      Radius.circular(innerRadius),
     );
     canvas.drawRRect(
       rect,
@@ -175,7 +186,7 @@ class CatFurBubblePainter extends CustomPainter {
       // 枠線・塗りつぶしともに薄いグレーで揃え、奥側に控えめなシルエットとして敷く。
       // 文字が乗る中央領域も同色で塗り、内側ストランドと一体のシルエットに見せる。
       final silhouetteColor = Colors.grey.shade200;
-      _drawSilhouetteFill(canvas, size, silhouetteColor);
+      _drawSilhouetteFill(canvas, size, silhouetteColor, _silhouetteInset);
       _drawAlignedInnerStrandLayer(
         canvas,
         size,
@@ -184,6 +195,31 @@ class CatFurBubblePainter extends CustomPainter {
         strokeColor: silhouetteColor,
         fillColor: silhouetteColor,
       );
+
+      // 2段目シルエット：1段目の内側にさらに重ね、より薄いグレーで塗る。
+      // 内側ストランドと塗りつぶしを連動させて、1段目と同様に一体のシルエット
+      // として見せる。1段目より敷ける余白が狭くなるため、ここで改めて
+      // フィット判定を行う。
+      final innerSilhouetteFits =
+          size.width > 2 * (_cornerMargin + _innerSilhouetteInset) &&
+          size.height > 2 * (_cornerMargin + _innerSilhouetteInset);
+      if (innerSilhouetteFits) {
+        final innerSilhouetteColor = Colors.grey.shade100;
+        _drawSilhouetteFill(
+          canvas,
+          size,
+          innerSilhouetteColor,
+          _innerSilhouetteInset,
+        );
+        _drawAlignedInnerStrandLayer(
+          canvas,
+          size,
+          outerSeed: seed,
+          inset: _innerSilhouetteInset,
+          strokeColor: innerSilhouetteColor,
+          fillColor: innerSilhouetteColor,
+        );
+      }
     }
   }
 
