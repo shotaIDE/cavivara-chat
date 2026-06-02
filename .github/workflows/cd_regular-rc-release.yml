@@ -22,7 +22,7 @@ jobs:
     outputs:
       new-tag-generated: ${{ steps.bump-version.outputs.VERSION_BUMPED }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
@@ -70,7 +70,7 @@ jobs:
     if: needs.trigger-cd-prod.outputs.new-tag-generated == 'true'
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
@@ -109,7 +109,7 @@ jobs:
         run: echo "${{ secrets.GOOGLE_SERVICE_PLIST_BASE64_PROD }}" | base64 -d > ios/Runner/Firebase/Prod/GoogleService-Info.plist
         working-directory: ./client
       - name: Import Code-Signing Certificates
-        uses: Apple-Actions/import-codesign-certs@5142e029c445c10ffc7149d172e540235a065466 # v7
+        uses: Apple-Actions/import-codesign-certs@5142e029c445c10ffc7149d172e540235a065466 # v7.0.0
         with:
           p12-file-base64: ${{ secrets.APPLE_DISTRIBUTION_P12_BASE64 }}
           p12-password: ${{ secrets.APPLE_DISTRIBUTION_P12_PASSWORD }}
@@ -141,7 +141,7 @@ jobs:
     if: needs.trigger-cd-prod.outputs.new-tag-generated == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
