@@ -171,6 +171,7 @@ class _CatFurBubbleState extends State<_CatFurBubble>
     return CustomPaint(
       painter: CatFurBubblePainter(
         seed: widget.seed,
+        brightness: Theme.of(context).brightness,
         windAnimation: _windController,
       ),
       child: Container(

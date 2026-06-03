@@ -7,12 +7,23 @@ import 'package:flutter/material.dart';
 /// 各辺と四隅の輪郭に沿って2次ベジェ曲線で構成した毛束を敷き詰め、
 /// [windAnimation] が指定されている場合は毛先を風揺れさせる。
 class CatFurBubblePainter extends CustomPainter {
-  CatFurBubblePainter({required this.seed, this.windAnimation})
-    : super(repaint: windAnimation);
+  CatFurBubblePainter({
+    required this.seed,
+    required this.brightness,
+    this.windAnimation,
+  }) : super(repaint: windAnimation);
 
   /// 描画される毛先が背景矩形の外側に突き出しうる最大距離（px）。
   /// 親ウィジェットに余白として確保してもらうための公開定数。
   static const maxOuterExtent = 10.0;
+
+  /// 猫毛吹き出しの中央領域に乗せる文字色として推奨される色。
+  /// 中央領域（2段目シルエット）の濃度に対して十分なコントラストを確保する。
+  static Color recommendedForegroundColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? Colors.grey.shade100
+        : Colors.grey.shade800;
+  }
 
   // ===== ジオメトリ定数 =====
 
@@ -90,9 +101,49 @@ class CatFurBubblePainter extends CustomPainter {
 
   final int seed;
 
+  /// 描画パレットを切り替えるためのテーマ輝度。
+  /// ライト/ダークそれぞれで、毛束・シルエット・シャドーの色を入れ替える。
+  final Brightness brightness;
+
   /// 風のアニメーション。0..1 で1サイクルとして扱う。
   /// null の場合は揺れずに静止状態で描画する。
   final Animation<double>? windAnimation;
+
+  // ===== 描画パレット =====
+  //
+  // ライトモードでは「外側=白」「リング=やや暗いグレー」「中心=その間のグレー」
+  // 「シャドー=最も暗い」の順で奥行きを表現している。ダークモードでも同じ相対
+  // 順序（外側が最も明るく、リングが最も暗いシルエット、中心はその間、シャドーは
+  // リングよりさらに暗い）を保ち、色だけを暗い側にシフトする。
+
+  static const _darkBubbleFillColor = Color(0xFF2C2C2C);
+  static const _darkSilhouetteCenterColor = Color(0xFF252525);
+  static const _darkSilhouetteRingColor = Color(0xFF1C1C1C);
+  static const _darkShadowColor = Color(0xFF0F0F0F);
+
+  bool get _isDark => brightness == Brightness.dark;
+
+  /// 背景矩形と外側ストランドの塗りつぶし色。
+  Color get _bubbleFillColor => _isDark ? _darkBubbleFillColor : Colors.white;
+
+  /// 外側ストランドの輪郭線色。
+  /// ダークモードでは明るい線が浮いて見えるため、地のダーク面とほぼ同じ濃度の
+  /// グレーまで落として、毛先の形だけが微かに見える程度に沈ませる。
+  Color get _outerStrokeColor => _isDark
+      ? Colors.grey.shade900.withAlpha(180)
+      : Colors.grey.shade600.withAlpha(180);
+
+  /// 1段目シルエット層の色（外側より一段奥に見える「影リング」）。
+  Color get _outerSilhouetteColor =>
+      _isDark ? _darkSilhouetteRingColor : Colors.grey.shade200;
+
+  /// 2段目シルエット層の色（文字が乗る中央領域）。
+  Color get _innerSilhouetteColor =>
+      _isDark ? _darkSilhouetteCenterColor : Colors.grey.shade100;
+
+  /// 下側に落ちる立体感のためのシャドー帯色。
+  Color get _shadowOverlayColor =>
+      _isDark ? _darkShadowColor : Colors.grey.shade300;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -103,6 +154,7 @@ class CatFurBubblePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CatFurBubblePainter oldDelegate) {
     return oldDelegate.seed != seed ||
+        oldDelegate.brightness != brightness ||
         oldDelegate.windAnimation != windAnimation;
   }
 
@@ -120,7 +172,7 @@ class CatFurBubblePainter extends CustomPainter {
     canvas.drawRRect(
       bgRect,
       Paint()
-        ..color = Colors.white
+        ..color = _bubbleFillColor
         ..style = PaintingStyle.fill,
     );
   }
@@ -167,8 +219,8 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       layerSeed: seed,
       inset: 0,
-      strokeColor: Colors.grey.shade600.withAlpha(180),
-      fillColor: Colors.white,
+      strokeColor: _outerStrokeColor,
+      fillColor: _bubbleFillColor,
     );
 
     // 内側ストランドが少しでも描かれるのは、辺の中央部に余白を含めた長さが
@@ -185,7 +237,7 @@ class CatFurBubblePainter extends CustomPainter {
 
       // 枠線・塗りつぶしともに薄いグレーで揃え、奥側に控えめなシルエットとして敷く。
       // 文字が乗る中央領域も同色で塗り、内側ストランドと一体のシルエットに見せる。
-      final silhouetteColor = Colors.grey.shade200;
+      final silhouetteColor = _outerSilhouetteColor;
       _drawSilhouetteFill(canvas, size, silhouetteColor, _silhouetteInset);
       _drawAlignedInnerStrandLayer(
         canvas,
@@ -204,7 +256,7 @@ class CatFurBubblePainter extends CustomPainter {
           size.width > 2 * (_cornerMargin + _innerSilhouetteInset) &&
           size.height > 2 * (_cornerMargin + _innerSilhouetteInset);
       if (innerSilhouetteFits) {
-        final innerSilhouetteColor = Colors.grey.shade100;
+        final innerSilhouetteColor = _innerSilhouetteColor;
         _drawSilhouetteFill(
           canvas,
           size,
@@ -244,9 +296,8 @@ class CatFurBubblePainter extends CustomPainter {
   /// 矩形を 2 枚（x の境界はキャンバス中央）並べて構成しているが、上端の
   /// 段差はシルエット内側に隠れて見えない。
   ///
-  /// 影色 `Colors.grey.shade300` は、外側ストランドの枠線色
-  /// （`shade600` の alpha 180、白との実効ブレンドで `shade500` 相当の輝度）
-  /// よりは薄く、シルエット（`shade200`）よりは濃くなるよう選定している。
+  /// 影色は外側ストランドの枠線色よりは薄く、シルエットよりは濃くなるよう
+  /// パレット側で選定している（ライト/ダークそれぞれで対応する濃度を持つ）。
   void _drawShadowOverlay(Canvas canvas, Size size) {
     // 毛先がキャンバス外にも伸びる分、外周方向には [maxOuterExtent] ぶん
     // 余裕を持たせる。上端は左半分が下 1/3 (y >= 2H/3)、右半分が下 2/3
@@ -268,7 +319,7 @@ class CatFurBubblePainter extends CustomPainter {
           size.height + maxOuterExtent,
         ),
       );
-    final shadowColor = Colors.grey.shade300;
+    final shadowColor = _shadowOverlayColor;
 
     canvas
       ..save()
@@ -284,7 +335,7 @@ class CatFurBubblePainter extends CustomPainter {
       size,
       layerSeed: seed,
       inset: 0,
-      strokeColor: Colors.grey.shade600.withAlpha(180),
+      strokeColor: _outerStrokeColor,
       fillColor: shadowColor,
     );
     canvas.restore();
