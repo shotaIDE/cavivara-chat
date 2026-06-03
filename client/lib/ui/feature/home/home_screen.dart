@@ -9,6 +9,7 @@ import 'package:house_worker/data/repository/chat_bubble_design_repository.dart'
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_directory_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
+import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
@@ -764,7 +765,9 @@ class _UserChatBubble extends ConsumerWidget {
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
 
     final textColor = design == ChatBubbleDesign.catFur
-        ? Colors.grey.shade800
+        ? CatFurBubblePainter.recommendedForegroundColor(
+            Theme.of(context).brightness,
+          )
         : Theme.of(context).colorScheme.onPrimaryContainer;
     final bodyText = Text(
       message.content,
@@ -829,7 +832,9 @@ class _AiChatBubble extends ConsumerWidget {
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
     final textColor = design == ChatBubbleDesign.catFur
-        ? Colors.grey.shade800
+        ? CatFurBubblePainter.recommendedForegroundColor(
+            Theme.of(context).brightness,
+          )
         : Theme.of(context).colorScheme.onSurface;
     final indicatorColor = Theme.of(context).colorScheme.primary;
 

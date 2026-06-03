@@ -17,6 +17,14 @@ class CatFurBubblePainter extends CustomPainter {
   /// 親ウィジェットに余白として確保してもらうための公開定数。
   static const maxOuterExtent = 10.0;
 
+  /// 猫毛吹き出しの中央領域に乗せる文字色として推奨される色。
+  /// 中央領域（2段目シルエット）の濃度に対して十分なコントラストを確保する。
+  static Color recommendedForegroundColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? Colors.grey.shade100
+        : Colors.grey.shade800;
+  }
+
   // ===== ジオメトリ定数 =====
 
   /// 角丸部分を避けるマージン
