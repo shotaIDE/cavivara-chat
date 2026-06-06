@@ -41,3 +41,6 @@ runs:
     - name: Install FlutterFire CLI
       shell: bash
       run: dart pub global activate flutterfire_cli
+    - name: Display FlutterFire CLI version
+      shell: bash
+      run: flutterfire --version
