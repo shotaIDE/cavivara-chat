@@ -79,7 +79,6 @@ void main() {
         iconPath: 'test_icon.png',
         aiPrompt: 'You are a helpful assistant.',
         tags: ['test'],
-        resumeSections: [],
       );
 
       const testCavivaraProfile2 = CavivaraProfile(
@@ -90,7 +89,6 @@ void main() {
         iconPath: 'test_mascot_icon.png',
         aiPrompt: 'You are a mascot assistant.',
         tags: ['test', 'mascot'],
-        resumeSections: [],
       );
 
       container = ProviderContainer(
@@ -478,7 +476,6 @@ void main() {
                   iconPath: 'test_icon.png',
                   aiPrompt: 'You are a helpful assistant.',
                   tags: ['test'],
-                  resumeSections: [],
                 ),
               ],
             ),

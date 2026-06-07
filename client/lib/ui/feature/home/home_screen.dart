@@ -16,8 +16,6 @@ import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
-import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
-import 'package:house_worker/ui/feature/resume/resume_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -65,10 +63,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _messageFocusNode.requestFocus();
     });
 
-    unawaited(
-      ref.read(updateLastTalkedCavivaraIdProvider(widget.cavivaraId).future),
-    );
-
     ref
       ..listenManual(awardReceivedChatStringProvider, (_, _) {
         // Providerの副作用のみを利用するため、何もしない
@@ -106,17 +100,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
-  void didUpdateWidget(covariant HomeScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.cavivaraId != widget.cavivaraId) {
-      unawaited(
-        ref.read(updateLastTalkedCavivaraIdProvider(widget.cavivaraId).future),
-      );
-    }
-  }
-
-  @override
   void dispose() {
     _suggestionTimer?.cancel();
     _messageController
@@ -139,12 +122,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           size: 32,
           assetPath: cavivaraProfile.iconPath,
           cavivaraId: widget.cavivaraId,
-          onTap: () {
-            HapticFeedbackHelper.lightImpact();
-            Navigator.of(context).push(
-              ResumeScreen.route(widget.cavivaraId),
-            );
-          },
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -193,17 +170,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       drawer: AppDrawer(
         isTalkSelected: true,
-        isJobMarketSelected: false,
         isAchievementSelected: false,
         onSelectTalk: () {
           Navigator.of(context).pushAndRemoveUntil(
             HomeScreen.route(widget.cavivaraId),
-            (route) => false,
-          );
-        },
-        onSelectJobMarket: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            JobMarketScreen.route(),
             (route) => false,
           );
         },
@@ -921,12 +891,6 @@ class _AiChatBubble extends ConsumerWidget {
     final avatar = CavivaraAvatar(
       assetPath: cavivaraProfile.iconPath,
       cavivaraId: cavivaraId,
-      onTap: () {
-        HapticFeedbackHelper.lightImpact();
-        Navigator.of(context).push(
-          ResumeScreen.route(cavivaraId),
-        );
-      },
     );
 
     return IntrinsicHeight(

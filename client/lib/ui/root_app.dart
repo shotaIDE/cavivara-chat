@@ -10,7 +10,6 @@ import 'package:house_worker/ui/component/app_theme.dart';
 import 'package:house_worker/ui/component/heads_up_notification_overlay.dart';
 import 'package:house_worker/ui/feature/auth/login_screen.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
-import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
 import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:house_worker/ui/feature/update/update_app_screen.dart';
@@ -62,8 +61,6 @@ class _RootAppState extends ConsumerState<RootApp> {
         initialRoutes = [LoginScreen.route()];
       case AppInitialRouteHome(:final cavivaraId):
         initialRoutes = [HomeScreen.route(cavivaraId)];
-      case AppInitialRouteJobMarket():
-        initialRoutes = [JobMarketScreen.route()];
     }
 
     final navigatorObservers = <NavigatorObserver>[
@@ -72,7 +69,11 @@ class _RootAppState extends ConsumerState<RootApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      routes: {'/': (_) => const JobMarketScreen()},
+      routes: {
+        '/': (_) => const HomeScreen(
+          cavivaraId: HomeScreen.defaultCavivaraId,
+        ),
+      },
       // `initialRoute` and `routes` are ineffective settings
       // that are set to avoid assertion errors.
       initialRoute: '/',

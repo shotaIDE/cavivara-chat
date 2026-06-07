@@ -15,10 +15,10 @@ void main() {
     });
 
     group('cavivaraDirectoryProvider', () {
-      test('2名のカヴィヴァラプロフィールが期待通り取得できること', () {
+      test('デフォルトカヴィヴァラのみが取得できること', () {
         final profiles = container.read(cavivaraDirectoryProvider);
 
-        expect(profiles, hasLength(2));
+        expect(profiles, hasLength(1));
 
         // デフォルトカヴィヴァラの確認
         final defaultCavivara = profiles.firstWhere(
@@ -26,15 +26,6 @@ void main() {
         );
         expect(defaultCavivara.displayName, equals('カヴィヴァラ'));
         expect(defaultCavivara.title, contains('マスコットキャラクター'));
-        expect(defaultCavivara.resumeSections, isNotEmpty);
-
-        // マスコットカヴィヴァラの確認
-        final mascotCavivara = profiles.firstWhere(
-          (profile) => profile.id == 'cavivara_mascot',
-        );
-        expect(mascotCavivara.displayName, equals('カヴィヴァラ・マスコット'));
-        expect(mascotCavivara.title, contains('応援隊長'));
-        expect(mascotCavivara.resumeSections, isNotEmpty);
       });
     });
 
@@ -45,14 +36,6 @@ void main() {
 
         expect(profile.id, equals(targetId));
         expect(profile.displayName, equals('カヴィヴァラ'));
-      });
-
-      test('マスコットカヴィヴァラのIDで正しいプロフィールが取得できること', () {
-        const targetId = 'cavivara_mascot';
-        final profile = container.read(cavivaraByIdProvider(targetId));
-
-        expect(profile.id, equals(targetId));
-        expect(profile.displayName, equals('カヴィヴァラ・マスコット'));
       });
 
       test('存在しないIDでCavivaraNotFoundExceptionが投げられること', () {

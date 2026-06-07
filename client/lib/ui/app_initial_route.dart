@@ -8,5 +8,4 @@ sealed class AppInitialRoute with _$AppInitialRoute {
   const factory AppInitialRoute.login() = AppInitialRouteLogin;
   const factory AppInitialRoute.home({required String cavivaraId}) =
       AppInitialRouteHome;
-  const factory AppInitialRoute.jobMarket() = AppInitialRouteJobMarket;
 }

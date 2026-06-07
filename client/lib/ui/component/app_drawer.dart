@@ -5,19 +5,15 @@ class AppDrawer extends StatelessWidget {
   const AppDrawer({
     super.key,
     required this.isTalkSelected,
-    required this.isJobMarketSelected,
     required this.isAchievementSelected,
     required this.onSelectTalk,
-    required this.onSelectJobMarket,
     required this.onSelectAchievement,
     required this.onSelectSettings,
   });
 
   final bool isTalkSelected;
-  final bool isJobMarketSelected;
   final bool isAchievementSelected;
   final VoidCallback onSelectTalk;
-  final VoidCallback onSelectJobMarket;
   final VoidCallback onSelectAchievement;
   final VoidCallback onSelectSettings;
 
@@ -30,7 +26,6 @@ class AppDrawer extends StatelessWidget {
           children: [
             _buildHeader(context),
             _buildTalkTile(context),
-            _buildJobMarketTile(context),
             _buildAchievementTile(context),
             const Divider(),
             _buildSettingsTile(context),
@@ -69,21 +64,6 @@ class AppDrawer extends StatelessWidget {
         Navigator.of(context).pop();
         if (!isTalkSelected) {
           onSelectTalk();
-        }
-      },
-    );
-  }
-
-  Widget _buildJobMarketTile(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.work),
-      title: const Text('転職市場'),
-      selected: isJobMarketSelected,
-      onTap: () {
-        HapticFeedbackHelper.onNavigationTap();
-        Navigator.of(context).pop();
-        if (!isJobMarketSelected) {
-          onSelectJobMarket();
         }
       },
     );

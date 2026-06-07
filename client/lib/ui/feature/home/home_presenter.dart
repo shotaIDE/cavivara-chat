@@ -6,7 +6,6 @@ import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
-import 'package:house_worker/data/repository/last_talked_cavivara_id_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
@@ -214,13 +213,6 @@ void clearAllChatMessages(Ref ref) {
 
   // AIサービスの全セッションをクリア
   aiChatService.clearAllChatSessions();
-}
-
-/// 最後に話したカヴィヴァラIDを更新する
-@riverpod
-Future<void> updateLastTalkedCavivaraId(Ref ref, String cavivaraId) async {
-  final notifier = ref.read(lastTalkedCavivaraIdProvider.notifier);
-  await notifier.updateId(cavivaraId);
 }
 
 /// 指定されたカヴィヴァラIDのサジェストリストを管理するプロバイダー
