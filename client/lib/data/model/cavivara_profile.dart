@@ -8,9 +8,6 @@ part 'cavivara_profile.freezed.dart';
 @freezed
 abstract class CavivaraProfile with _$CavivaraProfile {
   const factory CavivaraProfile({
-    /// ユニークID
-    required String id,
-
     /// 表示名
     required String displayName,
 

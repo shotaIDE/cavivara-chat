@@ -7,16 +7,14 @@ import 'package:house_worker/ui/feature/home/home_presenter.dart';
 class SuggestedReplyList extends ConsumerWidget {
   const SuggestedReplyList({
     super.key,
-    required this.cavivaraId,
     required this.onSuggestionTap,
   });
 
-  final String cavivaraId;
   final ValueChanged<String> onSuggestionTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final suggestions = ref.watch(suggestedRepliesProvider(cavivaraId));
+    final suggestions = ref.watch(suggestedRepliesProvider);
 
     if (suggestions.isEmpty) {
       return const SizedBox.shrink();

@@ -8,7 +8,7 @@ import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
-import 'package:house_worker/data/service/cavivara_directory_service.dart';
+import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/data/service/preference_service.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:mocktail/mocktail.dart';
@@ -71,24 +71,13 @@ void main() {
       // ChatStringCountRepository用のモックはテスト実装で対応
 
       // テスト用のカヴィヴァラプロフィールを作成
-      const testCavivaraProfile1 = CavivaraProfile(
-        id: 'cavivara_default',
-        displayName: 'テストカヴィヴァラ1',
+      const testCavivaraProfile = CavivaraProfile(
+        displayName: 'テストカヴィヴァラ',
         title: 'テスト用',
         description: 'テスト用のカヴィヴァラです',
         iconPath: 'test_icon.png',
         aiPrompt: 'You are a helpful assistant.',
         tags: ['test'],
-      );
-
-      const testCavivaraProfile2 = CavivaraProfile(
-        id: 'cavivara_mascot',
-        displayName: 'テストカヴィヴァラ2',
-        title: 'テスト用マスコット',
-        description: 'テスト用のマスコットカヴィヴァラです',
-        iconPath: 'test_mascot_icon.png',
-        aiPrompt: 'You are a mascot assistant.',
-        tags: ['test', 'mascot'],
       );
 
       container = ProviderContainer(
@@ -103,8 +92,8 @@ void main() {
           sentChatStringCountRepositoryProvider.overrideWith(
             () => testSentChatStringCountRepository,
           ),
-          cavivaraDirectoryProvider.overrideWith(
-            (ref) => [testCavivaraProfile1, testCavivaraProfile2],
+          cavivaraProfileProvider.overrideWith(
+            (ref) => testCavivaraProfile,
           ),
         ],
       );
@@ -116,31 +105,14 @@ void main() {
 
     group('chatMessagesProvider', () {
       test('初期状態では空のメッセージリストが返されること', () {
-        const cavivaraId = 'cavivara_default';
-        final messages = container.read(chatMessagesProvider(cavivaraId));
+        final messages = container.read(chatMessagesProvider);
 
         expect(messages, isEmpty);
       });
-
-      test(
-        '異なるカヴィヴァラIDに対して独立したメッセージリストが管理されること',
-        () {
-          const cavivaraId1 = 'cavivara_default';
-          const cavivaraId2 = 'cavivara_mascot';
-
-          final messages1 = container.read(chatMessagesProvider(cavivaraId1));
-          final messages2 = container.read(chatMessagesProvider(cavivaraId2));
-
-          expect(messages1, isEmpty);
-          expect(messages2, isEmpty);
-          expect(identical(messages1, messages2), isFalse);
-        },
-      );
     });
 
     group('sendMessage', () {
       test('メッセージ送信に成功した場合、メッセージリストが更新されること', () async {
-        const cavivaraId = 'cavivara_default';
         const messageText = 'テストメッセージ';
 
         // AI サービスのモック設定
@@ -158,14 +130,12 @@ void main() {
           ),
         );
 
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
 
         // メッセージ送信
         await notifier.sendMessage(messageText);
 
-        final messages = container.read(chatMessagesProvider(cavivaraId));
+        final messages = container.read(chatMessagesProvider);
 
         // ユーザーメッセージとAIメッセージが追加されていることを確認
         expect(messages, hasLength(2));
@@ -178,7 +148,6 @@ void main() {
       test(
         'AI サービス呼び出し時に適切なパラメーターが渡されること',
         () async {
-          const cavivaraId = 'cavivara_default';
           const messageText = 'テストメッセージ';
 
           when(
@@ -195,9 +164,7 @@ void main() {
             ),
           );
 
-          final notifier = container.read(
-            chatMessagesProvider(cavivaraId).notifier,
-          );
+          final notifier = container.read(chatMessagesProvider.notifier);
           await notifier.sendMessage(messageText);
 
           // AI サービスが適切なパラメーターで呼び出されたことを確認
@@ -214,7 +181,6 @@ void main() {
       );
 
       test('メッセージ送信エラー時に適切に処理されること', () async {
-        const cavivaraId = 'cavivara_default';
         const messageText = 'エラーテスト';
 
         when(
@@ -231,14 +197,12 @@ void main() {
           ),
         );
 
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
 
         // エラーが発生してもメッセージリストが破綻しないことを確認
         await notifier.sendMessage(messageText);
 
-        final messages = container.read(chatMessagesProvider(cavivaraId));
+        final messages = container.read(chatMessagesProvider);
 
         // ユーザーメッセージとエラーメッセージが追加されていることを確認
         expect(messages, hasLength(2));
@@ -249,7 +213,6 @@ void main() {
       });
 
       test('ストリーミングレスポンスが部分的に更新されること', () async {
-        const cavivaraId = 'cavivara_default';
         const messageText = 'ストリーミングテスト';
 
         // ストリーミングレスポンスのモック設定
@@ -269,12 +232,10 @@ void main() {
           ]),
         );
 
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
         await notifier.sendMessage(messageText);
 
-        final messages = container.read(chatMessagesProvider(cavivaraId));
+        final messages = container.read(chatMessagesProvider);
 
         // 最終的にストリーミングが完了したメッセージが保存されることを確認
         expect(messages, hasLength(2));
@@ -284,10 +245,7 @@ void main() {
     });
 
     group('clearMessages', () {
-      test('特定のカヴィヴァラのメッセージのみクリアされること', () async {
-        const cavivaraId1 = 'cavivara_default';
-        const cavivaraId2 = 'cavivara_mascot';
-
+      test('メッセージがクリアされること', () async {
         // AI サービスのモック設定
         when(
           () => mockAiChatService.sendMessageStream(
@@ -303,26 +261,16 @@ void main() {
           ),
         );
 
-        // 両方のカヴィヴァラにメッセージを追加
-        final notifier1 = container.read(
-          chatMessagesProvider(cavivaraId1).notifier,
-        );
-        final notifier2 = container.read(
-          chatMessagesProvider(cavivaraId2).notifier,
-        );
+        // メッセージを追加
+        final notifier = container.read(chatMessagesProvider.notifier);
+        await notifier.sendMessage('メッセージ1');
 
-        await notifier1.sendMessage('メッセージ1');
-        await notifier2.sendMessage('メッセージ2');
+        expect(container.read(chatMessagesProvider), hasLength(2));
 
-        // 1つ目のカヴィヴァラのメッセージをクリア
-        notifier1.clearMessages();
+        // メッセージをクリア
+        notifier.clearMessages();
 
-        final messages1 = container.read(chatMessagesProvider(cavivaraId1));
-        final messages2 = container.read(chatMessagesProvider(cavivaraId2));
-
-        // 1つ目だけクリアされ、2つ目は残っていることを確認
-        expect(messages1, isEmpty);
-        expect(messages2, hasLength(2));
+        expect(container.read(chatMessagesProvider), isEmpty);
       });
     });
   });
@@ -340,89 +288,56 @@ void main() {
 
     group('suggestedRepliesProvider', () {
       test('初期状態では空のサジェストリストが返されること', () {
-        const cavivaraId = 'cavivara_default';
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
 
         expect(suggestions, isEmpty);
       });
 
-      test('異なるカヴィヴァラIDに対して独立したサジェストリストが管理されること', () {
-        const cavivaraId1 = 'cavivara_default';
-        const cavivaraId2 = 'cavivara_mascot';
-
-        final suggestions1 = container.read(
-          suggestedRepliesProvider(cavivaraId1),
-        );
-        final suggestions2 = container.read(
-          suggestedRepliesProvider(cavivaraId2),
-        );
-
-        expect(suggestions1, isEmpty);
-        expect(suggestions2, isEmpty);
-        expect(identical(suggestions1, suggestions2), isFalse);
-      });
-
       test('save メソッドでサジェストを保存できること', () {
-        const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
-        container
-            .read(suggestedRepliesProvider(cavivaraId).notifier)
-            .save(testSuggestions);
+        container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
 
         expect(suggestions, equals(testSuggestions));
       });
 
       test('clear メソッドでサジェストをクリアできること', () {
-        const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
-        container
-            .read(suggestedRepliesProvider(cavivaraId).notifier)
-            .save(testSuggestions);
+        container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
         // 保存されていることを確認
         expect(
-          container.read(suggestedRepliesProvider(cavivaraId)),
+          container.read(suggestedRepliesProvider),
           equals(testSuggestions),
         );
 
         // クリア
-        container.read(suggestedRepliesProvider(cavivaraId).notifier).clear();
+        container.read(suggestedRepliesProvider.notifier).clear();
 
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
 
         expect(suggestions, isEmpty);
       });
 
       test('空のリストを保存できること', () {
-        const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2'];
 
-        final notifier = container.read(
-          suggestedRepliesProvider(cavivaraId).notifier,
-        )..save(testSuggestions);
+        final notifier = container.read(suggestedRepliesProvider.notifier)
+          ..save(testSuggestions);
 
         // 最初にサジェストを保存されていることを確認
         expect(
-          container.read(suggestedRepliesProvider(cavivaraId)),
+          container.read(suggestedRepliesProvider),
           equals(testSuggestions),
         );
 
         // 空のリストで上書き
         notifier.save([]);
 
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
 
         expect(suggestions, isEmpty);
       });
@@ -466,18 +381,15 @@ void main() {
             sentChatStringCountRepositoryProvider.overrideWith(
               () => testSentChatStringCountRepository,
             ),
-            cavivaraDirectoryProvider.overrideWith(
-              (ref) => [
-                const CavivaraProfile(
-                  id: 'cavivara_default',
-                  displayName: 'テストカヴィヴァラ',
-                  title: 'テスト用',
-                  description: 'テスト用のカヴィヴァラです',
-                  iconPath: 'test_icon.png',
-                  aiPrompt: 'You are a helpful assistant.',
-                  tags: ['test'],
-                ),
-              ],
+            cavivaraProfileProvider.overrideWith(
+              (ref) => const CavivaraProfile(
+                displayName: 'テストカヴィヴァラ',
+                title: 'テスト用',
+                description: 'テスト用のカヴィヴァラです',
+                iconPath: 'test_icon.png',
+                aiPrompt: 'You are a helpful assistant.',
+                tags: ['test'],
+              ),
             ),
           ],
         );
@@ -488,17 +400,14 @@ void main() {
       });
 
       test('メッセージ送信開始時に既存のサジェストがクリアされること', () async {
-        const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
         // 事前にサジェストを保存
-        container
-            .read(suggestedRepliesProvider(cavivaraId).notifier)
-            .save(testSuggestions);
+        container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
         // サジェストが保存されていることを確認
         expect(
-          container.read(suggestedRepliesProvider(cavivaraId)),
+          container.read(suggestedRepliesProvider),
           equals(testSuggestions),
         );
 
@@ -518,20 +427,15 @@ void main() {
         );
 
         // メッセージ送信
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
         await notifier.sendMessage('テストメッセージ');
 
         // サジェストがクリアされていることを確認
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, isEmpty);
       });
 
       test('AIからサジェスト付きレスポンスを受信した場合、サジェストが保存されること', () async {
-        const cavivaraId = 'cavivara_default';
         const messageText = 'テストメッセージ';
         final testSuggestions = ['次の質問1', '次の質問2', '次の質問3'];
 
@@ -554,20 +458,15 @@ void main() {
         );
 
         // メッセージ送信
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
         await notifier.sendMessage(messageText);
 
         // サジェストが保存されていることを確認
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, equals(testSuggestions));
       });
 
       test('AIからサジェストなしレスポンスを受信した場合、サジェストは空のままであること', () async {
-        const cavivaraId = 'cavivara_default';
         const messageText = 'テストメッセージ';
 
         // AIサービスのモック設定（サジェストなし）
@@ -586,20 +485,15 @@ void main() {
         );
 
         // メッセージ送信
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
         await notifier.sendMessage(messageText);
 
         // サジェストが空であることを確認
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, isEmpty);
       });
 
       test('ストリーミング中に複数のサジェストを受信した場合、最後のサジェストが保存されること', () async {
-        const cavivaraId = 'cavivara_default';
         const messageText = 'テストメッセージ';
 
         // ストリーミングレスポンスのモック設定
@@ -629,42 +523,31 @@ void main() {
         );
 
         // メッセージ送信
-        final notifier = container.read(
-          chatMessagesProvider(cavivaraId).notifier,
-        );
+        final notifier = container.read(chatMessagesProvider.notifier);
         await notifier.sendMessage(messageText);
 
         // 最後のサジェストが保存されていることを確認
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, equals(['最終質問1', '最終質問2', '最終質問3']));
       });
 
       test('チャットクリア時にサジェストもクリアされること', () {
-        const cavivaraId = 'cavivara_default';
         final testSuggestions = ['質問1', '質問2', '質問3'];
 
         // サジェストを保存
-        container
-            .read(suggestedRepliesProvider(cavivaraId).notifier)
-            .save(testSuggestions);
+        container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
         // サジェストが保存されていることを確認
         expect(
-          container.read(suggestedRepliesProvider(cavivaraId)),
+          container.read(suggestedRepliesProvider),
           equals(testSuggestions),
         );
 
         // チャットをクリア
-        container
-            .read(chatMessagesProvider(cavivaraId).notifier)
-            .clearMessages();
+        container.read(chatMessagesProvider.notifier).clearMessages();
 
         // サジェストがクリアされていることを確認
-        final suggestions = container.read(
-          suggestedRepliesProvider(cavivaraId),
-        );
+        final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, isEmpty);
       });
     });

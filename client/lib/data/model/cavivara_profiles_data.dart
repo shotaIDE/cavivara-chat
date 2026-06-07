@@ -9,7 +9,6 @@ class CavivaraProfilesData {
 
   /// デフォルトのカヴィヴァラプロフィール
   static CavivaraProfile get defaultCavivara => const CavivaraProfile(
-    id: 'cavivara_default',
     displayName: 'カヴィヴァラ',
     title: 'プレクトラム結社さざなみ工業\nマスコットキャラクター／悩み相談員',
     description:
@@ -25,11 +24,6 @@ class CavivaraProfilesData {
       '気遣いコミュニケーター',
     ],
   );
-
-  /// 全てのカヴィヴァラプロフィール
-  static List<CavivaraProfile> get allProfiles => [
-    defaultCavivara,
-  ];
 
   /// デフォルトカヴィヴァラのAI用プロンプト
   static const String _defaultCavivaraPrompt = '''

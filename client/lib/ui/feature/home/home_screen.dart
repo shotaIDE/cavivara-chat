@@ -7,7 +7,7 @@ import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
-import 'package:house_worker/data/service/cavivara_directory_service.dart';
+import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
@@ -22,8 +22,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
-
-  static const defaultCavivaraId = 'cavivara_default';
 
   static const name = 'HomeScreen';
 
@@ -110,16 +108,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cavivaraProfile = ref.watch(
-      cavivaraByIdProvider(HomeScreen.defaultCavivaraId),
-    );
+    final cavivaraProfile = ref.watch(cavivaraProfileProvider);
 
     final title = Row(
       children: [
         CavivaraAvatar(
           size: 32,
           assetPath: cavivaraProfile.iconPath,
-          cavivaraId: HomeScreen.defaultCavivaraId,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -152,7 +147,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _ChatMessageList(
               controller: _scrollController,
               onMessageSent: _onMessageSent,
-              cavivaraId: HomeScreen.defaultCavivaraId,
               shouldShowSuggestions: _shouldShowSuggestions,
             ),
           ),
@@ -217,18 +211,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     HapticFeedbackHelper.onClearChat();
-    ref
-        .read(chatMessagesProvider(HomeScreen.defaultCavivaraId).notifier)
-        .clearMessages();
+    ref.read(chatMessagesProvider.notifier).clearMessages();
   }
 
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
       HapticFeedbackHelper.onMessageSent();
-      ref
-          .read(chatMessagesProvider(HomeScreen.defaultCavivaraId).notifier)
-          .sendMessage(message);
+      ref.read(chatMessagesProvider.notifier).sendMessage(message);
       _messageController.clear();
     }
   }
@@ -242,9 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _messageInput() {
-    final isReceiving = ref.watch(
-      isReceivingMessagesProvider(HomeScreen.defaultCavivaraId),
-    );
+    final isReceiving = ref.watch(isReceivingMessagesProvider);
     final isSendUnavailable = _isMessageEmpty || isReceiving;
 
     return Container(
@@ -303,13 +291,11 @@ class _ChatMessageList extends ConsumerStatefulWidget {
   const _ChatMessageList({
     required this.controller,
     required this.onMessageSent,
-    required this.cavivaraId,
     required this.shouldShowSuggestions,
   });
 
   final ScrollController controller;
   final VoidCallback onMessageSent;
-  final String cavivaraId;
   final bool shouldShowSuggestions;
 
   @override
@@ -360,7 +346,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(chatMessagesProvider(widget.cavivaraId));
+    final messages = ref.watch(chatMessagesProvider);
     final hasStreamingMessages = messages.any(
       (ChatMessage message) => message.isStreaming,
     );
@@ -426,7 +412,6 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: SuggestedReplyList(
-              cavivaraId: widget.cavivaraId,
               onSuggestionTap: _sendSuggestion,
             ),
           );
@@ -446,7 +431,6 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
           ),
           child: _ChatBubble(
             message: message,
-            cavivaraId: widget.cavivaraId,
           ),
         );
       },
@@ -455,9 +439,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
   void _sendSuggestion(String message) {
     HapticFeedbackHelper.onSuggestionTap();
-    ref
-        .read(chatMessagesProvider(widget.cavivaraId).notifier)
-        .sendMessage(message);
+    ref.read(chatMessagesProvider.notifier).sendMessage(message);
     widget.onMessageSent();
   }
 }
@@ -465,11 +447,9 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 class _ChatBubble extends ConsumerWidget {
   const _ChatBubble({
     required this.message,
-    required this.cavivaraId,
   });
 
   final ChatMessage message;
-  final String cavivaraId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -477,7 +457,6 @@ class _ChatBubble extends ConsumerWidget {
       ChatMessageSenderUser() => _UserChatBubble(message: message),
       ChatMessageSenderAi() => _AiChatBubble(
         message: message,
-        cavivaraId: cavivaraId,
       ),
       ChatMessageSenderApp() => _AppChatBubble(
         message: message,
@@ -790,15 +769,13 @@ class _UserChatBubble extends ConsumerWidget {
 class _AiChatBubble extends ConsumerWidget {
   const _AiChatBubble({
     required this.message,
-    required this.cavivaraId,
   });
 
   final ChatMessage message;
-  final String cavivaraId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cavivaraProfile = ref.watch(cavivaraByIdProvider(cavivaraId));
+    final cavivaraProfile = ref.watch(cavivaraProfileProvider);
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
     final textColor = design == ChatBubbleDesign.catFur
@@ -890,7 +867,6 @@ class _AiChatBubble extends ConsumerWidget {
 
     final avatar = CavivaraAvatar(
       assetPath: cavivaraProfile.iconPath,
-      cavivaraId: cavivaraId,
     );
 
     return IntrinsicHeight(

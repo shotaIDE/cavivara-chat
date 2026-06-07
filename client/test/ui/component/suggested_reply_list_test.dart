@@ -7,7 +7,6 @@ import 'package:house_worker/ui/feature/home/home_presenter.dart';
 void main() {
   group('SuggestedReplyList', () {
     testWidgets('空のサジェストリストの場合、何も表示されないこと', (tester) async {
-      const cavivaraId = 'test_cavivara';
       var tapped = false;
 
       await tester.pumpWidget(
@@ -15,7 +14,6 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: SuggestedReplyList(
-                cavivaraId: cavivaraId,
                 onSuggestionTap: (_) {
                   tapped = true;
                 },
@@ -31,7 +29,6 @@ void main() {
     });
 
     testWidgets('サジェストが表示されること', (tester) async {
-      const cavivaraId = 'test_cavivara';
       final testSuggestions = ['質問1', '質問2', '質問3'];
 
       await tester.pumpWidget(
@@ -39,7 +36,6 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: SuggestedReplyList(
-                cavivaraId: cavivaraId,
                 onSuggestionTap: (_) {},
               ),
             ),
@@ -51,9 +47,7 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(find.byType(SuggestedReplyList)),
       );
-      container
-          .read(suggestedRepliesProvider(cavivaraId).notifier)
-          .save(testSuggestions);
+      container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
       await tester.pumpAndSettle();
 
@@ -64,7 +58,6 @@ void main() {
     });
 
     testWidgets('サジェストをタップするとコールバックが呼ばれること', (tester) async {
-      const cavivaraId = 'test_cavivara';
       final testSuggestions = ['質問1', '質問2', '質問3'];
       String? tappedText;
 
@@ -73,7 +66,6 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: SuggestedReplyList(
-                cavivaraId: cavivaraId,
                 onSuggestionTap: (text) {
                   tappedText = text;
                 },
@@ -87,9 +79,7 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(find.byType(SuggestedReplyList)),
       );
-      container
-          .read(suggestedRepliesProvider(cavivaraId).notifier)
-          .save(testSuggestions);
+      container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
       await tester.pumpAndSettle();
 
@@ -102,7 +92,6 @@ void main() {
     });
 
     testWidgets('横スクロールが可能であること', (tester) async {
-      const cavivaraId = 'test_cavivara';
       final testSuggestions = [
         '非常に長い質問1',
         '非常に長い質問2',
@@ -116,7 +105,6 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: SuggestedReplyList(
-                cavivaraId: cavivaraId,
                 onSuggestionTap: (_) {},
               ),
             ),
@@ -128,9 +116,7 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(find.byType(SuggestedReplyList)),
       );
-      container
-          .read(suggestedRepliesProvider(cavivaraId).notifier)
-          .save(testSuggestions);
+      container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
       await tester.pumpAndSettle();
 
