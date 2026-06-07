@@ -8,7 +8,7 @@ environment:
   # Flutter 3.44.0 or 3.44.1に上げると、CrashlyticsのdSYMアップロードに失敗するため、
   # Flutter 3.41.9を維持している。
   # https://github.com/invertase/flutterfire_cli/issues/428
-  sdk: 3.11.5
+  sdk: 3.12.1
 
 dependencies:
   # ライブラリが Flutter SDK によって固定されているため、バージョンを指定しない
