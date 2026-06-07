@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
-import 'package:house_worker/data/service/employment_state_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
@@ -35,10 +34,6 @@ class UserStatisticsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final employmentState = ref.watch(employmentStateProvider);
-    final defaultCavivaraId = employmentState.isNotEmpty
-        ? employmentState.first
-        : HomeScreen.defaultCavivaraId;
     final sentCount = ref.watch(sentChatStringCountRepositoryProvider);
     final receivedCount = ref.watch(receivedChatStringCountRepositoryProvider);
 
@@ -51,7 +46,7 @@ class UserStatisticsScreen extends ConsumerWidget {
         isAchievementSelected: true,
         onSelectTalk: () {
           Navigator.of(context).pushAndRemoveUntil(
-            HomeScreen.route(defaultCavivaraId),
+            HomeScreen.route(HomeScreen.defaultCavivaraId),
             (route) => false,
           );
         },
