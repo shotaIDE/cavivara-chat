@@ -1,17 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:house_worker/data/model/resume_section.dart';
 
 part 'cavivara_profile.freezed.dart';
 
 /// カヴィヴァラのプロフィール
 ///
-/// カヴィヴァラキャラクターの基本情報、履歴書セクション、AI用プロンプトを保持する
+/// カヴィヴァラキャラクターの基本情報とAI用プロンプトを保持する
 @freezed
 abstract class CavivaraProfile with _$CavivaraProfile {
   const factory CavivaraProfile({
-    /// ユニークID
-    required String id,
-
     /// 表示名
     required String displayName,
 
@@ -29,9 +25,6 @@ abstract class CavivaraProfile with _$CavivaraProfile {
 
     /// タグ一覧
     required List<String> tags,
-
-    /// 履歴書セクション一覧
-    required List<ResumeSection> resumeSections,
   }) = _CavivaraProfile;
 
   const CavivaraProfile._();

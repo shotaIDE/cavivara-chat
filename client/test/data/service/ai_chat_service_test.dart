@@ -37,7 +37,6 @@ void main() {
       test('チャットセッションがクリアできること', () {
         // チャットセッションのクリア機能をテスト
         expect(() => service.clearChatSession('test prompt'), returnsNormally);
-        expect(() => service.clearAllChatSessions(), returnsNormally);
       });
     });
 

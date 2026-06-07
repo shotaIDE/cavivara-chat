@@ -7,16 +7,12 @@ class CavivaraAvatar extends StatelessWidget {
     this.onTap,
     this.assetPath = _defaultAssetPath,
     this.backgroundColor,
-    this.cavivaraId,
-    this.semanticsLabel,
   });
 
   final double size;
   final VoidCallback? onTap;
   final String assetPath;
   final Color? backgroundColor;
-  final String? cavivaraId;
-  final String? semanticsLabel;
 
   static const String defaultAssetPath = 'assets/image/cavivara.png';
   static const String _defaultAssetPath = defaultAssetPath;
@@ -24,10 +20,7 @@ class CavivaraAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderRadius = BorderRadius.circular(12);
-    final heroTag = cavivaraId != null
-        ? 'cavivara_avatar_$cavivaraId'
-        : 'cavivara_avatar_default';
-    final label = semanticsLabel ?? 'カヴィヴァラさんのアイコン';
+    const label = 'カヴィヴァラさんのアイコン';
 
     Widget buildImage() {
       return Container(
@@ -49,45 +42,38 @@ class CavivaraAvatar extends StatelessWidget {
       );
     }
 
-    Widget buildContent() {
-      if (onTap == null) {
-        return Semantics(
-          label: label,
-          image: true,
-          child: buildImage(),
-        );
-      }
-
+    if (onTap == null) {
       return Semantics(
         label: label,
-        button: true,
         image: true,
-        child: ClipRRect(
-          borderRadius: borderRadius,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              child: Ink(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  image: DecorationImage(
-                    image: AssetImage(assetPath),
-                    fit: BoxFit.cover,
-                  ),
+        child: buildImage(),
+      );
+    }
+
+    return Semantics(
+      label: label,
+      button: true,
+      image: true,
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Ink(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                image: DecorationImage(
+                  image: AssetImage(assetPath),
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
           ),
         ),
-      );
-    }
-
-    return Hero(
-      tag: heroTag,
-      child: buildContent(),
+      ),
     );
   }
 }

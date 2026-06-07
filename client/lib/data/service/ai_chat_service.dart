@@ -347,10 +347,4 @@ class AiChatService {
       '${systemPrompt.hashCode}',
     );
   }
-
-  /// 全てのチャットセッションをクリア
-  void clearAllChatSessions() {
-    _chatSessions.clear();
-    _logger.info('All chat sessions cleared');
-  }
 }

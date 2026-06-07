@@ -51,7 +51,6 @@
 表示内容:
 - 送信チャット文字数
 - 受信チャット文字数
-- 履歴書閲覧時間
 - 全称号の一覧（達成状態、残り必要文字数を含む）
 
 ## データフロー
@@ -69,7 +68,6 @@
 `UserStatisticsScreen` が以下の情報を取得して表示:
 - `ReceivedChatStringCountRepository`: 総受信文字数
 - `SentChatStringCountRepository`: 総送信文字数
-- `ResumeViewingDurationRepository`: 履歴書閲覧時間
 
 各称号の達成状態は `CavivaraReward.isAchieved()` でリアルタイムに判定。
 
@@ -81,7 +79,6 @@
 - `hasEarnedPartTimeLeaderReward`: リーダー称号の獲得状態
 - `totalReceivedChatStringCount`: 総受信文字数（[ReceivedChatStringCountRepository](../../../client/lib/data/repository/received_chat_string_count_repository.dart) が管理）
 - `totalSentChatStringCount`: 総送信文字数
-- `resumeViewingMilliseconds`: 履歴書閲覧時間（ミリ秒）
 
 **注意**: 古いドキュメントで言及されていた `maxReceivedChatRewardThresholdNotified` は現在の実装では使用されていない。重複通知防止は `hasEarnedXxxReward` フラグのみで管理している。
 

@@ -6,12 +6,11 @@ import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
-import 'package:house_worker/data/repository/last_talked_cavivara_id_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
-import 'package:house_worker/data/service/cavivara_directory_service.dart';
+import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/heads_up_notification_presenter.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
@@ -19,22 +18,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'home_presenter.g.dart';
 
-/// 指定されたカヴィヴァラIDのチャットメッセージのリストを管理するプロバイダー
+/// チャットメッセージのリストを管理するプロバイダー
 @riverpod
 class ChatMessages extends _$ChatMessages {
   @override
-  List<ChatMessage> build(String cavivaraId) => [];
+  List<ChatMessage> build() => [];
 
   /// ユーザーメッセージを追加し、AIからの返信を取得する
   /// [content] - 送信するメッセージ内容
-  /// [cavivaraId] - 対象のカヴィヴァラID（このプロバイダーのパラメーターから自動取得）
   Future<void> sendMessage(String content) async {
     if (content.trim().isEmpty) {
       return;
     }
 
     // メッセージ送信開始時に既存のサジェストをクリア
-    ref.read(suggestedRepliesProvider(cavivaraId).notifier).clear();
+    ref.read(suggestedRepliesProvider.notifier).clear();
 
     // 簡単なID生成（DateTime + hashCode）
     final now = DateTime.now();
@@ -59,7 +57,7 @@ class ChatMessages extends _$ChatMessages {
     final aiChatService = ref.read(aiChatServiceProvider);
 
     // カヴィヴァラのプロフィールを取得してAI用プロンプトを使用
-    final cavivaraProfile = ref.read(cavivaraByIdProvider(cavivaraId));
+    final cavivaraProfile = ref.read(cavivaraProfileProvider);
     final systemPrompt = cavivaraProfile.aiPrompt;
 
     // 現在のチャット履歴を取得（AIサービスに会話履歴として渡すため）
@@ -160,9 +158,7 @@ class ChatMessages extends _$ChatMessages {
 
       // サジェストを保存
       if (lastSuggestedReplies.isNotEmpty) {
-        ref
-            .read(suggestedRepliesProvider(cavivaraId).notifier)
-            .save(lastSuggestedReplies);
+        ref.read(suggestedRepliesProvider.notifier).save(lastSuggestedReplies);
       }
 
       if (buffer.isNotEmpty) {
@@ -180,54 +176,26 @@ class ChatMessages extends _$ChatMessages {
     state = [];
 
     // サジェストもクリア
-    ref.read(suggestedRepliesProvider(cavivaraId).notifier).clear();
+    ref.read(suggestedRepliesProvider.notifier).clear();
 
     // AIサービスのセッションキャッシュもクリア
-    final cavivaraProfile = ref.read(cavivaraByIdProvider(cavivaraId));
+    final cavivaraProfile = ref.read(cavivaraProfileProvider);
     ref.read(aiChatServiceProvider).clearChatSession(cavivaraProfile.aiPrompt);
   }
 }
 
-/// 指定されたカヴィヴァラIDでAIがメッセージを受信中かどうかを返すプロバイダー
+/// AIがメッセージを受信中かどうかを返すプロバイダー
 @riverpod
-bool isReceivingMessages(Ref ref, String cavivaraId) {
-  final messages = ref.watch(chatMessagesProvider(cavivaraId));
+bool isReceivingMessages(Ref ref) {
+  final messages = ref.watch(chatMessagesProvider);
   return messages.any((message) => message.isStreaming);
 }
 
-/// 指定されたカヴィヴァラIDのチャット履歴をクリアするヘルパー関数
-@riverpod
-void clearChatMessages(Ref ref, String cavivaraId) {
-  ref.read(chatMessagesProvider(cavivaraId).notifier).clearMessages();
-}
-
-/// 全てのチャット履歴をクリアするヘルパー関数
-@riverpod
-void clearAllChatMessages(Ref ref) {
-  final directory = ref.read(cavivaraDirectoryProvider);
-  final aiChatService = ref.read(aiChatServiceProvider);
-
-  // 各カヴィヴァラのチャットをクリア
-  for (final profile in directory) {
-    ref.read(chatMessagesProvider(profile.id).notifier).clearMessages();
-  }
-
-  // AIサービスの全セッションをクリア
-  aiChatService.clearAllChatSessions();
-}
-
-/// 最後に話したカヴィヴァラIDを更新する
-@riverpod
-Future<void> updateLastTalkedCavivaraId(Ref ref, String cavivaraId) async {
-  final notifier = ref.read(lastTalkedCavivaraIdProvider.notifier);
-  await notifier.updateId(cavivaraId);
-}
-
-/// 指定されたカヴィヴァラIDのサジェストリストを管理するプロバイダー
+/// サジェストリストを管理するプロバイダー
 @riverpod
 class SuggestedReplies extends _$SuggestedReplies {
   @override
-  List<String> build(String cavivaraId) => [];
+  List<String> build() => [];
 
   /// サジェストリストを保存
   // ignore: use_setters_to_change_properties

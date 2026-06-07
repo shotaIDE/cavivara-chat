@@ -7,7 +7,7 @@ import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
-import 'package:house_worker/data/service/cavivara_directory_service.dart';
+import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
@@ -16,27 +16,19 @@ import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
-import 'package:house_worker/ui/feature/job_market/job_market_screen.dart';
-import 'package:house_worker/ui/feature/resume/resume_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key, required this.cavivaraId});
-
-  static const defaultCavivaraId = 'cavivara_default';
-
-  /// 対象のカヴィヴァラID
-  final String cavivaraId;
+  const HomeScreen({super.key});
 
   static const name = 'HomeScreen';
 
-  static MaterialPageRoute<HomeScreen> route(String cavivaraId) =>
-      MaterialPageRoute<HomeScreen>(
-        builder: (_) => HomeScreen(cavivaraId: cavivaraId),
-        settings: const RouteSettings(name: name),
-      );
+  static MaterialPageRoute<HomeScreen> route() => MaterialPageRoute<HomeScreen>(
+    builder: (_) => const HomeScreen(),
+    settings: const RouteSettings(name: name),
+  );
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -64,10 +56,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
       _messageFocusNode.requestFocus();
     });
-
-    unawaited(
-      ref.read(updateLastTalkedCavivaraIdProvider(widget.cavivaraId).future),
-    );
 
     ref
       ..listenManual(awardReceivedChatStringProvider, (_, _) {
@@ -106,17 +94,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
-  void didUpdateWidget(covariant HomeScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.cavivaraId != widget.cavivaraId) {
-      unawaited(
-        ref.read(updateLastTalkedCavivaraIdProvider(widget.cavivaraId).future),
-      );
-    }
-  }
-
-  @override
   void dispose() {
     _suggestionTimer?.cancel();
     _messageController
@@ -131,20 +108,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cavivaraProfile = ref.watch(cavivaraByIdProvider(widget.cavivaraId));
+    final cavivaraProfile = ref.watch(cavivaraProfileProvider);
 
     final title = Row(
       children: [
         CavivaraAvatar(
           size: 32,
           assetPath: cavivaraProfile.iconPath,
-          cavivaraId: widget.cavivaraId,
-          onTap: () {
-            HapticFeedbackHelper.lightImpact();
-            Navigator.of(context).push(
-              ResumeScreen.route(widget.cavivaraId),
-            );
-          },
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -177,7 +147,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _ChatMessageList(
               controller: _scrollController,
               onMessageSent: _onMessageSent,
-              cavivaraId: widget.cavivaraId,
               shouldShowSuggestions: _shouldShowSuggestions,
             ),
           ),
@@ -193,17 +162,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       drawer: AppDrawer(
         isTalkSelected: true,
-        isJobMarketSelected: false,
         isAchievementSelected: false,
         onSelectTalk: () {
           Navigator.of(context).pushAndRemoveUntil(
-            HomeScreen.route(widget.cavivaraId),
-            (route) => false,
-          );
-        },
-        onSelectJobMarket: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            JobMarketScreen.route(),
+            HomeScreen.route(),
             (route) => false,
           );
         },
@@ -249,16 +211,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     HapticFeedbackHelper.onClearChat();
-    ref.read(chatMessagesProvider(widget.cavivaraId).notifier).clearMessages();
+    ref.read(chatMessagesProvider.notifier).clearMessages();
   }
 
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
       HapticFeedbackHelper.onMessageSent();
-      ref
-          .read(chatMessagesProvider(widget.cavivaraId).notifier)
-          .sendMessage(message);
+      ref.read(chatMessagesProvider.notifier).sendMessage(message);
       _messageController.clear();
     }
   }
@@ -272,9 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _messageInput() {
-    final isReceiving = ref.watch(
-      isReceivingMessagesProvider(widget.cavivaraId),
-    );
+    final isReceiving = ref.watch(isReceivingMessagesProvider);
     final isSendUnavailable = _isMessageEmpty || isReceiving;
 
     return Container(
@@ -333,13 +291,11 @@ class _ChatMessageList extends ConsumerStatefulWidget {
   const _ChatMessageList({
     required this.controller,
     required this.onMessageSent,
-    required this.cavivaraId,
     required this.shouldShowSuggestions,
   });
 
   final ScrollController controller;
   final VoidCallback onMessageSent;
-  final String cavivaraId;
   final bool shouldShowSuggestions;
 
   @override
@@ -390,7 +346,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(chatMessagesProvider(widget.cavivaraId));
+    final messages = ref.watch(chatMessagesProvider);
     final hasStreamingMessages = messages.any(
       (ChatMessage message) => message.isStreaming,
     );
@@ -456,7 +412,6 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: SuggestedReplyList(
-              cavivaraId: widget.cavivaraId,
               onSuggestionTap: _sendSuggestion,
             ),
           );
@@ -476,7 +431,6 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
           ),
           child: _ChatBubble(
             message: message,
-            cavivaraId: widget.cavivaraId,
           ),
         );
       },
@@ -485,9 +439,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
   void _sendSuggestion(String message) {
     HapticFeedbackHelper.onSuggestionTap();
-    ref
-        .read(chatMessagesProvider(widget.cavivaraId).notifier)
-        .sendMessage(message);
+    ref.read(chatMessagesProvider.notifier).sendMessage(message);
     widget.onMessageSent();
   }
 }
@@ -495,11 +447,9 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 class _ChatBubble extends ConsumerWidget {
   const _ChatBubble({
     required this.message,
-    required this.cavivaraId,
   });
 
   final ChatMessage message;
-  final String cavivaraId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -507,7 +457,6 @@ class _ChatBubble extends ConsumerWidget {
       ChatMessageSenderUser() => _UserChatBubble(message: message),
       ChatMessageSenderAi() => _AiChatBubble(
         message: message,
-        cavivaraId: cavivaraId,
       ),
       ChatMessageSenderApp() => _AppChatBubble(
         message: message,
@@ -820,15 +769,13 @@ class _UserChatBubble extends ConsumerWidget {
 class _AiChatBubble extends ConsumerWidget {
   const _AiChatBubble({
     required this.message,
-    required this.cavivaraId,
   });
 
   final ChatMessage message;
-  final String cavivaraId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cavivaraProfile = ref.watch(cavivaraByIdProvider(cavivaraId));
+    final cavivaraProfile = ref.watch(cavivaraProfileProvider);
     final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
     final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
     final textColor = design == ChatBubbleDesign.catFur
@@ -920,13 +867,6 @@ class _AiChatBubble extends ConsumerWidget {
 
     final avatar = CavivaraAvatar(
       assetPath: cavivaraProfile.iconPath,
-      cavivaraId: cavivaraId,
-      onTap: () {
-        HapticFeedbackHelper.lightImpact();
-        Navigator.of(context).push(
-          ResumeScreen.route(cavivaraId),
-        );
-      },
     );
 
     return IntrinsicHeight(
