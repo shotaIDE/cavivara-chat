@@ -1,5 +1,4 @@
 enum PreferenceKey {
-  employedCavivaraIds,
   skipClearChatConfirmation,
   totalSentChatStringCount,
   totalReceivedChatStringCount,

@@ -42,7 +42,7 @@ class TestSentChatStringCountRepository extends SentChatStringCountRepository {
 void main() {
   setUpAll(() {
     // Register fallback values for mocktail matchers
-    registerFallbackValue(PreferenceKey.employedCavivaraIds);
+    registerFallbackValue(PreferenceKey.skipClearChatConfirmation);
   });
 
   group('Home Presenter - Chat Messages', () {
