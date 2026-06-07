@@ -22,9 +22,10 @@ GoogleFormService googleFormService(Ref ref) {
 
 class GoogleFormService {
   GoogleFormService({
-    required this._dio,
-    required this._errorReportService,
-  });
+    required Dio dio,
+    required ErrorReportService errorReportService,
+  }) : _dio = dio,
+       _errorReportService = errorReportService;
 
   final Dio _dio;
   final ErrorReportService _errorReportService;

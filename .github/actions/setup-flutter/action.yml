@@ -1,5 +1,9 @@
+name: Setup Flutter
+description: "Setup Flutter and related tools with caching."
+
 inputs:
   working-directory:
+    description: "Working directory where the Flutter project is located."
     required: false
     default: ./
 
@@ -38,6 +42,13 @@ runs:
     - name: Enable Swift Package Manager on Flutter
       run: flutter config --enable-swift-package-manager
       shell: bash
+    # FlutterFire CLIの最新バージョンが公開されここで採用されるバージョンが上がると、
+    # pbxprojファイルに書き込まれたCrashlyticsのdSYMアップロードコマンドが古いままとなり、
+    # 動作が乖離してエラーになることがある。
+    # そのため、定期的にflutterfire configureを行い直す必要がある。
     - name: Install FlutterFire CLI
       shell: bash
       run: dart pub global activate flutterfire_cli
+    - name: Display FlutterFire CLI version
+      shell: bash
+      run: flutterfire --version
