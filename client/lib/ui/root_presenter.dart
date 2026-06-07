@@ -3,7 +3,6 @@ import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/app_initial_route.dart';
-import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'root_presenter.g.dart';
@@ -34,9 +33,7 @@ Future<AppInitialRoute> appInitialRoute(Ref ref) async {
     return const AppInitialRoute.login();
   }
 
-  return const AppInitialRoute.home(
-    cavivaraId: HomeScreen.defaultCavivaraId,
-  );
+  return const AppInitialRoute.home();
 }
 
 @riverpod

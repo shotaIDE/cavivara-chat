@@ -67,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     await Navigator.of(context).pushReplacement(
-      HomeScreen.route(HomeScreen.defaultCavivaraId),
+      HomeScreen.route(),
     );
   }
 }

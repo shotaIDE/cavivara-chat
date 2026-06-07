@@ -46,7 +46,7 @@ class UserStatisticsScreen extends ConsumerWidget {
         isAchievementSelected: true,
         onSelectTalk: () {
           Navigator.of(context).pushAndRemoveUntil(
-            HomeScreen.route(HomeScreen.defaultCavivaraId),
+            HomeScreen.route(),
             (route) => false,
           );
         },

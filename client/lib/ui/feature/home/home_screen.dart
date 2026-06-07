@@ -21,20 +21,16 @@ import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key, required this.cavivaraId});
+  const HomeScreen({super.key});
 
   static const defaultCavivaraId = 'cavivara_default';
 
-  /// 対象のカヴィヴァラID
-  final String cavivaraId;
-
   static const name = 'HomeScreen';
 
-  static MaterialPageRoute<HomeScreen> route(String cavivaraId) =>
-      MaterialPageRoute<HomeScreen>(
-        builder: (_) => HomeScreen(cavivaraId: cavivaraId),
-        settings: const RouteSettings(name: name),
-      );
+  static MaterialPageRoute<HomeScreen> route() => MaterialPageRoute<HomeScreen>(
+    builder: (_) => const HomeScreen(),
+    settings: const RouteSettings(name: name),
+  );
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -114,14 +110,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cavivaraProfile = ref.watch(cavivaraByIdProvider(widget.cavivaraId));
+    final cavivaraProfile = ref.watch(
+      cavivaraByIdProvider(HomeScreen.defaultCavivaraId),
+    );
 
     final title = Row(
       children: [
         CavivaraAvatar(
           size: 32,
           assetPath: cavivaraProfile.iconPath,
-          cavivaraId: widget.cavivaraId,
+          cavivaraId: HomeScreen.defaultCavivaraId,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -154,7 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _ChatMessageList(
               controller: _scrollController,
               onMessageSent: _onMessageSent,
-              cavivaraId: widget.cavivaraId,
+              cavivaraId: HomeScreen.defaultCavivaraId,
               shouldShowSuggestions: _shouldShowSuggestions,
             ),
           ),
@@ -173,7 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isAchievementSelected: false,
         onSelectTalk: () {
           Navigator.of(context).pushAndRemoveUntil(
-            HomeScreen.route(widget.cavivaraId),
+            HomeScreen.route(),
             (route) => false,
           );
         },
@@ -219,7 +217,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     HapticFeedbackHelper.onClearChat();
-    ref.read(chatMessagesProvider(widget.cavivaraId).notifier).clearMessages();
+    ref
+        .read(chatMessagesProvider(HomeScreen.defaultCavivaraId).notifier)
+        .clearMessages();
   }
 
   void _sendMessage() {
@@ -227,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (message.isNotEmpty) {
       HapticFeedbackHelper.onMessageSent();
       ref
-          .read(chatMessagesProvider(widget.cavivaraId).notifier)
+          .read(chatMessagesProvider(HomeScreen.defaultCavivaraId).notifier)
           .sendMessage(message);
       _messageController.clear();
     }
@@ -243,7 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _messageInput() {
     final isReceiving = ref.watch(
-      isReceivingMessagesProvider(widget.cavivaraId),
+      isReceivingMessagesProvider(HomeScreen.defaultCavivaraId),
     );
     final isSendUnavailable = _isMessageEmpty || isReceiving;
 

@@ -59,8 +59,8 @@ class _RootAppState extends ConsumerState<RootApp> {
         initialRoutes = [UpdateAppScreen.route()];
       case AppInitialRouteLogin():
         initialRoutes = [LoginScreen.route()];
-      case AppInitialRouteHome(:final cavivaraId):
-        initialRoutes = [HomeScreen.route(cavivaraId)];
+      case AppInitialRouteHome():
+        initialRoutes = [HomeScreen.route()];
     }
 
     final navigatorObservers = <NavigatorObserver>[
@@ -69,11 +69,7 @@ class _RootAppState extends ConsumerState<RootApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      routes: {
-        '/': (_) => const HomeScreen(
-          cavivaraId: HomeScreen.defaultCavivaraId,
-        ),
-      },
+      routes: {'/': (_) => const HomeScreen()},
       // `initialRoute` and `routes` are ineffective settings
       // that are set to avoid assertion errors.
       initialRoute: '/',
