@@ -1,5 +1,9 @@
+name: Setup Flutter
+description: "Setup Flutter and related tools with caching."
+
 inputs:
   working-directory:
+    description: "Working directory where the Flutter project is located."
     required: false
     default: ./
 
