@@ -76,11 +76,20 @@ class _RootAppState extends ConsumerState<RootApp> {
         theme: getLightTheme(),
         darkTheme: getDarkTheme(),
         debugShowCheckedModeBanner: false,
-        home: const Scaffold(
+        home: Scaffold(
           body: Center(
             child: FractionallySizedBox(
               widthFactor: 0.5,
-              child: AnimatedCavivara(),
+              child: Builder(
+                builder: (context) {
+                  // ダークモードは白線、ライトモードは黒線にする。
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  return AnimatedCavivara(
+                    strokeColor: isDark ? Colors.white : Colors.black,
+                  );
+                },
+              ),
             ),
           ),
         ),
