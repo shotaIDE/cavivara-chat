@@ -95,8 +95,6 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
   }
 }
 
-// AUTO-GENERATED from kavi_gb__1.png
-// strokes: eyebrows/eyes removed (drawn as ellipses); eye-overlapping strokes removed
 const double kSrcWidth = 2308;
 const double kSrcHeight = 1890;
 
