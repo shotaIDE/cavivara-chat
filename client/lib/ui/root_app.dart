@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -24,11 +26,25 @@ class RootApp extends ConsumerStatefulWidget {
 }
 
 class _RootAppState extends ConsumerState<RootApp> {
+  /// スプラッシュ画面の最小表示時間。
+  static const _minSplashDuration = Duration(seconds: 1);
+
   final _navigatorKey = GlobalKey<NavigatorState>();
+
+  Timer? _splashTimer;
+
+  /// スプラッシュ画面の最小表示時間が経過したかどうか。
+  bool _minSplashElapsed = false;
 
   @override
   void initState() {
     super.initState();
+
+    _splashTimer = Timer(_minSplashDuration, () {
+      if (mounted) {
+        setState(() => _minSplashElapsed = true);
+      }
+    });
 
     ref.listenManual(updatedRemoteConfigKeysProvider, (_, next) {
       next.maybeWhen(
@@ -44,20 +60,26 @@ class _RootAppState extends ConsumerState<RootApp> {
   }
 
   @override
+  void dispose() {
+    _splashTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final appInitialRouteAsync = ref.watch(appInitialRouteProvider);
     final appInitialRoute = appInitialRouteAsync.whenOrNull(
       data: (appInitialRoute) => appInitialRoute,
     );
-    if (appInitialRoute == null) {
+    if (appInitialRoute == null || !_minSplashElapsed) {
       return MaterialApp(
         theme: getLightTheme(),
         darkTheme: getDarkTheme(),
         debugShowCheckedModeBanner: false,
         home: const Scaffold(
           body: Center(
-            child: SizedBox(
-              width: 120,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
               child: KaviFace(),
             ),
           ),
