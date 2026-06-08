@@ -1,21 +1,92 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 /// A self-contained widget that draws the Kavi line-art face.
 /// [strokeColor] sets the color of every line and the filled pupils.
-class KaviFace extends StatelessWidget {
+///
+/// 表示後、一定間隔で右目のウィンクアニメーションを再生する。
+class KaviFace extends StatefulWidget {
   const KaviFace({super.key, this.strokeColor = const Color(0xFF3D678D)});
 
   final Color strokeColor;
 
   @override
+  State<KaviFace> createState() => _KaviFaceState();
+}
+
+class _KaviFaceState extends State<KaviFace>
+    with SingleTickerProviderStateMixin {
+  /// 表示後、最初にウィンクするまでの待機時間。
+  static const _initialDelay = Duration(milliseconds: 500);
+
+  /// ウィンクを繰り返す間隔。
+  static const _winkInterval = Duration(seconds: 3);
+
+  late final AnimationController _controller;
+  late final Animation<double> _wink;
+  Timer? _winkTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+
+    // 0 -> 1 -> 0 と進めて、閉眼してから開眼するまばたきを表現する。
+    _wink = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 1,
+      ),
+    ]).animate(_controller);
+
+    _winkTimer = Timer(_initialDelay, _playWink);
+  }
+
+  void _playWink() {
+    _controller.forward(from: 0).whenComplete(() {
+      if (!mounted) {
+        return;
+      }
+      _winkTimer = Timer(_winkInterval, _playWink);
+    });
+  }
+
+  @override
+  void dispose() {
+    _winkTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AspectRatio(
       aspectRatio: kSrcWidth / kSrcHeight,
-      child: CustomPaint(
-        painter: KaviPainter(strokeColor: strokeColor),
-        size: Size.infinite,
+      child: AnimatedBuilder(
+        animation: _wink,
+        builder: (_, _) => CustomPaint(
+          painter: KaviPainter(
+            strokeColor: widget.strokeColor,
+            winkProgress: _wink.value,
+          ),
+          size: Size.infinite,
+        ),
       ),
     );
   }
@@ -331,9 +402,12 @@ const _Brow kRightBrow = _Brow(
 );
 
 class KaviPainter extends CustomPainter {
-  KaviPainter({required this.strokeColor});
+  KaviPainter({required this.strokeColor, this.winkProgress = 0});
 
   final Color strokeColor;
+
+  /// 右目のウィンク進捗。0 で開眼、1 で閉眼。
+  final double winkProgress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -365,22 +439,33 @@ class KaviPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
 
-    // Stroked paths: free-form strokes + eyebrows + eye arcs.
+    // Stroked paths: free-form strokes + eyebrows + 左目.
     final paths = _buildStrokePaths();
     paths.add(_browPath(kLeftBrow));
     paths.add(_browPath(kRightBrow));
     paths.add(_eyePath(kLeftEye));
-    paths.add(_eyePath(kRightEye));
 
     for (final path in paths) {
       canvas.drawPath(path, paint);
     }
 
-    // Pupils: filled solid (the black of the eye).
+    // Left pupil: filled solid (the black of the eye).
     canvas.drawPath(_pupilPath(kLeftPupil), fillPaint);
-    canvas.drawPath(_pupilPath(kRightPupil), fillPaint);
 
-    canvas.restore();
+    // 右目はウィンク進捗に応じて目の中心を軸に上下へ潰し、
+    // 閉じると横線(細いレンズ形)になってウィンクに見えるようにする。
+    final winkScaleY = 1.0 - 0.92 * winkProgress;
+    final winkMatrix = Matrix4.identity()
+      ..translate(kRightEye.cx, kRightEye.cy)
+      ..scale(1.0, winkScaleY)
+      ..translate(-kRightEye.cx, -kRightEye.cy);
+    canvas
+      ..drawPath(_eyePath(kRightEye).transform(winkMatrix.storage), paint)
+      ..drawPath(
+        _pupilPath(kRightPupil).transform(winkMatrix.storage),
+        fillPaint,
+      )
+      ..restore();
   }
 
   // ---- Free-form strokes via Catmull-Rom -> cubic bezier ----
@@ -502,5 +587,6 @@ class KaviPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant KaviPainter oldDelegate) =>
-      oldDelegate.strokeColor != strokeColor;
+      oldDelegate.strokeColor != strokeColor ||
+      oldDelegate.winkProgress != winkProgress;
 }
