@@ -369,7 +369,7 @@ class _Brow {
   final double angleDeg;
 }
 
-const _Eye kLeftEye = _Eye(
+const _Eye _kLeftEye = _Eye(
   cx: 480.5,
   cy: 1075,
   rx: 83.5,
@@ -377,7 +377,7 @@ const _Eye kLeftEye = _Eye(
   ryLo: 32.3,
   angleDeg: 0,
 );
-const _Eye kRightEye = _Eye(
+const _Eye _kRightEye = _Eye(
   cx: 938,
   cy: 1132.5,
   rx: 88,
@@ -385,16 +385,16 @@ const _Eye kRightEye = _Eye(
   ryLo: 37.8,
   angleDeg: 0,
 );
-const _Pupil kLeftPupil = _Pupil(cx: 480.5, cy: 1078.2, rx: 22.6, ry: 20.3);
-const _Pupil kRightPupil = _Pupil(cx: 938, cy: 1136.3, rx: 26.5, ry: 23.8);
-const _Brow kLeftBrow = _Brow(
+const _Pupil _kLeftPupil = _Pupil(cx: 480.5, cy: 1078.2, rx: 22.6, ry: 20.3);
+const _Pupil _kRightPupil = _Pupil(cx: 938, cy: 1136.3, rx: 26.5, ry: 23.8);
+const _Brow _kLeftBrow = _Brow(
   cx: 463,
   cy: 956,
   rx: 127,
   ry: 48.6,
   angleDeg: 2.25,
 );
-const _Brow kRightBrow = _Brow(
+const _Brow _kRightBrow = _Brow(
   cx: 952,
   cy: 1035.5,
   rx: 148,
@@ -421,9 +421,10 @@ class _CavivaraPainter extends CustomPainter {
     final dx = (size.width - drawnW) / 2;
     final dy = (size.height - drawnH) / 2;
 
-    canvas.save();
-    canvas.translate(dx, dy);
-    canvas.scale(s, s);
+    canvas
+      ..save()
+      ..translate(dx, dy)
+      ..scale(s, s);
 
     const strokeWidth = 20.0;
 
@@ -441,29 +442,29 @@ class _CavivaraPainter extends CustomPainter {
       ..isAntiAlias = true;
 
     // Stroked paths: free-form strokes + eyebrows + 左目.
-    final paths = _buildStrokePaths();
-    paths.add(_browPath(kLeftBrow));
-    paths.add(_browPath(kRightBrow));
-    paths.add(_eyePath(kLeftEye));
+    final paths = _buildStrokePaths()
+      ..add(_browPath(_kLeftBrow))
+      ..add(_browPath(_kRightBrow))
+      ..add(_eyePath(_kLeftEye));
 
     for (final path in paths) {
       canvas.drawPath(path, paint);
     }
 
     // Left pupil: filled solid (the black of the eye).
-    canvas.drawPath(_pupilPath(kLeftPupil), fillPaint);
+    canvas.drawPath(_pupilPath(_kLeftPupil), fillPaint);
 
     // 右目はウィンク進捗に応じて目の中心を軸に上下へ潰し、
     // 閉じると横線(細いレンズ形)になってウィンクに見えるようにする。
     final winkScaleY = 1.0 - 0.92 * winkProgress;
     final winkMatrix = Matrix4.identity()
-      ..translate(kRightEye.cx, kRightEye.cy)
-      ..scale(1.0, winkScaleY)
-      ..translate(-kRightEye.cx, -kRightEye.cy);
+      ..translateByDouble(_kRightEye.cx, _kRightEye.cy, 0, 1)
+      ..scaleByDouble(1, winkScaleY, 1, 1)
+      ..translateByDouble(-_kRightEye.cx, -_kRightEye.cy, 0, 1);
     canvas
-      ..drawPath(_eyePath(kRightEye).transform(winkMatrix.storage), paint)
+      ..drawPath(_eyePath(_kRightEye).transform(winkMatrix.storage), paint)
       ..drawPath(
-        _pupilPath(kRightPupil).transform(winkMatrix.storage),
+        _pupilPath(_kRightPupil).transform(winkMatrix.storage),
         fillPaint,
       )
       ..restore();
@@ -477,7 +478,9 @@ class _CavivaraPainter extends CustomPainter {
       for (var i = 0; i + 1 < stroke.length; i += 2) {
         pts.add(Offset(stroke[i], stroke[i + 1]));
       }
-      if (pts.length < 2) continue;
+      if (pts.length < 2) {
+        continue;
+      }
 
       final path = Path()..moveTo(pts.first.dx, pts.first.dy);
       if (pts.length == 2) {
@@ -524,7 +527,7 @@ class _CavivaraPainter extends CustomPainter {
     _addLidArc(path, e.rx, e.ryLo, kEyeTip, 1); // lower lid
 
     final m = Matrix4.identity()
-      ..translate(center.dx, center.dy)
+      ..translateByDouble(center.dx, center.dy, 0, 1)
       ..rotateZ(rot);
     return path.transform(m.storage);
   }
@@ -536,14 +539,18 @@ class _CavivaraPainter extends CustomPainter {
   void _addLidArc(Path path, double a, double h, double yc, int sign) {
     final ry = h + yc;
     var val = 1 - (yc * yc) / (ry * ry);
-    if (val <= 1e-6) val = 1e-6;
+    if (val <= 1e-6) {
+      val = 1e-6;
+    }
     final rx = a / math.sqrt(val);
 
     final se = -yc / ry; // sin at the corner points
     final ce = a / rx; // cos at the corner points
     var aLeft = math.atan2(se, -ce);
     final aRight = math.atan2(se, ce);
-    if (aLeft > 0) aLeft -= 2 * math.pi;
+    if (aLeft > 0) {
+      aLeft -= 2 * math.pi;
+    }
 
     const n = 48;
     for (var i = 0; i <= n; i++) {
@@ -581,7 +588,7 @@ class _CavivaraPainter extends CustomPainter {
     // 180deg -> 360deg = top half of the ellipse (arches upward).
     final path = Path()..addArc(rect, math.pi, math.pi);
     final m = Matrix4.identity()
-      ..translate(b.cx, b.cy)
+      ..translateByDouble(b.cx, b.cy, 0, 1)
       ..rotateZ(rot);
     return path.transform(m.storage);
   }
