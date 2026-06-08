@@ -73,8 +73,17 @@ class _RootAppState extends ConsumerState<RootApp> {
     );
     if (appInitialRoute == null || !_minSplashElapsed) {
       return MaterialApp(
+        title: 'カヴィヴァラチャット',
         theme: getLightTheme(),
         darkTheme: getDarkTheme(),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ja', 'JP'),
+        ],
         debugShowCheckedModeBanner: false,
         home: Scaffold(
           body: Center(
