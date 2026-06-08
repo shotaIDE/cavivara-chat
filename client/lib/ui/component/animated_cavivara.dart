@@ -27,6 +27,9 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
   /// ウィンクを繰り返す間隔。
   static const _winkInterval = Duration(seconds: 3);
 
+  /// ウィンク 1 回（閉眼 → 開眼）にかける時間。
+  static const _winkDuration = Duration(milliseconds: 260);
+
   late final AnimationController _controller;
   late final Animation<double> _wink;
   Timer? _winkTimer;
@@ -37,7 +40,7 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 260),
+      duration: _winkDuration,
     );
 
     // 0 -> 1 -> 0 と進めて、閉眼してから開眼するまばたきを表現する。
@@ -80,7 +83,7 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: kSrcWidth / kSrcHeight,
+      aspectRatio: _kSrcWidth / _kSrcHeight,
       child: AnimatedBuilder(
         animation: _wink,
         builder: (_, _) => CustomPaint(
@@ -95,10 +98,10 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
   }
 }
 
-const double kSrcWidth = 2308;
-const double kSrcHeight = 1890;
+const double _kSrcWidth = 2308;
+const double _kSrcHeight = 1890;
 
-const List<List<double>> kStrokes = [
+const List<List<double>> _kStrokes = [
   [
     169.0,
     1673.0,
@@ -405,6 +408,12 @@ const _Brow _kRightBrow = _Brow(
 class _CavivaraPainter extends CustomPainter {
   _CavivaraPainter({required this.strokeColor, this.winkProgress = 0});
 
+  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
+  static const double _strokeWidth = 20;
+
+  /// 閉眼（[winkProgress] = 1）時に右目を縦方向へ潰す割合。
+  static const double _winkCloseAmount = 0.92;
+
   final Color strokeColor;
 
   /// 右目のウィンク進捗。0 で開眼、1 で閉眼。
@@ -412,26 +421,22 @@ class _CavivaraPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sx = size.width / kSrcWidth;
-    final sy = size.height / kSrcHeight;
+    // ソース画像をアスペクト比を保ったまま中央に収まるよう拡縮・移動する。
+    final sx = size.width / _kSrcWidth;
+    final sy = size.height / _kSrcHeight;
     final s = sx < sy ? sx : sy;
-
-    final drawnW = kSrcWidth * s;
-    final drawnH = kSrcHeight * s;
-    final dx = (size.width - drawnW) / 2;
-    final dy = (size.height - drawnH) / 2;
+    final dx = (size.width - _kSrcWidth * s) / 2;
+    final dy = (size.height - _kSrcHeight * s) / 2;
 
     canvas
       ..save()
       ..translate(dx, dy)
       ..scale(s, s);
 
-    const strokeWidth = 20.0;
-
-    final paint = Paint()
+    final strokePaint = Paint()
       ..color = strokeColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
+      ..strokeWidth = _strokeWidth
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
@@ -441,39 +446,54 @@ class _CavivaraPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
 
-    // Stroked paths: free-form strokes + eyebrows + 左目.
+    _drawStaticFeatures(canvas, strokePaint, fillPaint);
+    _drawWinkingRightEye(canvas, strokePaint, fillPaint);
+
+    canvas.restore();
+  }
+
+  /// ウィンクの影響を受けない部分（輪郭などの自由曲線・眉・左目・左の瞳）を描く。
+  void _drawStaticFeatures(Canvas canvas, Paint strokePaint, Paint fillPaint) {
     final paths = _buildStrokePaths()
       ..add(_browPath(_kLeftBrow))
       ..add(_browPath(_kRightBrow))
       ..add(_eyePath(_kLeftEye));
 
     for (final path in paths) {
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, strokePaint);
     }
 
-    // Left pupil: filled solid (the black of the eye).
     canvas.drawPath(_pupilPath(_kLeftPupil), fillPaint);
+  }
 
-    // 右目はウィンク進捗に応じて目の中心を軸に上下へ潰し、
-    // 閉じると横線(細いレンズ形)になってウィンクに見えるようにする。
-    final winkScaleY = 1.0 - 0.92 * winkProgress;
+  /// 右目（輪郭と瞳）をウィンク進捗に応じて目の中心を軸に上下へ潰して描く。
+  /// 閉じると横線（細いレンズ形）になってウィンクに見える。
+  void _drawWinkingRightEye(
+    Canvas canvas,
+    Paint strokePaint,
+    Paint fillPaint,
+  ) {
+    final winkScaleY = 1.0 - _winkCloseAmount * winkProgress;
     final winkMatrix = Matrix4.identity()
       ..translateByDouble(_kRightEye.cx, _kRightEye.cy, 0, 1)
       ..scaleByDouble(1, winkScaleY, 1, 1)
       ..translateByDouble(-_kRightEye.cx, -_kRightEye.cy, 0, 1);
+
     canvas
-      ..drawPath(_eyePath(_kRightEye).transform(winkMatrix.storage), paint)
+      ..drawPath(
+        _eyePath(_kRightEye).transform(winkMatrix.storage),
+        strokePaint,
+      )
       ..drawPath(
         _pupilPath(_kRightPupil).transform(winkMatrix.storage),
         fillPaint,
-      )
-      ..restore();
+      );
   }
 
   // ---- Free-form strokes via Catmull-Rom -> cubic bezier ----
   List<Path> _buildStrokePaths() {
     final paths = <Path>[];
-    for (final stroke in kStrokes) {
+    for (final stroke in _kStrokes) {
       final pts = <Offset>[];
       for (var i = 0; i + 1 < stroke.length; i += 2) {
         pts.add(Offset(stroke[i], stroke[i + 1]));
@@ -513,18 +533,18 @@ class _CavivaraPainter extends CustomPainter {
   //
   // The two arcs share the SAME corner points (inner/outer eye corner) at
   // (-rx, 0) and (+rx, 0). Each arc's ellipse center is pushed away from the
-  // axis by [kEyeTip], so the tangent at the corners is slanted instead of
+  // axis by [_kEyeTip], so the tangent at the corners is slanted instead of
   // vertical. Where the upper and lower arcs meet, their differing tangents
   // produce a sharp point -> the almond/cat-eye shape.
-  static const double kEyeTip = 45; // larger = sharper corners
+  static const double _kEyeTip = 45; // larger = sharper corners
 
   Path _eyePath(_Eye e) {
     final rot = e.angleDeg * math.pi / 180.0;
     final center = Offset(e.cx, e.cy);
 
     final path = Path();
-    _addLidArc(path, e.rx, e.ryUp, kEyeTip, -1); // upper lid
-    _addLidArc(path, e.rx, e.ryLo, kEyeTip, 1); // lower lid
+    _addLidArc(path, e.rx, e.ryUp, _kEyeTip, -1); // upper lid
+    _addLidArc(path, e.rx, e.ryLo, _kEyeTip, 1); // lower lid
 
     final m = Matrix4.identity()
       ..translateByDouble(center.dx, center.dy, 0, 1)
