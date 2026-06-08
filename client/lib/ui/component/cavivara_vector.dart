@@ -3,20 +3,23 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// A self-contained widget that draws the Kavi line-art face.
-/// [strokeColor] sets the color of every line and the filled pupils.
+/// アニメーション可能なカヴィヴァラ(Cavivara)の全身像を描画する自己完結ウィジェット。
+/// [strokeColor] が全ての線と塗りつぶした瞳の色を指定する。
 ///
 /// 表示後、一定間隔で右目のウィンクアニメーションを再生する。
-class KaviFace extends StatefulWidget {
-  const KaviFace({super.key, this.strokeColor = const Color(0xFF3D678D)});
+class AnimatedCavivara extends StatefulWidget {
+  const AnimatedCavivara({
+    super.key,
+    this.strokeColor = const Color(0xFF3D678D),
+  });
 
   final Color strokeColor;
 
   @override
-  State<KaviFace> createState() => _KaviFaceState();
+  State<AnimatedCavivara> createState() => _AnimatedCavivaraState();
 }
 
-class _KaviFaceState extends State<KaviFace>
+class _AnimatedCavivaraState extends State<AnimatedCavivara>
     with SingleTickerProviderStateMixin {
   /// 表示後、最初にウィンクするまでの待機時間。
   static const _initialDelay = Duration(milliseconds: 500);
@@ -81,7 +84,7 @@ class _KaviFaceState extends State<KaviFace>
       child: AnimatedBuilder(
         animation: _wink,
         builder: (_, _) => CustomPaint(
-          painter: KaviPainter(
+          painter: _CavivaraPainter(
             strokeColor: widget.strokeColor,
             winkProgress: _wink.value,
           ),
@@ -401,8 +404,8 @@ const _Brow kRightBrow = _Brow(
   angleDeg: 5.02,
 );
 
-class KaviPainter extends CustomPainter {
-  KaviPainter({required this.strokeColor, this.winkProgress = 0});
+class _CavivaraPainter extends CustomPainter {
+  _CavivaraPainter({required this.strokeColor, this.winkProgress = 0});
 
   final Color strokeColor;
 
@@ -586,7 +589,7 @@ class KaviPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant KaviPainter oldDelegate) =>
+  bool shouldRepaint(covariant _CavivaraPainter oldDelegate) =>
       oldDelegate.strokeColor != strokeColor ||
       oldDelegate.winkProgress != winkProgress;
 }

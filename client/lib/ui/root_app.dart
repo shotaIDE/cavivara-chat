@@ -80,7 +80,7 @@ class _RootAppState extends ConsumerState<RootApp> {
           body: Center(
             child: FractionallySizedBox(
               widthFactor: 0.5,
-              child: KaviFace(),
+              child: AnimatedCavivara(),
             ),
           ),
         ),
