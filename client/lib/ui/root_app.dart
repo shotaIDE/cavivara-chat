@@ -82,11 +82,10 @@ class _RootAppState extends ConsumerState<RootApp> {
               widthFactor: 0.5,
               child: Builder(
                 builder: (context) {
-                  // ダークモードは白線、ライトモードは黒線にする。
-                  final isDark =
-                      Theme.of(context).brightness == Brightness.dark;
+                  // onSurface より少し控えめな前景色。
+                  // ダークモードは明色、ライトモードは暗色になる。
                   return AnimatedCavivara(
-                    strokeColor: isDark ? Colors.white : Colors.black,
+                    strokeColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   );
                 },
               ),
