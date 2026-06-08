@@ -350,7 +350,7 @@ class KaviPainter extends CustomPainter {
     canvas.translate(dx, dy);
     canvas.scale(s, s);
 
-    const strokeWidth = 20;
+    const strokeWidth = 20.0;
 
     final paint = Paint()
       ..color = strokeColor
