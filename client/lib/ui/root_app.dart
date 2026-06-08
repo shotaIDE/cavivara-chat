@@ -7,6 +7,7 @@ import 'package:house_worker/data/definition/flavor.dart';
 import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/app_initial_route.dart';
 import 'package:house_worker/ui/component/app_theme.dart';
+import 'package:house_worker/ui/component/cavivara_vector.dart';
 import 'package:house_worker/ui/component/heads_up_notification_overlay.dart';
 import 'package:house_worker/ui/feature/auth/login_screen.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
@@ -49,7 +50,19 @@ class _RootAppState extends ConsumerState<RootApp> {
       data: (appInitialRoute) => appInitialRoute,
     );
     if (appInitialRoute == null) {
-      return Container();
+      return MaterialApp(
+        theme: getLightTheme(),
+        darkTheme: getDarkTheme(),
+        debugShowCheckedModeBanner: false,
+        home: const Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 120,
+              child: KaviFace(),
+            ),
+          ),
+        ),
+      );
     }
 
     final List<MaterialPageRoute<Widget>> initialRoutes;
