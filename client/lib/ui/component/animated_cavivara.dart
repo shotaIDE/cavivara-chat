@@ -414,6 +414,18 @@ class _CavivaraPainter extends CustomPainter {
   /// 閉眼（[winkProgress] = 1）時に右目を縦方向へ潰す割合。
   static const double _winkCloseAmount = 0.92;
 
+  /// ウィンクの影響を受けない静的な Path 群（輪郭などの自由曲線・眉・左目）。
+  /// ソース画像座標系で定義されており、色・サイズ・ウィンク進捗に依存しない。
+  /// 毎フレーム再生成するとアニメーションがカクつくため、一度だけ生成して使い回す。
+  static final List<Path> _staticStrokePaths = _buildStaticStrokePaths();
+
+  /// 静的に塗りつぶす左の瞳の Path。
+  static final Path _leftPupilPath = _pupilPath(_kLeftPupil);
+
+  /// ウィンクで変形させる右目・右の瞳の基準 Path（変形前）。
+  static final Path _rightEyeBasePath = _eyePath(_kRightEye);
+  static final Path _rightPupilBasePath = _pupilPath(_kRightPupil);
+
   final Color strokeColor;
 
   /// 右目のウィンク進捗。0 で開眼、1 で閉眼。
@@ -454,16 +466,11 @@ class _CavivaraPainter extends CustomPainter {
 
   /// ウィンクの影響を受けない部分（輪郭などの自由曲線・眉・左目・左の瞳）を描く。
   void _drawStaticFeatures(Canvas canvas, Paint strokePaint, Paint fillPaint) {
-    final paths = _buildStrokePaths()
-      ..add(_browPath(_kLeftBrow))
-      ..add(_browPath(_kRightBrow))
-      ..add(_eyePath(_kLeftEye));
-
-    for (final path in paths) {
+    for (final path in _staticStrokePaths) {
       canvas.drawPath(path, strokePaint);
     }
 
-    canvas.drawPath(_pupilPath(_kLeftPupil), fillPaint);
+    canvas.drawPath(_leftPupilPath, fillPaint);
   }
 
   /// 右目（輪郭と瞳）をウィンク進捗に応じて目の中心を軸に上下へ潰して描く。
@@ -481,17 +488,23 @@ class _CavivaraPainter extends CustomPainter {
 
     canvas
       ..drawPath(
-        _eyePath(_kRightEye).transform(winkMatrix.storage),
+        _rightEyeBasePath.transform(winkMatrix.storage),
         strokePaint,
       )
       ..drawPath(
-        _pupilPath(_kRightPupil).transform(winkMatrix.storage),
+        _rightPupilBasePath.transform(winkMatrix.storage),
         fillPaint,
       );
   }
 
+  /// ウィンクの影響を受けない静的なストローク Path をまとめて生成する。
+  static List<Path> _buildStaticStrokePaths() => _buildStrokePaths()
+    ..add(_browPath(_kLeftBrow))
+    ..add(_browPath(_kRightBrow))
+    ..add(_eyePath(_kLeftEye));
+
   // ---- Free-form strokes via Catmull-Rom -> cubic bezier ----
-  List<Path> _buildStrokePaths() {
+  static List<Path> _buildStrokePaths() {
     final paths = <Path>[];
     for (final stroke in _kStrokes) {
       final pts = <Offset>[];
@@ -538,7 +551,7 @@ class _CavivaraPainter extends CustomPainter {
   // produce a sharp point -> the almond/cat-eye shape.
   static const double _kEyeTip = 45; // larger = sharper corners
 
-  Path _eyePath(_Eye e) {
+  static Path _eyePath(_Eye e) {
     final rot = e.angleDeg * math.pi / 180.0;
     final center = Offset(e.cx, e.cy);
 
@@ -556,7 +569,7 @@ class _CavivaraPainter extends CustomPainter {
   /// and bulges to a peak of height [h] (sign < 0 = upward, sign > 0 = down).
   /// [yc] offsets the ellipse center to slant the tangents at the corners,
   /// which is what makes the eye corners come to a point.
-  void _addLidArc(Path path, double a, double h, double yc, int sign) {
+  static void _addLidArc(Path path, double a, double h, double yc, int sign) {
     final ry = h + yc;
     var val = 1 - (yc * yc) / (ry * ry);
     if (val <= 1e-6) {
@@ -587,7 +600,7 @@ class _CavivaraPainter extends CustomPainter {
     }
   }
 
-  Path _pupilPath(_Pupil p) {
+  static Path _pupilPath(_Pupil p) {
     return Path()..addOval(
       Rect.fromCenter(
         center: Offset(p.cx, p.cy),
@@ -598,7 +611,7 @@ class _CavivaraPainter extends CustomPainter {
   }
 
   // ---- Eyebrow: an upper (convex) elliptical arc ----
-  Path _browPath(_Brow b) {
+  static Path _browPath(_Brow b) {
     final rot = b.angleDeg * math.pi / 180.0;
     final rect = Rect.fromCenter(
       center: Offset.zero,
