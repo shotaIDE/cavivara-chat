@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,6 +8,7 @@ import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/definition/flavor.dart';
 import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/app_initial_route.dart';
+import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_theme.dart';
 import 'package:house_worker/ui/component/heads_up_notification_overlay.dart';
 import 'package:house_worker/ui/feature/auth/login_screen.dart';
@@ -23,11 +26,25 @@ class RootApp extends ConsumerStatefulWidget {
 }
 
 class _RootAppState extends ConsumerState<RootApp> {
+  /// スプラッシュ画面の最小表示時間。
+  static const _minSplashDuration = Duration(seconds: 1);
+
   final _navigatorKey = GlobalKey<NavigatorState>();
+
+  Timer? _splashTimer;
+
+  /// スプラッシュ画面の最小表示時間が経過したかどうか。
+  bool _minSplashElapsed = false;
 
   @override
   void initState() {
     super.initState();
+
+    _splashTimer = Timer(_minSplashDuration, () {
+      if (mounted) {
+        setState(() => _minSplashElapsed = true);
+      }
+    });
 
     ref.listenManual(updatedRemoteConfigKeysProvider, (_, next) {
       next.maybeWhen(
@@ -43,13 +60,48 @@ class _RootAppState extends ConsumerState<RootApp> {
   }
 
   @override
+  void dispose() {
+    _splashTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final appInitialRouteAsync = ref.watch(appInitialRouteProvider);
     final appInitialRoute = appInitialRouteAsync.whenOrNull(
       data: (appInitialRoute) => appInitialRoute,
     );
-    if (appInitialRoute == null) {
-      return Container();
+    if (appInitialRoute == null || !_minSplashElapsed) {
+      return MaterialApp(
+        title: 'カヴィヴァラチャット',
+        theme: getLightTheme(),
+        darkTheme: getDarkTheme(),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ja', 'JP'),
+        ],
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Builder(
+                builder: (context) {
+                  // onSurface より少し控えめな前景色。
+                  // ダークモードは明色、ライトモードは暗色になる。
+                  return AnimatedCavivara(
+                    strokeColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     final List<MaterialPageRoute<Widget>> initialRoutes;
