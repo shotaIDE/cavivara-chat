@@ -324,7 +324,7 @@ const List<List<double>> _kStrokes = [
     1746.0,
   ],
 ];
-// ---- Eyes: drawn with elliptical arcs instead of free-form strokes ----
+// ---- 目: 自由曲線ではなく楕円弧で描く ----
 
 class _Eye {
   const _Eye({
@@ -356,7 +356,7 @@ class _Pupil {
   final double ry;
 }
 
-// Eyebrows: full ellipses (flattened).
+// 眉: 平たく潰した楕円全体で表現する。
 class _Brow {
   const _Brow({
     required this.cx,
@@ -503,7 +503,7 @@ class _CavivaraPainter extends CustomPainter {
     ..add(_browPath(_kRightBrow))
     ..add(_eyePath(_kLeftEye));
 
-  // ---- Free-form strokes via Catmull-Rom -> cubic bezier ----
+  // ---- 自由曲線: Catmull-Rom を 3 次ベジェに変換して描く ----
   static List<Path> _buildStrokePaths() {
     final paths = <Path>[];
     for (final stroke in _kStrokes) {
@@ -542,22 +542,21 @@ class _CavivaraPainter extends CustomPainter {
     return paths;
   }
 
-  // ---- Eye: almond shape = upper arc + lower arc of two ellipses ----
+  // ---- 目: アーモンド形 = 2 つの楕円の上弧 + 下弧で構成する ----
   //
-  // The two arcs share the SAME corner points (inner/outer eye corner) at
-  // (-rx, 0) and (+rx, 0). Each arc's ellipse center is pushed away from the
-  // axis by [_kEyeTip], so the tangent at the corners is slanted instead of
-  // vertical. Where the upper and lower arcs meet, their differing tangents
-  // produce a sharp point -> the almond/cat-eye shape.
-  static const double _kEyeTip = 45; // larger = sharper corners
+  // 上下の弧は (-rx, 0) と (+rx, 0) にある同じ目尻・目頭の点を共有する。
+  // 各弧の楕円中心を [_kEyeTip] だけ軸から離すことで、目尻・目頭での接線が
+  // 垂直ではなく斜めになる。上弧と下弧が出会う箇所では接線が異なるため
+  // 尖った角が生まれ、アーモンド形（猫目）になる。
+  static const double _kEyeTip = 45; // 大きいほど角が尖る
 
   static Path _eyePath(_Eye e) {
     final rot = e.angleDeg * math.pi / 180.0;
     final center = Offset(e.cx, e.cy);
 
     final path = Path();
-    _addLidArc(path, e.rx, e.ryUp, _kEyeTip, -1); // upper lid
-    _addLidArc(path, e.rx, e.ryLo, _kEyeTip, 1); // lower lid
+    _addLidArc(path, e.rx, e.ryUp, _kEyeTip, -1); // 上まぶた
+    _addLidArc(path, e.rx, e.ryLo, _kEyeTip, 1); // 下まぶた
 
     final m = Matrix4.identity()
       ..translateByDouble(center.dx, center.dy, 0, 1)
@@ -565,10 +564,10 @@ class _CavivaraPainter extends CustomPainter {
     return path.transform(m.storage);
   }
 
-  /// Appends an elliptical arc that passes through the corners (-a, 0)/(a, 0)
-  /// and bulges to a peak of height [h] (sign < 0 = upward, sign > 0 = down).
-  /// [yc] offsets the ellipse center to slant the tangents at the corners,
-  /// which is what makes the eye corners come to a point.
+  /// 目尻・目頭の点 (-a, 0)/(a, 0) を通り、高さ [h] の頂点まで膨らむ楕円弧を
+  /// 追加する（sign < 0 で上向き、sign > 0 で下向き）。
+  /// [yc] は楕円中心をずらして目尻・目頭での接線を斜めにし、
+  /// それにより目の角が尖って見えるようにする。
   static void _addLidArc(Path path, double a, double h, double yc, int sign) {
     final ry = h + yc;
     var val = 1 - (yc * yc) / (ry * ry);
@@ -577,8 +576,8 @@ class _CavivaraPainter extends CustomPainter {
     }
     final rx = a / math.sqrt(val);
 
-    final se = -yc / ry; // sin at the corner points
-    final ce = a / rx; // cos at the corner points
+    final se = -yc / ry; // 目尻・目頭の点における sin
+    final ce = a / rx; // 目尻・目頭の点における cos
     var aLeft = math.atan2(se, -ce);
     final aRight = math.atan2(se, ce);
     if (aLeft > 0) {
@@ -610,7 +609,7 @@ class _CavivaraPainter extends CustomPainter {
     );
   }
 
-  // ---- Eyebrow: an upper (convex) elliptical arc ----
+  // ---- 眉: 上に凸の楕円弧 ----
   static Path _browPath(_Brow b) {
     final rot = b.angleDeg * math.pi / 180.0;
     final rect = Rect.fromCenter(
@@ -618,7 +617,7 @@ class _CavivaraPainter extends CustomPainter {
       width: b.rx * 2,
       height: b.ry * 2,
     );
-    // 180deg -> 360deg = top half of the ellipse (arches upward).
+    // 180度 -> 360度 = 楕円の上半分（上向きに弧を描く）。
     final path = Path()..addArc(rect, math.pi, math.pi);
     final m = Matrix4.identity()
       ..translateByDouble(b.cx, b.cy, 0, 1)
