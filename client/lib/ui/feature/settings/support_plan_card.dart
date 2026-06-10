@@ -21,10 +21,13 @@ class SupportPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final label = '${plan.displayName}、$priceString、獲得${plan.vivaPoint}VP';
 
+    // トーク画面のアクションボタンと同様に、目立つ背景色で購入を促す
     return Card(
       elevation: 2,
+      color: theme.colorScheme.surfaceContainerHigh,
       child: Semantics(
         label: label,
         button: true,
@@ -41,17 +44,17 @@ class SupportPlanCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       // 獲得VP
                       Text(
                         description,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -59,8 +62,9 @@ class SupportPlanCard extends StatelessWidget {
                 ),
                 Text(
                   priceString,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ],
