@@ -79,6 +79,9 @@ class VpSummaryCard extends StatelessWidget {
                   minHeight: 8,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(titleColor),
+                  // 称号名は伏せるため、進捗率のみ読み上げる
+                  semanticsLabel: '次の称号への進捗',
+                  semanticsValue: '${(progress * 100).toInt()}%',
                 ),
               ),
             ] else ...[
