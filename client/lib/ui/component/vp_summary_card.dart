@@ -36,8 +36,11 @@ class VpSummaryCard extends StatelessWidget {
     final titleColor = currentTitle.color;
 
     return Card(
+      // 影を消してフラットにし、存在感を抑える
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -47,12 +50,12 @@ class VpSummaryCard extends StatelessWidget {
                 Icon(
                   Icons.favorite,
                   color: titleColor,
-                  size: 24,
+                  size: 20,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '累計 $totalVP VP',
-                  style: theme.textTheme.headlineSmall?.copyWith(
+                  '$totalVP VP',
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),

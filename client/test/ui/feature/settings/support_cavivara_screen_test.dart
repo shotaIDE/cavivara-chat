@@ -168,7 +168,7 @@ void main() {
 
       // Assert
       // 累計VPが表示されていること
-      expect(find.text('累計 50 VP'), findsOneWidget);
+      expect(find.text('50 VP'), findsOneWidget);
     });
 
     testWidgets('注意書きテキストが表示されること', (tester) async {
