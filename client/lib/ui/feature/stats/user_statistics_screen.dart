@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
+import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
@@ -103,7 +104,17 @@ class UserStatisticsScreen extends ConsumerWidget {
     final supporterState = ref.watch(supportCavivaraPresenterProvider);
 
     return ListView(
+      // 肖像画の発光（グロー）が上端で途切れないようにクリップを無効化する
+      clipBehavior: Clip.none,
       children: [
+        // 発光が AppBar に被らないよう、上部に余白を確保する
+        const SizedBox(height: 16),
+        // カヴィヴァラさんの肖像画（額縁付き）
+        _CavivaraPortrait(
+          frameColor: supporterState.value?.currentTitle.color,
+        ),
+        const SizedBox(height: 32),
+
         // 累計VPとサポーター称号セクション
         _buildSupporterSection(context, supporterState),
         const SizedBox(height: 32),
@@ -165,138 +176,74 @@ class UserStatisticsScreen extends ConsumerWidget {
         final titleColor = state.currentTitle.color;
         final isDark = theme.brightness == Brightness.dark;
 
-        return Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                titleColor.withValues(alpha: isDark ? 0.35 : 0.25),
-                titleColor.withValues(alpha: isDark ? 0.15 : 0.1),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: titleColor.withValues(alpha: 0.5),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: titleColor.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+        // 美術館の作品キャプションのように、作品名と解説を中央に表示する
+        final titleCard = Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 作品名（称号）
+              Text(
+                state.currentTitle.displayName,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: isDark
+                      ? titleColor
+                      : HSLColor.fromColor(
+                          titleColor,
+                        ).withLightness(0.3).toColor(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 作品名と解説を区切る細い罫線
+              Container(
+                width: 32,
+                height: 1,
+                color: theme.colorScheme.outlineVariant,
+              ),
+              const SizedBox(height: 8),
+              // 解説（称号の説明）
+              Text(
+                state.currentTitle.description,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
+        );
+
+        // 累計VPと次の称号までのVPを表示する通常スタイルのカード
+        final vpCard = Card(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // アイコンと称号名
+                // 累計VP
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // 大きな称号アイコン
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            titleColor,
-                            titleColor.withValues(alpha: 0.7),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: titleColor.withValues(alpha: 0.6),
-                            blurRadius: 20,
-                            spreadRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        state.currentTitle.icon,
-                        size: 36,
-                        color: Colors.white,
-                      ),
+                    Icon(
+                      Icons.favorite,
+                      color: titleColor,
+                      size: 24,
                     ),
-                    const SizedBox(width: 20),
-                    // 称号情報
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'サポーター称号',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            state.currentTitle.displayName,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? titleColor
-                                  : HSLColor.fromColor(
-                                      titleColor,
-                                    ).withLightness(0.3).toColor(),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            state.currentTitle.description,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                    const SizedBox(width: 8),
+                    Text(
+                      '累計 ${state.totalVP} VP',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-
-                // 累計VP表示（大きく目立つように）
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.favorite,
-                        color: titleColor,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '累計 ${state.totalVP} VP',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: titleColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
 
                 // 次の称号への進捗
                 if (state.nextTitle != null) ...[
+                  const SizedBox(height: 16),
                   Text(
                     '次の称号「${state.nextTitle!.displayName}」まで'
                     'あと${state.vpToNextTitle}VP',
@@ -315,35 +262,135 @@ class UserStatisticsScreen extends ConsumerWidget {
                       valueColor: AlwaysStoppedAnimation<Color>(titleColor),
                     ),
                   ),
-                  const SizedBox(height: 16),
                 ],
-
-                // 応援画面へのナビゲーションボタン
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      HapticFeedbackHelper.lightImpact();
-                      Navigator.of(context).push(SupportCavivaraScreen.route());
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: titleColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    icon: const Icon(Icons.favorite),
-                    label: const Text('カヴィヴァラを応援する'),
-                  ),
-                ),
               ],
             ),
           ),
+        );
+
+        // 応援画面へのナビゲーションボタン
+        final supportButton = SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () {
+              HapticFeedbackHelper.lightImpact();
+              Navigator.of(context).push(SupportCavivaraScreen.route());
+            },
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              textStyle: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            icon: const Icon(Icons.favorite, size: 28),
+            label: const Text('カヴィヴァラを応援する'),
+          ),
+        );
+
+        return Column(
+          children: [
+            titleCard,
+            const SizedBox(height: 48),
+            supportButton,
+            const SizedBox(height: 32),
+            vpCard,
+          ],
         );
       },
       loading: () => const Center(
         child: CircularProgressIndicator(),
       ),
       error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// カヴィヴァラさんの肖像画を額縁付きで表示するウィジェット。
+class _CavivaraPortrait extends StatelessWidget {
+  const _CavivaraPortrait({
+    this.frameColor,
+  });
+
+  /// 額縁の色。サポーター称号の色に合わせる。null の場合はテーマの既定色を使う。
+  final Color? frameColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedFrameColor = frameColor ?? theme.colorScheme.outlineVariant;
+
+    // 肖像画全体が額縁内に収まるよう、切り取らずに余白を付けて表示する
+    final portrait = AspectRatio(
+      aspectRatio: 3 / 4,
+      child: Image.asset(
+        CavivaraAvatar.defaultAssetPath,
+        fit: BoxFit.contain,
+      ),
+    );
+
+    // 内側のマット（台紙）に肖像画を載せる
+    final matWithPortrait = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(2),
+        child: portrait,
+      ),
+    );
+
+    // 額縁のグラデーション。称号色に明暗の変化をつけて立体感を出す
+    final frameHsl = HSLColor.fromColor(resolvedFrameColor);
+    final lighterFrameColor = frameHsl
+        .withLightness((frameHsl.lightness + 0.15).clamp(0.0, 1.0))
+        .toColor();
+    final darkerFrameColor = frameHsl
+        .withLightness((frameHsl.lightness - 0.15).clamp(0.0, 1.0))
+        .toColor();
+    final frameGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        lighterFrameColor,
+        resolvedFrameColor,
+        darkerFrameColor,
+      ],
+    );
+
+    // 外側の額縁で囲む。色はサポーター称号の色に合わせ、周囲を発光させる
+    final framedPortrait = Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        gradient: frameGradient,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          // 称号色で額縁の周囲をぼかして発光しているように見せる
+          BoxShadow(
+            color: resolvedFrameColor.withValues(alpha: 0.7),
+            blurRadius: 24,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: resolvedFrameColor.withValues(alpha: 0.4),
+            blurRadius: 48,
+            spreadRadius: 8,
+          ),
+        ],
+      ),
+      child: matWithPortrait,
+    );
+
+    return Center(
+      child: Semantics(
+        label: 'カヴィヴァラさんの肖像画',
+        image: true,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 200),
+          child: framedPortrait,
+        ),
+      ),
     );
   }
 }
