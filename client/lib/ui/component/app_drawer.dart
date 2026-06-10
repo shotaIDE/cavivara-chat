@@ -65,15 +65,19 @@ class AppDrawer extends ConsumerWidget {
       ),
     );
 
-    return InkWell(
-      onTap: () {
-        HapticFeedbackHelper.onNavigationTap();
-        Navigator.of(context).pop();
-        if (!isAchievementSelected) {
-          onSelectAchievement();
-        }
-      },
-      child: header,
+    return Semantics(
+      button: true,
+      onTapHint: '業績画面を開く',
+      child: InkWell(
+        onTap: () {
+          HapticFeedbackHelper.onNavigationTap();
+          Navigator.of(context).pop();
+          if (!isAchievementSelected) {
+            onSelectAchievement();
+          }
+        },
+        child: header,
+      ),
     );
   }
 
