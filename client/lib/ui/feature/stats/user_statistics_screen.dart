@@ -8,6 +8,7 @@ import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
+import 'package:house_worker/ui/component/vp_summary_card.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
@@ -216,56 +217,13 @@ class UserStatisticsScreen extends ConsumerWidget {
           ),
         );
 
-        // 累計VPと次の称号までのVPを表示する通常スタイルのカード
-        final vpCard = Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 累計VP
-                Row(
-                  children: [
-                    Icon(
-                      Icons.favorite,
-                      color: titleColor,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '累計 ${state.totalVP} VP',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // 次の称号への進捗
-                if (state.nextTitle != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    '次の称号「${state.nextTitle!.displayName}」まで'
-                    'あと${state.vpToNextTitle}VP',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: state.progressToNextTitle,
-                      minHeight: 8,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(titleColor),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+        // 累計VPと次の称号までのVPを表示するカード（応援画面と共有）
+        final vpCard = VpSummaryCard(
+          totalVP: state.totalVP,
+          currentTitle: state.currentTitle,
+          nextTitle: state.nextTitle,
+          vpToNext: state.vpToNextTitle,
+          progress: state.progressToNextTitle,
         );
 
         // 応援画面へのナビゲーションボタン

@@ -7,9 +7,9 @@ import 'package:house_worker/data/model/support_plan.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
+import 'package:house_worker/ui/component/vp_summary_card.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
-import 'package:house_worker/ui/feature/settings/vp_progress_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -100,8 +100,8 @@ void main() {
       // AppBarが表示されていること
       expect(find.text('カヴィヴァラを応援'), findsOneWidget);
 
-      // VP進捗ウィジェットが表示されていること
-      expect(find.byType(VPProgressWidget), findsOneWidget);
+      // VP進捗カードが表示されていること
+      expect(find.byType(VpSummaryCard), findsOneWidget);
 
       // 応援プランカードが3つ表示されていること
       expect(find.byType(SupportPlanCard), findsNWidgets(3));
@@ -168,7 +168,7 @@ void main() {
 
       // Assert
       // 累計VPが表示されていること
-      expect(find.text('累計: 50VP'), findsOneWidget);
+      expect(find.text('累計 50 VP'), findsOneWidget);
     });
 
     testWidgets('注意書きテキストが表示されること', (tester) async {

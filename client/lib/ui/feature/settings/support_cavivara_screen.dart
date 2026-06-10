@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
+import 'package:house_worker/ui/component/vp_summary_card.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
 import 'package:house_worker/ui/feature/settings/thank_you_dialog.dart';
-import 'package:house_worker/ui/feature/settings/vp_progress_widget.dart';
 
 /// カヴィヴァラ応援画面
 class SupportCavivaraScreen extends ConsumerStatefulWidget {
@@ -46,9 +46,9 @@ class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // VP進捗表示セクション
-                VPProgressWidget(
-                  currentVP: state.totalVP,
+                // VP進捗表示セクション（業績画面と共有し Hero で繋ぐ）
+                VpSummaryCard(
+                  totalVP: state.totalVP,
                   currentTitle: state.currentTitle,
                   nextTitle: state.nextTitle,
                   vpToNext: state.vpToNextTitle,
