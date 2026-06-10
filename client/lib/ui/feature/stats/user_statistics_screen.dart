@@ -7,6 +7,7 @@ import 'package:house_worker/data/repository/sent_chat_string_count_repository.d
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
+import 'package:house_worker/ui/component/supporter_title_caption.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/component/vp_summary_card.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
@@ -174,48 +175,8 @@ class UserStatisticsScreen extends ConsumerWidget {
 
     return supporterState.when(
       data: (state) {
-        final titleColor = state.currentTitle.color;
-        final isDark = theme.brightness == Brightness.dark;
-
-        // 美術館の作品キャプションのように、作品名と解説を中央に表示する
-        final titleCard = Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 作品名（称号）
-              Text(
-                state.currentTitle.displayName,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                  color: isDark
-                      ? titleColor
-                      : HSLColor.fromColor(
-                          titleColor,
-                        ).withLightness(0.3).toColor(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 作品名と解説を区切る細い罫線
-              Container(
-                width: 32,
-                height: 1,
-                color: theme.colorScheme.outlineVariant,
-              ),
-              const SizedBox(height: 8),
-              // 解説（称号の説明）
-              Text(
-                state.currentTitle.description,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        );
+        // 美術館の作品キャプションのように、称号と説明を表示する（応援画面と共有）
+        final titleCard = SupporterTitleCaption(title: state.currentTitle);
 
         // 累計VPと次の称号までのVPを表示するカード（応援画面と共有）
         final vpCard = VpSummaryCard(
