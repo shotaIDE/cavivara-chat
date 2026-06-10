@@ -319,6 +319,18 @@ class _CavivaraPortrait extends StatelessWidget {
     final theme = Theme.of(context);
     final resolvedFrameColor = frameColor ?? theme.colorScheme.outlineVariant;
 
+    // 額縁の明暗。称号色から明部・暗部・最暗部を作り、立体的な額装を表現する
+    final frameHsl = HSLColor.fromColor(resolvedFrameColor);
+    final lighterFrameColor = frameHsl
+        .withLightness((frameHsl.lightness + 0.18).clamp(0.0, 1.0))
+        .toColor();
+    final darkerFrameColor = frameHsl
+        .withLightness((frameHsl.lightness - 0.18).clamp(0.0, 1.0))
+        .toColor();
+    final deepestFrameColor = frameHsl
+        .withLightness((frameHsl.lightness - 0.35).clamp(0.0, 1.0))
+        .toColor();
+
     // 肖像画全体が額縁内に収まるよう、切り取らずに余白を付けて表示する
     final portrait = AspectRatio(
       aspectRatio: 3 / 4,
@@ -328,58 +340,69 @@ class _CavivaraPortrait extends StatelessWidget {
       ),
     );
 
-    // 内側のマット（台紙）に肖像画を載せる
-    final matWithPortrait = Container(
-      padding: const EdgeInsets.all(8),
+    // 作品まわりの細い縁取り
+    final portraitWithLine = DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(2),
+        border: Border.all(
+          color: darkerFrameColor.withValues(alpha: 0.4),
+        ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(2),
-        child: portrait,
-      ),
+      child: portrait,
     );
 
-    // 額縁のグラデーション。称号色に明暗の変化をつけて立体感を出す
-    final frameHsl = HSLColor.fromColor(resolvedFrameColor);
-    final lighterFrameColor = frameHsl
-        .withLightness((frameHsl.lightness + 0.15).clamp(0.0, 1.0))
-        .toColor();
-    final darkerFrameColor = frameHsl
-        .withLightness((frameHsl.lightness - 0.15).clamp(0.0, 1.0))
-        .toColor();
-    final frameGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        lighterFrameColor,
-        resolvedFrameColor,
-        darkerFrameColor,
-      ],
+    // 広めの台紙（マット）。美術館の額装のように作品の周囲に余白を取る
+    final mat = Container(
+      padding: const EdgeInsets.all(18),
+      color: theme.colorScheme.surface,
+      child: portraitWithLine,
     );
 
-    // 外側の額縁で囲む。色はサポーター称号の色に合わせ、周囲を発光させる
+    // 額縁の溝（リップ）。モールディングと台紙の境目を暗くして奥行きを出す
+    final lip = Container(
+      padding: const EdgeInsets.all(3),
+      color: deepestFrameColor,
+      child: mat,
+    );
+
+    // 外側のモールディング（金枠）。光沢グラデーションとハイライトの縁取りで
+    // 立体的な額装を表現し、周囲を称号色で発光させる
     final framedPortrait = Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: frameGradient,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            lighterFrameColor,
+            resolvedFrameColor,
+            darkerFrameColor,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: lighterFrameColor.withValues(alpha: 0.7),
+        ),
         boxShadow: [
           // 称号色で額縁の周囲をぼかして発光しているように見せる
           BoxShadow(
-            color: resolvedFrameColor.withValues(alpha: 0.7),
+            color: resolvedFrameColor.withValues(alpha: 0.6),
             blurRadius: 24,
             spreadRadius: 2,
           ),
           BoxShadow(
-            color: resolvedFrameColor.withValues(alpha: 0.4),
+            color: resolvedFrameColor.withValues(alpha: 0.35),
             blurRadius: 48,
             spreadRadius: 8,
           ),
+          // 額縁を壁から浮かせるドロップシャドウ
+          const BoxShadow(
+            color: Color(0x55000000),
+            blurRadius: 12,
+            offset: Offset(0, 8),
+          ),
         ],
       ),
-      child: matWithPortrait,
+      child: lip,
     );
 
     return Center(
