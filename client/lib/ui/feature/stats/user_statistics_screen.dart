@@ -324,7 +324,7 @@ class _CavivaraPortrait extends StatelessWidget {
       child: lip,
     );
 
-    return Center(
+    final centeredPortrait = Center(
       child: Semantics(
         label: 'カヴィヴァラさんの肖像画',
         image: true,
@@ -333,6 +333,23 @@ class _CavivaraPortrait extends StatelessWidget {
           child: framedPortrait,
         ),
       ),
+    );
+
+    // 表示時に、わずかに拡大しながらふわっとフェードインさせる
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1200),
+      curve: Curves.easeOutCubic,
+      child: centeredPortrait,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(
+            scale: 0.7 + 0.3 * value,
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
