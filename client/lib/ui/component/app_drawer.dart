@@ -37,9 +37,8 @@ class AppDrawer extends ConsumerWidget {
           padding: EdgeInsets.zero,
           children: [
             _buildHeader(context, currentTitle),
-            _buildTalkTile(context),
-            _buildAchievementTile(context),
             const Divider(),
+            _buildTalkTile(context),
             _buildSettingsTile(context),
           ],
         ),
@@ -88,21 +87,6 @@ class AppDrawer extends ConsumerWidget {
         Navigator.of(context).pop();
         if (!isTalkSelected) {
           onSelectTalk();
-        }
-      },
-    );
-  }
-
-  Widget _buildAchievementTile(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.insights),
-      title: const Text('あなたの業績'),
-      selected: isAchievementSelected,
-      onTap: () {
-        HapticFeedbackHelper.onNavigationTap();
-        Navigator.of(context).pop();
-        if (!isAchievementSelected) {
-          onSelectAchievement();
         }
       },
     );
