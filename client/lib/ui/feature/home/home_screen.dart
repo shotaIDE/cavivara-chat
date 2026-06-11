@@ -34,7 +34,11 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  /// 画面表示時に内容がふわっと浮き出る入場アニメーションにかける時間。
+  static const _entranceDuration = Duration(milliseconds: 1000);
+
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _messageFocusNode = FocusNode();
@@ -42,12 +46,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _shouldShowSuggestions = false;
   Timer? _suggestionTimer;
 
+  late final AnimationController _entranceController;
+  late final Animation<double> _entranceFade;
+  late final Animation<Offset> _entranceSlide;
+
   @override
   void initState() {
     super.initState();
 
     _messageController.addListener(_onMessageChanged);
     _messageFocusNode.addListener(_onFocusChanged);
+
+    // 画面表示時に内容を下からふわっと浮き出させる。
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: _entranceDuration,
+    );
+    _entranceFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOut,
+    );
+    _entranceSlide = Tween<Offset>(
+      begin: const Offset(0, 0.04),
+      end: Offset.zero,
+    ).animate(_entranceFade);
+    _entranceController.forward();
 
     // ビルド完了後にテキストフィールドにフォーカスしてキーボードを表示
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -95,6 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    _entranceController.dispose();
     _suggestionTimer?.cancel();
     _messageController
       ..removeListener(_onMessageChanged)
@@ -155,7 +179,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ],
     );
 
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: AppBar(
         title: title,
         actions: [clearButton],
@@ -177,6 +201,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       ),
       body: body,
+    );
+
+    // タイトルバーを含む画面全体を、下からふわっと浮き出させる。
+    return FadeTransition(
+      opacity: _entranceFade,
+      child: SlideTransition(
+        position: _entranceSlide,
+        child: scaffold,
+      ),
     );
   }
 
