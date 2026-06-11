@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
+import 'package:house_worker/ui/component/cavivara_entrance_animation.dart';
 
 /// カヴィヴァラさんの肖像画を、美術館の額装のような額縁付きで表示するウィジェット。
 ///
@@ -157,12 +158,13 @@ class CavivaraPortrait extends StatelessWidget {
     // 表示時に、拡大しながらふわっとフェードインさせる
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 1200),
-      curve: Curves.easeOutCubic,
+      duration: CavivaraEntranceAnimation.duration,
+      curve: CavivaraEntranceAnimation.curve,
       child: centeredPortrait,
       builder: (context, value, child) {
         return Opacity(
-          opacity: value,
+          // easeOutBack は終盤で 1.0 を超えるため、不透明度は範囲内に収める
+          opacity: value.clamp(0.0, 1.0),
           child: Transform.scale(
             scale: 0.7 + 0.3 * value,
             child: child,
