@@ -36,8 +36,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with SingleTickerProviderStateMixin {
-  /// 画面表示時に内容がふわっと浮き出る入場アニメーションにかける時間。
-  static const _entranceDuration = Duration(milliseconds: 1000);
+  /// 画面表示時に内容が下からぬるっと浮き上がる入場アニメーションにかける時間。
+  static const _entranceDuration = Duration(milliseconds: 700);
 
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -57,17 +57,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _messageController.addListener(_onMessageChanged);
     _messageFocusNode.addListener(_onFocusChanged);
 
-    // 画面表示時に内容を下からふわっと浮き出させる。
+    // 画面表示時に内容を下からぬるっと浮き上がらせる。
     _entranceController = AnimationController(
       vsync: this,
       duration: _entranceDuration,
     );
     _entranceFade = CurvedAnimation(
       parent: _entranceController,
-      curve: Curves.easeOut,
+      curve: Curves.easeOutBack,
     );
     _entranceSlide = Tween<Offset>(
-      begin: const Offset(0, 0.04),
+      begin: const Offset(0, 0.18),
       end: Offset.zero,
     ).animate(_entranceFade);
     _entranceController.forward();
@@ -203,7 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       body: body,
     );
 
-    // タイトルバーを含む画面全体を、下からふわっと浮き出させる。
+    // タイトルバーを含む画面全体を、下からぬるっと浮き上がらせる。
     return FadeTransition(
       opacity: _entranceFade,
       child: SlideTransition(
@@ -373,7 +373,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     widget.controller.animateTo(
       widget.controller.position.maxScrollExtent,
       duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+      curve: Curves.easeOutBack,
     );
   }
 
@@ -618,7 +618,7 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOut,
+      curve: Curves.easeOutBack,
     );
 
     // 表示されたら即座にアニメーション開始
