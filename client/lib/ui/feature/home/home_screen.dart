@@ -911,20 +911,24 @@ class _AiChatBubble extends ConsumerWidget {
           )
         : bubble;
 
-    final avatar = SizedBox(
-      width: 56,
-      height: 56,
-      child: Transform.flip(
-        flipX: true,
-        child: AnimatedCavivara(
-          strokeColor: Theme.of(context).colorScheme.onSurface,
-          // 輪郭内側を吹き出しの最内層グレーと同じ色で塗りつぶす。
-          fillColor: CatFurBubblePainter.innerSilhouetteColor(
-            Theme.of(context).brightness,
+    final avatar = Semantics(
+      label: 'カヴィヴァラさんのアイコン',
+      image: true,
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: Transform.flip(
+          flipX: true,
+          child: AnimatedCavivara(
+            strokeColor: Theme.of(context).colorScheme.onSurface,
+            // 輪郭内側を吹き出しの最内層グレーと同じ色で塗りつぶす。
+            fillColor: CatFurBubblePainter.innerSilhouetteColor(
+              Theme.of(context).brightness,
+            ),
+            // 画面上で約1.2px相当の線になるよう、表示サイズ(56)から
+            // ソース画像座標系(幅2308)へ換算する。
+            strokeWidth: 1.2 * 2308 / 56,
           ),
-          // 画面上で約1.2px相当の線になるよう、表示サイズ(56)から
-          // ソース画像座標系(幅2308)へ換算する。
-          strokeWidth: 1.2 * 2308 / 56,
         ),
       ),
     );
