@@ -25,6 +25,14 @@ class CatFurBubblePainter extends CustomPainter {
         : Colors.grey.shade800;
   }
 
+  /// 猫毛吹き出しの最も内側（文字が乗る中央領域）の塗りつぶし色。
+  /// アイコンなどを吹き出し中央と同じ濃度のグレーで塗りたい場合に参照する。
+  static Color innerSilhouetteColor(Brightness brightness) {
+    return brightness == Brightness.dark
+        ? _darkSilhouetteCenterColor
+        : Colors.grey.shade100;
+  }
+
   // ===== ジオメトリ定数 =====
 
   /// 角丸部分を避けるマージン
@@ -138,8 +146,7 @@ class CatFurBubblePainter extends CustomPainter {
       _isDark ? _darkSilhouetteRingColor : Colors.grey.shade200;
 
   /// 2段目シルエット層の色（文字が乗る中央領域）。
-  Color get _innerSilhouetteColor =>
-      _isDark ? _darkSilhouetteCenterColor : Colors.grey.shade100;
+  Color get _innerSilhouetteColor => innerSilhouetteColor(brightness);
 
   /// 下側に落ちる立体感のためのシャドー帯色。
   Color get _shadowOverlayColor =>
@@ -974,7 +981,8 @@ enum _Corner {
   topLeft,
   topRight,
   bottomRight,
-  bottomLeft;
+  bottomLeft
+  ;
 
   bool get isLeft => this == _Corner.topLeft || this == _Corner.bottomLeft;
   bool get isTop => this == _Corner.topLeft || this == _Corner.topRight;
