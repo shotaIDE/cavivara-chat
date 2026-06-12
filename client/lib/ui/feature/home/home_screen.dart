@@ -136,20 +136,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     final title = Row(
       children: [
-        SizedBox(
-          width: 48,
-          height: 48,
-          child: Transform.flip(
-            flipX: true,
-            child: AnimatedCavivara(
-              strokeColor: Theme.of(context).colorScheme.onSurface,
-              // 輪郭内側を吹き出し横のアイコンと同じ最内層グレーで塗る。
-              fillColor: CatFurBubblePainter.innerSilhouetteColor(
-                Theme.of(context).brightness,
+        Semantics(
+          label: 'カヴィヴァラさんのアイコン',
+          image: true,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Transform.flip(
+              flipX: true,
+              child: AnimatedCavivara(
+                strokeColor: Theme.of(context).colorScheme.onSurface,
+                // 輪郭内側を吹き出し横のアイコンと同じ最内層グレーで塗る。
+                fillColor: CatFurBubblePainter.innerSilhouetteColor(
+                  Theme.of(context).brightness,
+                ),
+                // 画面上で約1.2px相当の線になるよう、表示サイズ(48)から
+                // ソース画像座標系(幅2308)へ換算する。
+                strokeWidth: 1.2 * 2308 / 48,
               ),
-              // 画面上で約1.2px相当の線になるよう、表示サイズ(48)から
-              // ソース画像座標系(幅2308)へ換算する。
-              strokeWidth: 1.2 * 2308 / 48,
             ),
           ),
         ),
