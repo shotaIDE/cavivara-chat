@@ -8,9 +8,9 @@ import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
+import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
-import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
@@ -136,9 +136,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     final title = Row(
       children: [
-        CavivaraAvatar(
-          size: 32,
-          assetPath: cavivaraProfile.iconPath,
+        Semantics(
+          label: 'カヴィヴァラさんのアイコン',
+          image: true,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Transform.flip(
+              flipX: true,
+              child: AnimatedCavivara(
+                strokeColor: Theme.of(context).colorScheme.onSurface,
+                // 輪郭内側を吹き出し横のアイコンと同じ最内層グレーで塗る。
+                fillColor: CatFurBubblePainter.innerSilhouetteColor(
+                  Theme.of(context).brightness,
+                ),
+                // 画面上で約1.2px相当の線になるよう、表示サイズ(48)から
+                // ソース画像座標系(幅2308)へ換算する。
+                strokeWidth: 1.2 * 2308 / 48,
+              ),
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -757,7 +774,6 @@ class _UserChatBubble extends ConsumerWidget {
         color: textColor,
       ),
     );
-    final timeText = _TimestampText(timestamp: message.timestamp);
     final bubbleColor = Theme.of(context).colorScheme.primaryContainer;
     final bubble = design.buildBubble(
       context: context,
@@ -789,7 +805,6 @@ class _UserChatBubble extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       spacing: 4,
       children: [
-        timeText,
         Skeletonizer(
           enabled: designAsync.isLoading,
           child: bubbleWithPointer,
@@ -869,8 +884,6 @@ class _AiChatBubble extends ConsumerWidget {
       }
     }
 
-    final timeText = _TimestampText(timestamp: message.timestamp);
-
     final bubbleColor = Theme.of(context).colorScheme.surfaceContainer;
 
     final bubble = design.buildBubble(
@@ -898,8 +911,26 @@ class _AiChatBubble extends ConsumerWidget {
           )
         : bubble;
 
-    final avatar = CavivaraAvatar(
-      assetPath: cavivaraProfile.iconPath,
+    final avatar = Semantics(
+      label: 'カヴィヴァラさんのアイコン',
+      image: true,
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: Transform.flip(
+          flipX: true,
+          child: AnimatedCavivara(
+            strokeColor: Theme.of(context).colorScheme.onSurface,
+            // 輪郭内側を吹き出しの最内層グレーと同じ色で塗りつぶす。
+            fillColor: CatFurBubblePainter.innerSilhouetteColor(
+              Theme.of(context).brightness,
+            ),
+            // 画面上で約1.2px相当の線になるよう、表示サイズ(56)から
+            // ソース画像座標系(幅2308)へ換算する。
+            strokeWidth: 1.2 * 2308 / 56,
+          ),
+        ),
+      ),
     );
 
     return IntrinsicHeight(
@@ -909,18 +940,15 @@ class _AiChatBubble extends ConsumerWidget {
           avatar,
           const SizedBox(width: 8),
           Flexible(
-            child: Skeletonizer(
-              enabled: designAsync.isLoading,
-              child: bubbleWithPointer,
+            // アイコンに対して吹き出しを少し下げる。
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Skeletonizer(
+                enabled: designAsync.isLoading,
+                child: bubbleWithPointer,
+              ),
             ),
           ),
-          if (!message.isStreaming || message.content.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: timeText,
-            ),
-          ],
         ],
       ),
     );
@@ -948,9 +976,6 @@ class _AppChatBubble extends ConsumerWidget {
     final bubbleColor = Theme.of(
       context,
     ).colorScheme.surfaceContainer.withAlpha(100);
-    final timeText = _TimestampText(
-      timestamp: message.timestamp,
-    );
     final bubble = design.buildBubble(
       context: context,
       messageType: MessageType.system,
@@ -970,27 +995,7 @@ class _AppChatBubble extends ConsumerWidget {
       spacing: 4,
       children: [
         expanded,
-        timeText,
       ],
-    );
-  }
-}
-
-class _TimestampText extends StatelessWidget {
-  const _TimestampText({
-    required this.timestamp,
-  });
-
-  final DateTime timestamp;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '${timestamp.hour.toString().padLeft(2, '0')}:'
-      '${timestamp.minute.toString().padLeft(2, '0')}',
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
-      ),
     );
   }
 }

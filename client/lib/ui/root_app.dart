@@ -10,6 +10,7 @@ import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/app_initial_route.dart';
 import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_theme.dart';
+import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/heads_up_notification_overlay.dart';
 import 'package:house_worker/ui/feature/auth/login_screen.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
@@ -95,6 +96,12 @@ class _RootAppState extends ConsumerState<RootApp> {
                   // ダークモードは明色、ライトモードは暗色になる。
                   return AnimatedCavivara(
                     strokeColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    // 輪郭内側を吹き出し横のアイコンと同じ最内層グレーで塗る。
+                    fillColor: CatFurBubblePainter.innerSilhouetteColor(
+                      Theme.of(context).brightness,
+                    ),
+                    // スプラッシュ画面ではウインクさせる。
+                    eyeAnimation: CavivaraEyeAnimation.wink,
                   );
                 },
               ),

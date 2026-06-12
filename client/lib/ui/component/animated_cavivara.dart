@@ -3,17 +3,39 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+/// カヴィヴァラの目のアニメーションの種類。
+enum CavivaraEyeAnimation {
+  /// 両目を同時に閉じてまばたきする。
+  blink,
+
+  /// 右目だけを閉じてウインクする。
+  wink,
+}
+
 /// アニメーション可能なカヴィヴァラ(Cavivara)の全身像を描画する自己完結ウィジェット。
 /// [strokeColor] が全ての線と塗りつぶした瞳の色を指定する。
 ///
-/// 表示後、一定間隔で右目のウィンクアニメーションを再生する。
+/// 表示後、一定間隔で目のアニメーション（[eyeAnimation] で指定）を再生する。
 class AnimatedCavivara extends StatefulWidget {
   const AnimatedCavivara({
     super.key,
     this.strokeColor = const Color(0xFF3D678D),
+    this.fillColor = const Color(0xFFE0E0E0),
+    this.strokeWidth = _CavivaraPainter._defaultStrokeWidth,
+    this.eyeAnimation = CavivaraEyeAnimation.blink,
   });
 
   final Color strokeColor;
+
+  /// カヴィヴァラの輪郭の内側（顔・体）を塗りつぶす色。
+  final Color fillColor;
+
+  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
+  /// 小さいサイズで表示する場合は大きめの値を指定すると視認性が上がる。
+  final double strokeWidth;
+
+  /// 目のアニメーションの種類（両目のまばたき／右目のウインク）。
+  final CavivaraEyeAnimation eyeAnimation;
 
   @override
   State<AnimatedCavivara> createState() => _AnimatedCavivaraState();
@@ -21,18 +43,18 @@ class AnimatedCavivara extends StatefulWidget {
 
 class _AnimatedCavivaraState extends State<AnimatedCavivara>
     with SingleTickerProviderStateMixin {
-  /// 表示後、最初にウィンクするまでの待機時間。
+  /// 表示後、最初にまばたきするまでの待機時間。
   static const _initialDelay = Duration(milliseconds: 500);
 
-  /// ウィンクを繰り返す間隔。
-  static const _winkInterval = Duration(seconds: 3);
+  /// まばたきを繰り返す間隔。
+  static const _blinkInterval = Duration(seconds: 3);
 
-  /// ウィンク 1 回（閉眼 → 開眼）にかける時間。
-  static const _winkDuration = Duration(milliseconds: 260);
+  /// まばたき 1 回（閉眼 → 開眼）にかける時間。
+  static const _blinkDuration = Duration(milliseconds: 260);
 
   late final AnimationController _controller;
-  late final Animation<double> _wink;
-  Timer? _winkTimer;
+  late final Animation<double> _blink;
+  Timer? _blinkTimer;
 
   @override
   void initState() {
@@ -40,11 +62,11 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
 
     _controller = AnimationController(
       vsync: this,
-      duration: _winkDuration,
+      duration: _blinkDuration,
     );
 
     // 0 -> 1 -> 0 と進めて、閉眼してから開眼するまばたきを表現する。
-    _wink = TweenSequence<double>([
+    _blink = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(
           begin: 0,
@@ -61,21 +83,21 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
       ),
     ]).animate(_controller);
 
-    _winkTimer = Timer(_initialDelay, _playWink);
+    _blinkTimer = Timer(_initialDelay, _playBlink);
   }
 
-  void _playWink() {
+  void _playBlink() {
     _controller.forward(from: 0).whenComplete(() {
       if (!mounted) {
         return;
       }
-      _winkTimer = Timer(_winkInterval, _playWink);
+      _blinkTimer = Timer(_blinkInterval, _playBlink);
     });
   }
 
   @override
   void dispose() {
-    _winkTimer?.cancel();
+    _blinkTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -85,11 +107,14 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
     return AspectRatio(
       aspectRatio: _kSrcWidth / _kSrcHeight,
       child: AnimatedBuilder(
-        animation: _wink,
+        animation: _blink,
         builder: (_, _) => CustomPaint(
           painter: _CavivaraPainter(
             strokeColor: widget.strokeColor,
-            winkProgress: _wink.value,
+            fillColor: widget.fillColor,
+            strokeWidth: widget.strokeWidth,
+            blinkProgress: _blink.value,
+            eyeAnimation: widget.eyeAnimation,
           ),
           size: Size.infinite,
         ),
@@ -406,30 +431,48 @@ const _Brow _kRightBrow = _Brow(
 );
 
 class _CavivaraPainter extends CustomPainter {
-  _CavivaraPainter({required this.strokeColor, this.winkProgress = 0});
+  _CavivaraPainter({
+    required this.strokeColor,
+    required this.fillColor,
+    this.strokeWidth = _defaultStrokeWidth,
+    this.blinkProgress = 0,
+    this.eyeAnimation = CavivaraEyeAnimation.blink,
+  });
 
-  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
-  static const double _strokeWidth = 20;
+  /// 線および塗りつぶした瞳の太さの既定値（ソース画像の座標系での値）。
+  static const double _defaultStrokeWidth = 20;
 
-  /// 閉眼（[winkProgress] = 1）時に右目を縦方向へ潰す割合。
-  static const double _winkCloseAmount = 0.92;
+  /// 閉眼（[blinkProgress] = 1）時に目を縦方向へ潰す割合。
+  static const double _blinkCloseAmount = 0.92;
 
-  /// ウィンクの影響を受けない静的な Path 群（輪郭などの自由曲線・眉・左目）。
-  /// ソース画像座標系で定義されており、色・サイズ・ウィンク進捗に依存しない。
+  /// まばたきの影響を受けない静的な Path 群（輪郭などの自由曲線・眉）。
+  /// ソース画像座標系で定義されており、色・サイズ・まばたき進捗に依存しない。
   /// 毎フレーム再生成するとアニメーションがカクつくため、一度だけ生成して使い回す。
   static final List<Path> _staticStrokePaths = _buildStaticStrokePaths();
 
-  /// 静的に塗りつぶす左の瞳の Path。
-  static final Path _leftPupilPath = _pupilPath(_kLeftPupil);
+  /// 輪郭の内側を塗りつぶすための、顔・体のシルエットを表す閉じた Path。
+  /// 輪郭を構成するストロークを一筆書きの順序でつなぎ合わせて生成する。
+  static final Path _bodyPath = _buildBodyPath();
 
-  /// ウィンクで変形させる右目・右の瞳の基準 Path（変形前）。
+  /// まばたきで変形させる左右の目・瞳の基準 Path（変形前）。
+  static final Path _leftEyeBasePath = _eyePath(_kLeftEye);
+  static final Path _leftPupilBasePath = _pupilPath(_kLeftPupil);
   static final Path _rightEyeBasePath = _eyePath(_kRightEye);
   static final Path _rightPupilBasePath = _pupilPath(_kRightPupil);
 
   final Color strokeColor;
 
-  /// 右目のウィンク進捗。0 で開眼、1 で閉眼。
-  final double winkProgress;
+  /// 輪郭の内側（顔・体のシルエット）を塗りつぶす色。
+  final Color fillColor;
+
+  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
+  final double strokeWidth;
+
+  /// 目のまばたき進捗。0 で開眼、1 で閉眼。
+  final double blinkProgress;
+
+  /// 目のアニメーションの種類（両目のまばたき／右目のウインク）。
+  final CavivaraEyeAnimation eyeAnimation;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -448,7 +491,7 @@ class _CavivaraPainter extends CustomPainter {
     final strokePaint = Paint()
       ..color = strokeColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = _strokeWidth
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
@@ -458,88 +501,171 @@ class _CavivaraPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
 
-    _drawStaticFeatures(canvas, strokePaint, fillPaint);
-    _drawWinkingRightEye(canvas, strokePaint, fillPaint);
+    // 線を描く前に、輪郭の内側（顔・体）を塗りつぶす。
+    final bodyPaint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawPath(_bodyPath, bodyPaint);
+
+    _drawStaticFeatures(canvas, strokePaint);
+    _drawBlinkingEyes(canvas, strokePaint, fillPaint);
 
     canvas.restore();
   }
 
-  /// ウィンクの影響を受けない部分（輪郭などの自由曲線・眉・左目・左の瞳）を描く。
-  void _drawStaticFeatures(Canvas canvas, Paint strokePaint, Paint fillPaint) {
+  /// まばたきの影響を受けない部分（輪郭などの自由曲線・眉）を描く。
+  void _drawStaticFeatures(Canvas canvas, Paint strokePaint) {
     for (final path in _staticStrokePaths) {
       canvas.drawPath(path, strokePaint);
     }
-
-    canvas.drawPath(_leftPupilPath, fillPaint);
   }
 
-  /// 右目（輪郭と瞳）をウィンク進捗に応じて目の中心を軸に上下へ潰して描く。
-  /// 閉じると横線（細いレンズ形）になってウィンクに見える。
-  void _drawWinkingRightEye(
+  /// 両目（輪郭と瞳）を [eyeAnimation] に応じて描く。
+  /// ウインク時は左目を閉じず（進捗 0）、右目だけを閉じる。
+  void _drawBlinkingEyes(Canvas canvas, Paint strokePaint, Paint fillPaint) {
+    final leftProgress = eyeAnimation == CavivaraEyeAnimation.blink
+        ? blinkProgress
+        : 0.0;
+    _drawBlinkingEye(
+      canvas,
+      strokePaint,
+      fillPaint,
+      _kLeftEye,
+      _leftEyeBasePath,
+      _leftPupilBasePath,
+      leftProgress,
+    );
+    _drawBlinkingEye(
+      canvas,
+      strokePaint,
+      fillPaint,
+      _kRightEye,
+      _rightEyeBasePath,
+      _rightPupilBasePath,
+      blinkProgress,
+    );
+  }
+
+  /// 1 つの目（輪郭と瞳）を [progress] に応じて目の中心を軸に上下へ潰して描く。
+  /// 閉じると横線（細いレンズ形）になってまばたき・ウインクに見える。
+  void _drawBlinkingEye(
     Canvas canvas,
     Paint strokePaint,
     Paint fillPaint,
+    _Eye eye,
+    Path eyeBasePath,
+    Path pupilBasePath,
+    double progress,
   ) {
-    final winkScaleY = 1.0 - _winkCloseAmount * winkProgress;
-    final winkMatrix = Matrix4.identity()
-      ..translateByDouble(_kRightEye.cx, _kRightEye.cy, 0, 1)
-      ..scaleByDouble(1, winkScaleY, 1, 1)
-      ..translateByDouble(-_kRightEye.cx, -_kRightEye.cy, 0, 1);
+    final blinkScaleY = 1.0 - _blinkCloseAmount * progress;
+    final blinkMatrix = Matrix4.identity()
+      ..translateByDouble(eye.cx, eye.cy, 0, 1)
+      ..scaleByDouble(1, blinkScaleY, 1, 1)
+      ..translateByDouble(-eye.cx, -eye.cy, 0, 1);
 
     canvas
       ..drawPath(
-        _rightEyeBasePath.transform(winkMatrix.storage),
+        eyeBasePath.transform(blinkMatrix.storage),
         strokePaint,
       )
       ..drawPath(
-        _rightPupilBasePath.transform(winkMatrix.storage),
+        pupilBasePath.transform(blinkMatrix.storage),
         fillPaint,
       );
   }
 
-  /// ウィンクの影響を受けない静的なストローク Path をまとめて生成する。
+  /// まばたきの影響を受けない静的なストローク Path をまとめて生成する。
   static List<Path> _buildStaticStrokePaths() => _buildStrokePaths()
     ..add(_browPath(_kLeftBrow))
-    ..add(_browPath(_kRightBrow))
-    ..add(_eyePath(_kLeftEye));
+    ..add(_browPath(_kRightBrow));
 
   // ---- 自由曲線: Catmull-Rom を 3 次ベジェに変換して描く ----
   static List<Path> _buildStrokePaths() {
     final paths = <Path>[];
-    for (final stroke in _kStrokes) {
-      final pts = <Offset>[];
-      for (var i = 0; i + 1 < stroke.length; i += 2) {
-        pts.add(Offset(stroke[i], stroke[i + 1]));
-      }
+    for (var index = 0; index < _kStrokes.length; index++) {
+      final pts = _strokePoints(index);
       if (pts.length < 2) {
         continue;
       }
-
       final path = Path()..moveTo(pts.first.dx, pts.first.dy);
-      if (pts.length == 2) {
-        path.lineTo(pts[1].dx, pts[1].dy);
-        paths.add(path);
-        continue;
-      }
-      const tension = 6;
-      for (var i = 0; i < pts.length - 1; i++) {
-        final p0 = i == 0 ? pts[0] : pts[i - 1];
-        final p1 = pts[i];
-        final p2 = pts[i + 1];
-        final p3 = (i + 2 < pts.length) ? pts[i + 2] : pts[pts.length - 1];
-        final c1 = Offset(
-          p1.dx + (p2.dx - p0.dx) / tension,
-          p1.dy + (p2.dy - p0.dy) / tension,
-        );
-        final c2 = Offset(
-          p2.dx - (p3.dx - p1.dx) / tension,
-          p2.dy - (p3.dy - p1.dy) / tension,
-        );
-        path.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
-      }
+      _appendCatmullRom(path, pts);
       paths.add(path);
     }
     return paths;
+  }
+
+  /// 輪郭を構成するストロークを一筆書きの順序でたどり、顔・体のシルエットを
+  /// 表す閉じた Path を生成する。各要素は `[ストロークの添字, 反転フラグ]`。
+  /// 反転フラグが 1 のときはそのストロークの点列を逆順にたどる。
+  /// ストローク同士の端点が完全には一致しないため、直前のストロークの終点から
+  /// 次のストロークの始点へは直線でつなぐ。
+  static const List<List<int>> _kBodyOutline = [
+    [25, 1], [35, 1], [6, 0], [47, 0], [12, 0], [32, 0], // 左側面（下→上）
+    [37, 1], [18, 0], [26, 0], [30, 1], [34, 0], [39, 0], [41, 1], // 左耳・頭頂
+    [5, 0], // 額
+    [1, 0], [4, 0], [36, 0], [9, 1], [16, 0], [42, 0], // 右耳
+    [49, 0], [52, 0], // 右側面・右脚（上→下）
+    [29, 1], [0, 1], // 足元・下端（右→左）
+  ];
+
+  static Path _buildBodyPath() {
+    final path = Path();
+    var started = false;
+    for (final segment in _kBodyOutline) {
+      final pts = _strokePoints(segment[0], reversed: segment[1] == 1);
+      if (pts.isEmpty) {
+        continue;
+      }
+      if (!started) {
+        path.moveTo(pts.first.dx, pts.first.dy);
+        started = true;
+      } else {
+        // 直前のストロークの終点から次のストロークの始点へ直線でつなぐ。
+        path.lineTo(pts.first.dx, pts.first.dy);
+      }
+      _appendCatmullRom(path, pts);
+    }
+    path.close();
+    return path;
+  }
+
+  /// 指定したストロークの点列を返す。[reversed] が真のときは逆順にする。
+  static List<Offset> _strokePoints(int index, {bool reversed = false}) {
+    final stroke = _kStrokes[index];
+    final pts = <Offset>[];
+    for (var i = 0; i + 1 < stroke.length; i += 2) {
+      pts.add(Offset(stroke[i], stroke[i + 1]));
+    }
+    return reversed ? pts.reversed.toList() : pts;
+  }
+
+  /// すでに [pts] の先頭にカーソルがある Path に対して、[pts] を通る
+  /// Catmull-Rom 曲線（3 次ベジェ変換）を追記する。
+  static void _appendCatmullRom(Path path, List<Offset> pts) {
+    if (pts.length < 2) {
+      return;
+    }
+    if (pts.length == 2) {
+      path.lineTo(pts[1].dx, pts[1].dy);
+      return;
+    }
+    const tension = 6;
+    for (var i = 0; i < pts.length - 1; i++) {
+      final p0 = i == 0 ? pts[0] : pts[i - 1];
+      final p1 = pts[i];
+      final p2 = pts[i + 1];
+      final p3 = (i + 2 < pts.length) ? pts[i + 2] : pts[pts.length - 1];
+      final c1 = Offset(
+        p1.dx + (p2.dx - p0.dx) / tension,
+        p1.dy + (p2.dy - p0.dy) / tension,
+      );
+      final c2 = Offset(
+        p2.dx - (p3.dx - p1.dx) / tension,
+        p2.dy - (p3.dy - p1.dy) / tension,
+      );
+      path.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
+    }
   }
 
   // ---- 目: アーモンド形 = 2 つの楕円の上弧 + 下弧で構成する ----
@@ -628,5 +754,8 @@ class _CavivaraPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CavivaraPainter oldDelegate) =>
       oldDelegate.strokeColor != strokeColor ||
-      oldDelegate.winkProgress != winkProgress;
+      oldDelegate.fillColor != fillColor ||
+      oldDelegate.strokeWidth != strokeWidth ||
+      oldDelegate.blinkProgress != blinkProgress ||
+      oldDelegate.eyeAnimation != eyeAnimation;
 }
