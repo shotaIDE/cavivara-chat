@@ -100,6 +100,8 @@ class _RootAppState extends ConsumerState<RootApp> {
                     fillColor: CatFurBubblePainter.innerSilhouetteColor(
                       Theme.of(context).brightness,
                     ),
+                    // スプラッシュ画面ではウインクさせる。
+                    eyeAnimation: CavivaraEyeAnimation.wink,
                   );
                 },
               ),
