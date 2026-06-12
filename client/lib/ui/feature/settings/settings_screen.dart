@@ -4,17 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:house_worker/data/definition/app_definition.dart';
-import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/sign_in_result.dart';
 import 'package:house_worker/data/model/user_profile.dart';
-import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
-import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/color.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
-import 'package:house_worker/ui/feature/settings/chat_bubble_design_selection_dialog.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
 import 'package:house_worker/ui/feature/settings/submit_feedback_screen.dart';
@@ -58,9 +54,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SectionHeader(title: 'ユーザー情報'),
               _buildUserInfoTile(context, userProfile, ref),
               const _SupporterTitleDisplayTile(),
-              const Divider(),
-              const SectionHeader(title: '表示設定'),
-              const _ChatBubbleDesignTile(),
               const Divider(),
               const SectionHeader(title: 'アプリについて'),
               const _ReviewAppTile(),
@@ -399,38 +392,6 @@ class _MoveScreenTrailingIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Icon(Icons.arrow_forward_ios, size: 16);
-  }
-}
-
-class _ChatBubbleDesignTile extends ConsumerWidget {
-  const _ChatBubbleDesignTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
-
-    final subtitleText = designAsync.when(
-      data: (design) => Text(design.displayName),
-      loading: () => Text(ChatBubbleDesign.corporateStandard.displayName),
-      error: (_, _) => const Text('デザイン情報を取得できませんでした'),
-    );
-
-    return ListTile(
-      leading: const Icon(Icons.chat_bubble_outline),
-      title: const Text('吹き出しデザイン'),
-      subtitle: Skeletonizer(
-        enabled: designAsync.isLoading,
-        child: subtitleText,
-      ),
-      trailing: const _MoveScreenTrailingIcon(),
-      onTap: () {
-        HapticFeedbackHelper.lightImpact();
-        showDialog<void>(
-          context: context,
-          builder: (_) => const ChatBubbleDesignSelectionDialog(),
-        );
-      },
-    );
   }
 }
 
