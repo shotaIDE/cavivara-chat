@@ -757,7 +757,6 @@ class _UserChatBubble extends ConsumerWidget {
         color: textColor,
       ),
     );
-    final timeText = _TimestampText(timestamp: message.timestamp);
     final bubbleColor = Theme.of(context).colorScheme.primaryContainer;
     final bubble = design.buildBubble(
       context: context,
@@ -789,7 +788,6 @@ class _UserChatBubble extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       spacing: 4,
       children: [
-        timeText,
         Skeletonizer(
           enabled: designAsync.isLoading,
           child: bubbleWithPointer,
@@ -869,8 +867,6 @@ class _AiChatBubble extends ConsumerWidget {
       }
     }
 
-    final timeText = _TimestampText(timestamp: message.timestamp);
-
     final bubbleColor = Theme.of(context).colorScheme.surfaceContainer;
 
     final bubble = design.buildBubble(
@@ -914,13 +910,6 @@ class _AiChatBubble extends ConsumerWidget {
               child: bubbleWithPointer,
             ),
           ),
-          if (!message.isStreaming || message.content.isNotEmpty) ...[
-            const SizedBox(width: 4),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: timeText,
-            ),
-          ],
         ],
       ),
     );
@@ -948,9 +937,6 @@ class _AppChatBubble extends ConsumerWidget {
     final bubbleColor = Theme.of(
       context,
     ).colorScheme.surfaceContainer.withAlpha(100);
-    final timeText = _TimestampText(
-      timestamp: message.timestamp,
-    );
     final bubble = design.buildBubble(
       context: context,
       messageType: MessageType.system,
@@ -970,27 +956,7 @@ class _AppChatBubble extends ConsumerWidget {
       spacing: 4,
       children: [
         expanded,
-        timeText,
       ],
-    );
-  }
-}
-
-class _TimestampText extends StatelessWidget {
-  const _TimestampText({
-    required this.timestamp,
-  });
-
-  final DateTime timestamp;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '${timestamp.hour.toString().padLeft(2, '0')}:'
-      '${timestamp.minute.toString().padLeft(2, '0')}',
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
-      ),
     );
   }
 }
