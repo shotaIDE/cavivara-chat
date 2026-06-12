@@ -73,5 +73,23 @@ void main() {
       expect(find.byType(AnimatedCavivara), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('fillColor を指定してもビルドできること', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                child: AnimatedCavivara(fillColor: Colors.grey),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(AnimatedCavivara), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
