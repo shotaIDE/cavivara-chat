@@ -8,9 +8,9 @@ import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
+import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
-import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
@@ -136,9 +136,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     final title = Row(
       children: [
-        CavivaraAvatar(
-          size: 32,
-          assetPath: cavivaraProfile.iconPath,
+        SizedBox(
+          width: 48,
+          height: 48,
+          child: Transform.flip(
+            flipX: true,
+            child: AnimatedCavivara(
+              strokeColor: Theme.of(context).colorScheme.onSurface,
+              // 画面上で約1.2px相当の線になるよう、表示サイズ(48)から
+              // ソース画像座標系(幅2308)へ換算する。
+              strokeWidth: 1.2 * 2308 / 48,
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -894,8 +903,18 @@ class _AiChatBubble extends ConsumerWidget {
           )
         : bubble;
 
-    final avatar = CavivaraAvatar(
-      assetPath: cavivaraProfile.iconPath,
+    final avatar = SizedBox(
+      width: 56,
+      height: 56,
+      child: Transform.flip(
+        flipX: true,
+        child: AnimatedCavivara(
+          strokeColor: Theme.of(context).colorScheme.onSurface,
+          // 画面上で約1.2px相当の線になるよう、表示サイズ(56)から
+          // ソース画像座標系(幅2308)へ換算する。
+          strokeWidth: 1.2 * 2308 / 56,
+        ),
+      ),
     );
 
     return IntrinsicHeight(
@@ -905,9 +924,13 @@ class _AiChatBubble extends ConsumerWidget {
           avatar,
           const SizedBox(width: 8),
           Flexible(
-            child: Skeletonizer(
-              enabled: designAsync.isLoading,
-              child: bubbleWithPointer,
+            // アイコンに対して吹き出しを少し下げる。
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Skeletonizer(
+                enabled: designAsync.isLoading,
+                child: bubbleWithPointer,
+              ),
             ),
           ),
         ],

@@ -11,9 +11,14 @@ class AnimatedCavivara extends StatefulWidget {
   const AnimatedCavivara({
     super.key,
     this.strokeColor = const Color(0xFF3D678D),
+    this.strokeWidth = _CavivaraPainter._defaultStrokeWidth,
   });
 
   final Color strokeColor;
+
+  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
+  /// 小さいサイズで表示する場合は大きめの値を指定すると視認性が上がる。
+  final double strokeWidth;
 
   @override
   State<AnimatedCavivara> createState() => _AnimatedCavivaraState();
@@ -89,6 +94,7 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
         builder: (_, _) => CustomPaint(
           painter: _CavivaraPainter(
             strokeColor: widget.strokeColor,
+            strokeWidth: widget.strokeWidth,
             winkProgress: _wink.value,
           ),
           size: Size.infinite,
@@ -406,10 +412,14 @@ const _Brow _kRightBrow = _Brow(
 );
 
 class _CavivaraPainter extends CustomPainter {
-  _CavivaraPainter({required this.strokeColor, this.winkProgress = 0});
+  _CavivaraPainter({
+    required this.strokeColor,
+    this.strokeWidth = _defaultStrokeWidth,
+    this.winkProgress = 0,
+  });
 
-  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
-  static const double _strokeWidth = 20;
+  /// 線および塗りつぶした瞳の太さの既定値（ソース画像の座標系での値）。
+  static const double _defaultStrokeWidth = 20;
 
   /// 閉眼（[winkProgress] = 1）時に右目を縦方向へ潰す割合。
   static const double _winkCloseAmount = 0.92;
@@ -427,6 +437,9 @@ class _CavivaraPainter extends CustomPainter {
   static final Path _rightPupilBasePath = _pupilPath(_kRightPupil);
 
   final Color strokeColor;
+
+  /// 線および塗りつぶした瞳の太さ（ソース画像の座標系での値）。
+  final double strokeWidth;
 
   /// 右目のウィンク進捗。0 で開眼、1 で閉眼。
   final double winkProgress;
@@ -448,7 +461,7 @@ class _CavivaraPainter extends CustomPainter {
     final strokePaint = Paint()
       ..color = strokeColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = _strokeWidth
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
@@ -628,5 +641,6 @@ class _CavivaraPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CavivaraPainter oldDelegate) =>
       oldDelegate.strokeColor != strokeColor ||
+      oldDelegate.strokeWidth != strokeWidth ||
       oldDelegate.winkProgress != winkProgress;
 }
