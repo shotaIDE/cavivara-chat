@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/chat_message.dart';
-import 'package:house_worker/data/repository/chat_bubble_design_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/animated_cavivara.dart';
@@ -486,10 +485,11 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
         }
 
         final message = messages[index];
-        final design =
-            ref.watch(chatBubbleDesignRepositoryProvider).value ??
-            ChatBubbleDesign.corporateStandard;
-        final verticalPadding = design == ChatBubbleDesign.catFur ? 16.0 : 8.0;
+        // カヴィヴァラさん(AI)の発言は猫毛様式で毛先がはみ出すため、
+        // 上下の余白を広めに確保する。
+        final verticalPadding = message.sender is ChatMessageSenderAi
+            ? 16.0
+            : 8.0;
         return Padding(
           padding: EdgeInsets.only(
             left: 16 + MediaQuery.of(context).viewPadding.left,
@@ -653,7 +653,7 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeIn,
     );
 
     // 表示されたら即座にアニメーション開始
@@ -769,39 +769,33 @@ class _SuggestionCard extends StatelessWidget {
   }
 }
 
-class _UserChatBubble extends ConsumerWidget {
+class _UserChatBubble extends StatelessWidget {
   const _UserChatBubble({
     required this.message,
   });
 
+  /// ユーザーの発言は社内標準様式で表示する。
+  static const ChatBubbleDesign _design = ChatBubbleDesign.corporateStandard;
+
   final ChatMessage message;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
-    final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
-
-    final textColor = design == ChatBubbleDesign.catFur
-        ? CatFurBubblePainter.recommendedForegroundColor(
-            Theme.of(context).brightness,
-          )
-        : Theme.of(context).colorScheme.onPrimaryContainer;
+  Widget build(BuildContext context) {
     final bodyText = Text(
       message.content,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: textColor,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
     final bubbleColor = Theme.of(context).colorScheme.primaryContainer;
-    final bubble = design.buildBubble(
+    final bubble = _design.buildBubble(
       context: context,
-      messageType: MessageType.user,
       backgroundColor: bubbleColor,
       child: bodyText,
       seed: message.id.hashCode,
     );
 
-    final bubbleWithPointer = design.shouldWithPointer
+    final bubbleWithPointer = _design.shouldWithPointer
         ? Stack(
             clipBehavior: Clip.none,
             children: [
@@ -823,10 +817,7 @@ class _UserChatBubble extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       spacing: 4,
       children: [
-        Skeletonizer(
-          enabled: designAsync.isLoading,
-          child: bubbleWithPointer,
-        ),
+        bubbleWithPointer,
       ],
     );
   }
@@ -839,39 +830,28 @@ class _AiChatBubble extends ConsumerWidget {
 
   final ChatMessage message;
 
+  /// カヴィヴァラさん(AI)の発言は毛並み(猫毛様式)で表示する。
+  static const ChatBubbleDesign _design = ChatBubbleDesign.catFur;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cavivaraProfile = ref.watch(cavivaraProfileProvider);
-    final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
-    final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
-    final textColor = design == ChatBubbleDesign.catFur
-        ? CatFurBubblePainter.recommendedForegroundColor(
-            Theme.of(context).brightness,
-          )
-        : Theme.of(context).colorScheme.onSurface;
+    final textColor = CatFurBubblePainter.recommendedForegroundColor(
+      Theme.of(context).brightness,
+    );
     final indicatorColor = Theme.of(context).colorScheme.primary;
 
     Widget bodyText;
     if (message.isStreaming && message.content.isEmpty) {
-      bodyText = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(indicatorColor),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${cavivaraProfile.displayName}が考え中…',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: textColor,
-            ),
-          ),
-        ],
+      // 考え中は、返答を生成している様子を文字列のスケルトンで表現する。
+      final skeletonTextStyle = Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: textColor);
+      bodyText = Skeletonizer(
+        child: Text(
+          '${cavivaraProfile.displayName}が考えています',
+          style: skeletonTextStyle,
+        ),
       );
     } else {
       final textWidget = Text(
@@ -904,15 +884,14 @@ class _AiChatBubble extends ConsumerWidget {
 
     final bubbleColor = Theme.of(context).colorScheme.surfaceContainer;
 
-    final bubble = design.buildBubble(
+    final bubble = _design.buildBubble(
       context: context,
-      messageType: MessageType.ai,
       backgroundColor: bubbleColor,
       child: bodyText,
       seed: message.id.hashCode,
     );
 
-    final bubbleWithPointer = design.shouldWithPointer
+    final bubbleWithPointer = _design.shouldWithPointer
         ? Stack(
             clipBehavior: Clip.none,
             children: [
@@ -958,13 +937,10 @@ class _AiChatBubble extends ConsumerWidget {
           avatar,
           const SizedBox(width: 8),
           Flexible(
-            // アイコンに対して吹き出しを少し下げる。
+            // アイコンに対して吹き出しを少し下げつつ、上下の余白を揃える。
             child: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Skeletonizer(
-                enabled: designAsync.isLoading,
-                child: bubbleWithPointer,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: bubbleWithPointer,
             ),
           ),
         ],
@@ -973,18 +949,18 @@ class _AiChatBubble extends ConsumerWidget {
   }
 }
 
-class _AppChatBubble extends ConsumerWidget {
+class _AppChatBubble extends StatelessWidget {
   const _AppChatBubble({
     required this.message,
   });
 
+  /// アプリ(システム)の発言は社内標準様式で表示する。
+  static const ChatBubbleDesign _design = ChatBubbleDesign.corporateStandard;
+
   final ChatMessage message;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final designAsync = ref.watch(chatBubbleDesignRepositoryProvider);
-    final design = designAsync.value ?? ChatBubbleDesign.corporateStandard;
-
+  Widget build(BuildContext context) {
     final bodyText = Text(
       message.content,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -994,25 +970,18 @@ class _AppChatBubble extends ConsumerWidget {
     final bubbleColor = Theme.of(
       context,
     ).colorScheme.surfaceContainer.withAlpha(100);
-    final bubble = design.buildBubble(
+    final bubble = _design.buildBubble(
       context: context,
-      messageType: MessageType.system,
       backgroundColor: bubbleColor,
       child: bodyText,
       seed: message.id.hashCode,
     );
 
-    final expanded = Expanded(
-      child: Skeletonizer(
-        enabled: designAsync.isLoading,
-        child: bubble,
-      ),
-    );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       spacing: 4,
       children: [
-        expanded,
+        Expanded(child: bubble),
       ],
     );
   }

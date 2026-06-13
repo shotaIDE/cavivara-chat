@@ -49,6 +49,10 @@ void main() {
       );
       container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
+      // 初回サジェストと同様の遅延表示のため、表示開始まで時間を進めてから
+      // フェードインを完了させる。
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       // すべてのサジェストが表示されていることを確認
@@ -81,6 +85,10 @@ void main() {
       );
       container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
+      // 初回サジェストと同様の遅延表示のため、表示開始まで時間を進めてから
+      // フェードインを完了させる。
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       // 2番目のサジェストをタップ
@@ -118,6 +126,10 @@ void main() {
       );
       container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
+      // 初回サジェストと同様の遅延表示のため、表示開始まで時間を進めてから
+      // フェードインを完了させる。
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
       // ListView が存在することを確認（横スクロール可能）

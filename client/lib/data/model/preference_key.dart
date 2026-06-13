@@ -4,7 +4,6 @@ enum PreferenceKey {
   totalReceivedChatStringCount,
   hasEarnedPartTimerReward,
   hasEarnedPartTimeLeaderReward,
-  chatBubbleDesign,
   totalVivaPoint,
   supportHistoryList,
 }
