@@ -54,7 +54,10 @@ class UserStatisticsScreen extends ConsumerWidget {
           );
         },
         onSelectAchievement: () {
-          Navigator.of(context).pop();
+          Navigator.of(context).pushAndRemoveUntil(
+            UserStatisticsScreen.route(),
+            (route) => false,
+          );
         },
         onSelectSettings: () {
           Navigator.of(context).push(SettingsScreen.route());

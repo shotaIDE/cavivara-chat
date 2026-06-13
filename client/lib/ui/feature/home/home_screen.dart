@@ -211,7 +211,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           );
         },
         onSelectAchievement: () {
-          Navigator.of(context).push(UserStatisticsScreen.route());
+          Navigator.of(context).pushAndRemoveUntil(
+            UserStatisticsScreen.route(),
+            (route) => false,
+          );
         },
         onSelectSettings: () {
           Navigator.of(context).push(SettingsScreen.route());
