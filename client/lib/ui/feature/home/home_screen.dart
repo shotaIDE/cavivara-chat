@@ -771,7 +771,7 @@ class _UserChatBubble extends StatelessWidget {
         color: Theme.of(context).colorScheme.onSurface,
       ),
     );
-    final bubbleColor = Theme.of(context).colorScheme.surfaceContainerLow;
+    final bubbleColor = Theme.of(context).colorScheme.primaryContainer;
     final bubble = _design.buildBubble(
       context: context,
       backgroundColor: bubbleColor,
