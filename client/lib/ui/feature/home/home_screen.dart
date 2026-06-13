@@ -931,9 +931,9 @@ class _AiChatBubble extends ConsumerWidget {
           avatar,
           const SizedBox(width: 8),
           Flexible(
-            // アイコンに対して吹き出しを少し下げる。
+            // アイコンに対して吹き出しを少し下げつつ、上下の余白を揃える。
             child: Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: bubbleWithPointer,
             ),
           ),
