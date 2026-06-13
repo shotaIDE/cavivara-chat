@@ -765,10 +765,10 @@ class _UserChatBubble extends StatelessWidget {
     final bodyText = Text(
       message.content,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: Theme.of(context).colorScheme.onPrimaryContainer,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
-    final bubbleColor = Theme.of(context).colorScheme.primaryContainer;
+    final bubbleColor = Theme.of(context).colorScheme.surfaceContainerLow;
     final bubble = _design.buildBubble(
       context: context,
       backgroundColor: bubbleColor,
