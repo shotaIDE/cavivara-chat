@@ -637,7 +637,7 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeIn,
     );
 
     // 表示されたら即座にアニメーション開始

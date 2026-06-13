@@ -47,7 +47,7 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeIn,
     );
   }
 
