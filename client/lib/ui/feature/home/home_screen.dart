@@ -17,6 +17,7 @@ import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -827,25 +828,15 @@ class _AiChatBubble extends ConsumerWidget {
 
     Widget bodyText;
     if (message.isStreaming && message.content.isEmpty) {
-      bodyText = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(indicatorColor),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${cavivaraProfile.displayName}が考え中…',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: textColor,
-            ),
-          ),
-        ],
+      // 考え中は、返答を生成している様子を文字列のスケルトンで表現する。
+      final skeletonTextStyle = Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: textColor);
+      bodyText = Skeletonizer(
+        child: Text(
+          '${cavivaraProfile.displayName}が考えています',
+          style: skeletonTextStyle,
+        ),
       );
     } else {
       final textWidget = Text(
