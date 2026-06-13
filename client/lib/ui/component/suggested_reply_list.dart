@@ -103,16 +103,12 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SizedBox(
-        // 上下に余白を確保し、チップの影が ListView のクリップ枠で
-        // 切り取られないようにする。
-        height: 64,
+        height: 48,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.only(
             left: 16 + MediaQuery.of(context).viewPadding.left,
             right: 16 + MediaQuery.of(context).viewPadding.right,
-            top: 12,
-            bottom: 12,
           ),
           itemBuilder: (context, index) {
             final suggestion = suggestions[index];
