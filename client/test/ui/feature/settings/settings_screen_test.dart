@@ -9,6 +9,7 @@ import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -18,6 +19,16 @@ void main() {
     late ProviderContainer container;
 
     setUp(() {
+      // _AppVersionTile が参照する currentAppVersionProvider は
+      // PackageInfo.fromPlatform() を待つため、モックしないと
+      // Skeletonizer のシマーが永久に動き pumpAndSettle がタイムアウトする。
+      PackageInfo.setMockInitialValues(
+        appName: 'カヴィヴァラチャット',
+        packageName: 'com.example.app',
+        version: '1.0.0',
+        buildNumber: '1',
+        buildSignature: '',
+      );
       SharedPreferences.setMockInitialValues({});
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.empty();
