@@ -219,6 +219,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Navigator.of(context).push(SettingsScreen.route());
         },
       ),
+      // ドロワーを開く際にキーボードを非表示にする。
+      // これにより、ドロワーを閉じた後にフォーカスが復元されてキーボードが
+      // 意図せず表示されることを防ぐ。
+      onDrawerChanged: (isOpened) {
+        if (isOpened) {
+          _dismissKeyboard();
+        }
+      },
       body: body,
     );
 
@@ -276,7 +284,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _dismissKeyboard() {
-    FocusScope.of(context).unfocus();
+    // メッセージ入力欄の FocusNode 自体を unfocus する。
+    //
+    // FocusScope.of(context).unfocus() ではフォーカススコープの親側の
+    // _focusedChildren しかクリアされず、TextField はスコープの
+    // _focusedChildren に残り続ける。そのためドロワーを閉じた際に
+    // フォーカスが復元され、キーボードが意図せず再表示されてしまう。
+    // FocusNode を直接 unfocus することでスコープから確実に除去する。
+    _messageFocusNode.unfocus();
   }
 
   void _onMessageSent() {
