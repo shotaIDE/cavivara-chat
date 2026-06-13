@@ -220,6 +220,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Navigator.of(context).push(SettingsScreen.route());
         },
       ),
+      // ドロワーを開く際にキーボードを非表示にする。
+      // これにより、ドロワーを閉じた後にフォーカスが復元されてキーボードが
+      // 意図せず表示されることを防ぐ。
+      onDrawerChanged: (isOpened) {
+        if (isOpened) {
+          _dismissKeyboard();
+        }
+      },
       body: body,
     );
 
