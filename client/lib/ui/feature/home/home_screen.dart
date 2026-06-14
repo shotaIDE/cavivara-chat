@@ -374,6 +374,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
   int _previousMessageCount = 0;
   bool _previousHasStreamingMessages = false;
   bool _previousStreamingMessageHadContent = false;
+  double _previousViewInsetBottom = 0;
 
   @override
   void initState() {
@@ -443,10 +444,21 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
       HapticFeedbackHelper.onMessageReceiveComplete();
     }
 
-    // メッセージ数が増えた場合、またはストリーミングが終了した場合で、ユーザーが最下部にいる場合のみ自動スクロール
+    // キーボードが表示されて画面が縮小したことを検知する。
+    // MediaQuery.viewInsets.bottom が増加したタイミングがキーボードの出現に対応する。
+    // Scaffold の resizeToAvoidBottomInset によりビューポートが縮小するが、
+    // ListView のスクロール位置は自動調整されないため、明示的に最下部へ移動する必要がある。
+    final currentViewInsetBottom = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardAppearing = currentViewInsetBottom > _previousViewInsetBottom;
+    _previousViewInsetBottom = currentViewInsetBottom;
+
+    // メッセージ数が増えた場合、ストリーミングが終了した場合、またはキーボードが表示された場合で、
+    // ユーザーが最下部にいる場合のみ自動スクロール
     final shouldAutoScroll =
         _isAtBottom &&
-        (messages.length > _previousMessageCount || isStreamingCompleted);
+        (messages.length > _previousMessageCount ||
+            isStreamingCompleted ||
+            isKeyboardAppearing);
 
     if (shouldAutoScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
