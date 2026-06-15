@@ -449,7 +449,8 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     // Scaffold の resizeToAvoidBottomInset によりビューポートが縮小するが、
     // ListView のスクロール位置は自動調整されないため、明示的に最下部へ移動する必要がある。
     final currentViewInsetBottom = MediaQuery.of(context).viewInsets.bottom;
-    final isKeyboardAppearing = currentViewInsetBottom > _previousViewInsetBottom;
+    final isKeyboardAppearing =
+        currentViewInsetBottom > _previousViewInsetBottom;
     _previousViewInsetBottom = currentViewInsetBottom;
 
     // メッセージ数が増えた場合、ストリーミングが終了した場合、またはキーボードが表示された場合で、
