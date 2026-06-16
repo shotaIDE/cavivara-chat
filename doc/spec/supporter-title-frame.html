@@ -107,7 +107,7 @@
     <p class="note">
       肖像画は <code>client/assets/image/cavivara.png</code> を参照。ブラウザで読み込めない場合はプレースホルダを表示する。<br>
       額縁構造（外側→内側）: モールディング（称号色グラデーション＋発光）→ 溝（最暗部）→ 台紙 → 細い縁取り → 肖像画（3:4）。<br>
-      色・必要 VP は <code>supporter_title.dart</code> / <code>supporter_title_extension.dart</code> に基づく。
+      色は「チープ→高級」エスカレート配色（<code>supporter_title_extension.dart</code> に反映済み）。必要 VP・称号名は <code>supporter_title.dart</code> に基づく。
     </p>
   </div>
 
@@ -115,15 +115,17 @@
     // 肖像画アセットへの相対パス（doc/spec/ から client/assets/... へ）
     const PORTRAIT_SRC = "../../client/assets/image/cavivara.png";
 
-    // サポーター称号（実装の値）
+    // サポーター称号（チープ → 高級へエスカレートする配色案）
+    // 安価な素材（鉄→銅→銀）→ 貴金属（金）→ 宝石（翠玉→青玉→紫水晶）の順に
+    // 上位ほど深く彩度の高い高級感のある色味になるよう設計している。
     const TITLES = [
-      { key: "newbie",       name: "駆け出しヴィヴァサポーター", vp: 0,   color: "#9E9E9E" },
-      { key: "beginner",     name: "初心ヴィヴァサポーター",     vp: 10,  color: "#CD7F32" },
-      { key: "intermediate", name: "一人前ヴィヴァサポーター",   vp: 30,  color: "#C0C0C0" },
-      { key: "advanced",     name: "ベテランヴィヴァサポーター", vp: 70,  color: "#FFD700" },
-      { key: "expert",       name: "熟練ヴィヴァサポーター",     vp: 150, color: "#E5E4E2" },
-      { key: "master",       name: "達人ヴィヴァサポーター",     vp: 300, color: "#50C878" },
-      { key: "legend",       name: "伝説のヴィヴァサポーター",   vp: 500, color: "#B9F2FF" },
+      { key: "newbie",       name: "駆け出しヴィヴァサポーター", vp: 0,   color: "#9A9A9A", material: "鉄（くすんだグレー）" },
+      { key: "beginner",     name: "初心ヴィヴァサポーター",     vp: 10,  color: "#C17A3F", material: "ブロンズ（銅）" },
+      { key: "intermediate", name: "一人前ヴィヴァサポーター",   vp: 30,  color: "#EB6A8C", material: "ピンク（紅梅）" },
+      { key: "advanced",     name: "ベテランヴィヴァサポーター", vp: 70,  color: "#E6B422", material: "ゴールド（金）" },
+      { key: "expert",       name: "熟練ヴィヴァサポーター",     vp: 150, color: "#1FA567", material: "エメラルド（翠玉）" },
+      { key: "master",       name: "達人ヴィヴァサポーター",     vp: 300, color: "#2E63D6", material: "サファイア（青玉）" },
+      { key: "legend",       name: "伝説のヴィヴァサポーター",   vp: 500, color: "#7A3FB5", material: "ロイヤルパープル（紫水晶）" },
     ];
 
     // --- 色変換ユーティリティ（Flutter の HSLColor 操作を再現） ---
@@ -248,7 +250,8 @@
         caption.className = "caption";
         caption.innerHTML =
           `<div class="name">${title.name}</div>` +
-          `<div class="sub">${title.vp} VP ・ <code>${title.key}</code> ・ ${title.color}</div>`;
+          `<div class="sub">${title.vp} VP ・ ${title.material}</div>` +
+          `<div class="sub"><code>${title.key}</code> ・ ${title.color}</div>`;
 
         item.appendChild(slot);
         item.appendChild(caption);
