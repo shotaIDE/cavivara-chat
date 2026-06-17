@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -34,6 +35,10 @@ Future<void> main() async {
 
   try {
     await Firebase.initializeApp(options: _getFirebaseOptions());
+
+    await FirebaseAppCheck.instance.activate(
+      providerApple: const AppleAppAttestProvider(),
+    );
 
     if (useFirebaseEmulator) {
       await _setupFirebaseEmulators();
