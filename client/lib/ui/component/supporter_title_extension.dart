@@ -45,13 +45,13 @@ extension SupporterTitleExtension on SupporterTitle {
   /// 称号の色
   Color get color {
     return switch (this) {
-      SupporterTitle.newbie => Colors.grey,
-      SupporterTitle.beginner => const Color(0xFFCD7F32), // ブロンズ
-      SupporterTitle.intermediate => const Color(0xFFC0C0C0), // シルバー
-      SupporterTitle.advanced => const Color(0xFFFFD700), // ゴールド
-      SupporterTitle.expert => const Color(0xFFE5E4E2), // プラチナ
-      SupporterTitle.master => const Color(0xFF50C878), // エメラルド
-      SupporterTitle.legend => const Color(0xFFB9F2FF), // ダイヤモンド
+      SupporterTitle.newbie => const Color(0xFF9A9A9A), // 鉄（くすんだグレー）
+      SupporterTitle.beginner => const Color(0xFFC17A3F), // ブロンズ（銅）
+      SupporterTitle.intermediate => const Color(0xFFEB6A8C), // ピンク（紅梅）
+      SupporterTitle.advanced => const Color(0xFFE6B422), // ゴールド（金）
+      SupporterTitle.expert => const Color(0xFF1FA567), // エメラルド（翠玉）
+      SupporterTitle.master => const Color(0xFF2E63D6), // サファイア（青玉）
+      SupporterTitle.legend => const Color(0xFF7A3FB5), // ロイヤルパープル（紫水晶）
     };
   }
 }

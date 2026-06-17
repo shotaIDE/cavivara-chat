@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>サポーター称号 額縁シミュレーション</title>
+  <style>
+    :root {
+      --bg: #f3efe9;
+      --wall: #e9e3da;
+      --text: #1f2328;
+      --text-sub: #6b7280;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 16px 64px;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; margin: 0 0 4px; }
+    .lead { color: var(--text-sub); margin: 0 0 24px; font-size: 0.95rem; }
+
+    .controls {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 28px; padding: 14px 16px;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    }
+    .controls label { font-size: 0.88rem; }
+    .toggle { display: flex; align-items: center; gap: 8px; }
+
+    /* 美術館の壁に見立てたギャラリー */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 48px 32px;
+      padding: 40px 24px;
+      background:
+        linear-gradient(180deg, var(--wall), #ded7cc);
+      border-radius: 16px;
+    }
+    .item { display: flex; flex-direction: column; align-items: center; }
+    .frame-slot { margin-bottom: 18px; }
+    .caption { text-align: center; }
+    .caption .name { font-weight: 700; font-size: 1rem; }
+    .caption .sub { font-size: 0.8rem; color: var(--text-sub); }
+
+    /* === 額縁の各レイヤー（Flutter CavivaraPortrait を再現） === */
+    .portrait-constraint { width: 200px; }
+    .molding {           /* framedPortrait: 外側モールディング（金枠） */
+      padding: 16px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+    .lip {               /* lip: 額縁の溝（最暗部） */
+      padding: 3px;
+    }
+    .mat {               /* mat: 台紙（マット） */
+      padding: 18px;
+      background: #fdfcfb;
+    }
+    .line {              /* portraitWithLine: 作品まわりの細い縁取り */
+      border: 1px solid;
+    }
+    .portrait {          /* portrait: 3:4 の肖像画 */
+      aspect-ratio: 3 / 4;
+      width: 100%;
+      display: block;
+      object-fit: contain;
+      background: #f0ece6;
+    }
+    .portrait-fallback {
+      aspect-ratio: 3 / 4; width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: repeating-linear-gradient(45deg, #efe9e1, #efe9e1 8px, #e7e0d6 8px, #e7e0d6 16px);
+      color: var(--text-sub); font-size: 0.8rem; text-align: center; padding: 8px;
+    }
+    .note { font-size: 0.8rem; color: var(--text-sub); margin-top: 28px; }
+    code { background:#eee; padding:1px 5px; border-radius:4px; font-family:ui-monospace,Menlo,monospace; font-size:0.8rem;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>サポーター称号 額縁シミュレーション</h1>
+    <p class="lead">業績画面・ドロワーで表示される <code>CavivaraPortrait</code> の額縁を、各サポーター称号の色で再現したもの。額縁の明暗・グラデーション・称号色の発光は実装と同じ計算（HSL 明度 ±0.18 / −0.35）で生成している。</p>
+
+    <div class="controls">
+      <div class="toggle">
+        <input type="checkbox" id="glow" checked>
+        <label for="glow">発光（グロー）を表示</label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="shadow" checked>
+        <label for="shadow">ドロップシャドウを表示</label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="simplified">
+        <label for="simplified">簡易表示（<code>simplified: true</code> 相当）</label>
+      </div>
+    </div>
+
+    <div class="gallery" id="gallery"></div>
+
+    <p class="note">
+      肖像画は <code>client/assets/image/cavivara.png</code> を参照。ブラウザで読み込めない場合はプレースホルダを表示する。<br>
+      額縁構造（外側→内側）: モールディング（称号色グラデーション＋発光）→ 溝（最暗部）→ 台紙 → 細い縁取り → 肖像画（3:4）。<br>
+      色は「チープ→高級」エスカレート配色（<code>supporter_title_extension.dart</code> に反映済み）。必要 VP・称号名は <code>supporter_title.dart</code> に基づく。
+    </p>
+  </div>
+
+  <script>
+    // 肖像画アセットへの相対パス（doc/spec/ から client/assets/... へ）
+    const PORTRAIT_SRC = "../../client/assets/image/cavivara.png";
+
+    // サポーター称号（チープ → 高級へエスカレートする配色案）
+    // 安価な素材（鉄→銅→銀）→ 貴金属（金）→ 宝石（翠玉→青玉→紫水晶）の順に
+    // 上位ほど深く彩度の高い高級感のある色味になるよう設計している。
+    const TITLES = [
+      { key: "newbie",       name: "駆け出しヴィヴァサポーター", vp: 0,   color: "#9A9A9A", material: "鉄（くすんだグレー）" },
+      { key: "beginner",     name: "初心ヴィヴァサポーター",     vp: 10,  color: "#C17A3F", material: "ブロンズ（銅）" },
+      { key: "intermediate", name: "一人前ヴィヴァサポーター",   vp: 30,  color: "#EB6A8C", material: "ピンク（紅梅）" },
+      { key: "advanced",     name: "ベテランヴィヴァサポーター", vp: 70,  color: "#E6B422", material: "ゴールド（金）" },
+      { key: "expert",       name: "熟練ヴィヴァサポーター",     vp: 150, color: "#1FA567", material: "エメラルド（翠玉）" },
+      { key: "master",       name: "達人ヴィヴァサポーター",     vp: 300, color: "#2E63D6", material: "サファイア（青玉）" },
+      { key: "legend",       name: "伝説のヴィヴァサポーター",   vp: 500, color: "#7A3FB5", material: "ロイヤルパープル（紫水晶）" },
+    ];
+
+    // --- 色変換ユーティリティ（Flutter の HSLColor 操作を再現） ---
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+    function rgbToHsl({ r, g, b }) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0; const l = (max + min) / 2;
+      const d = max - min;
+      if (d !== 0) {
+        s = d / (1 - Math.abs(2 * l - 1));
+        switch (max) {
+          case r: h = ((g - b) / d) % 6; break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h *= 60; if (h < 0) h += 360;
+      }
+      return { h, s, l };
+    }
+    function hslToCss({ h, s, l }, alpha = 1) {
+      const a = alpha === 1 ? "" : `, ${alpha}`;
+      const fn = alpha === 1 ? "hsl" : "hsla";
+      return `${fn}(${h.toFixed(1)}, ${(s * 100).toFixed(1)}%, ${(l * 100).toFixed(1)}%${a})`;
+    }
+    const clamp01 = (x) => Math.min(1, Math.max(0, x));
+    function withLightness(hsl, delta) {
+      return { h: hsl.h, s: hsl.s, l: clamp01(hsl.l + delta) };
+    }
+
+    function buildFrame(title, opts) {
+      const baseHsl = rgbToHsl(hexToRgb(title.color));
+      const lighter = withLightness(baseHsl, +0.18);
+      const darker  = withLightness(baseHsl, -0.18);
+      const deepest = withLightness(baseHsl, -0.35);
+
+      const resolvedCss = hslToCss(baseHsl);
+      const lighterCss  = hslToCss(lighter);
+      const darkerCss   = hslToCss(darker);
+      const deepestCss  = hslToCss(deepest);
+
+      // 肖像画 + 細い縁取り
+      const img = document.createElement("img");
+      img.className = "portrait";
+      img.src = PORTRAIT_SRC;
+      img.alt = "カヴィヴァラさんの肖像画";
+      img.onerror = function () {
+        const fb = document.createElement("div");
+        fb.className = "portrait-fallback";
+        fb.textContent = "cavivara.png";
+        this.replaceWith(fb);
+      };
+      const line = document.createElement("div");
+      line.className = "line";
+      line.style.borderColor = hslToCss(darker, 0.4);
+      line.appendChild(img);
+
+      // 台紙
+      const mat = document.createElement("div");
+      mat.className = "mat";
+      mat.appendChild(line);
+
+      // simplified: 台紙の周りに細い枠だけ
+      if (opts.simplified) {
+        const simple = document.createElement("div");
+        simple.style.padding = "6px";
+        simple.style.borderRadius = "4px";
+        simple.style.background = resolvedCss;
+        simple.appendChild(mat);
+        return simple;
+      }
+
+      // 溝（最暗部）
+      const lip = document.createElement("div");
+      lip.className = "lip";
+      lip.style.background = deepestCss;
+      lip.appendChild(mat);
+
+      // 外側モールディング
+      const molding = document.createElement("div");
+      molding.className = "molding";
+      molding.style.borderColor = hslToCss(lighter, 0.7);
+      molding.style.background =
+        `linear-gradient(135deg, ${lighterCss}, ${resolvedCss}, ${darkerCss})`;
+
+      const shadows = [];
+      if (opts.glow) {
+        shadows.push(`0 0 24px 2px ${hslToCss(baseHsl, 0.6)}`);
+        shadows.push(`0 0 48px 8px ${hslToCss(baseHsl, 0.35)}`);
+      }
+      if (opts.shadow) {
+        shadows.push(`0 8px 12px 0 rgba(0,0,0,0.33)`);
+      }
+      molding.style.boxShadow = shadows.join(", ");
+      molding.appendChild(lip);
+      return molding;
+    }
+
+    function render() {
+      const opts = {
+        glow: document.getElementById("glow").checked,
+        shadow: document.getElementById("shadow").checked,
+        simplified: document.getElementById("simplified").checked,
+      };
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
+      for (const title of TITLES) {
+        const item = document.createElement("div");
+        item.className = "item";
+
+        const slot = document.createElement("div");
+        slot.className = "frame-slot";
+        const constraint = document.createElement("div");
+        constraint.className = "portrait-constraint";
+        constraint.appendChild(buildFrame(title, opts));
+        slot.appendChild(constraint);
+
+        const caption = document.createElement("div");
+        caption.className = "caption";
+        caption.innerHTML =
+          `<div class="name">${title.name}</div>` +
+          `<div class="sub">${title.vp} VP ・ ${title.material}</div>` +
+          `<div class="sub"><code>${title.key}</code> ・ ${title.color}</div>`;
+
+        item.appendChild(slot);
+        item.appendChild(caption);
+        gallery.appendChild(item);
+      }
+    }
+
+    ["glow", "shadow", "simplified"].forEach((id) =>
+      document.getElementById(id).addEventListener("change", render)
+    );
+    render();
+  </script>
+</body>
+</html>
