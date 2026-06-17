@@ -7,7 +7,7 @@ terraform {
   required_providers {
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "7.36.0"
+      version = "7.37.0"
       configuration_aliases = [
         google-beta.no_user_project_override
       ]
