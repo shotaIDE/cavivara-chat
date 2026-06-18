@@ -302,8 +302,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _onMessageSent() {
-    // スクロール位置によらず最下部へスクロールし、送信したメッセージと
-    // カヴィヴァラさんのローディング中メッセージが見えるようにする。
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    // 送信前の時点ですでに最下部付近にいる場合は、_ChatMessageList 側の
+    // メッセージ増加に伴う自動スクロールに委ね、animateTo の二重実行を避ける。
+    // この判定は新メッセージのレイアウト前（リビルド前）に同期的に行う必要がある。
+    // post-frame まで遅らせると maxScrollExtent が増加し、判定が壊れるため。
+    const threshold = 100.0; // _ChatMessageList の最下部判定と揃える
+    final position = _scrollController.position;
+    final isAtBottom =
+        (position.maxScrollExtent - position.pixels) <= threshold;
+    if (isAtBottom) {
+      return;
+    }
+
+    // 最下部から離れている場合は、送信したメッセージとカヴィヴァラさんの
+    // ローディング中メッセージが見えるよう、明示的に最下部へスクロールする。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) {
         return;
