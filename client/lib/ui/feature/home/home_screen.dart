@@ -178,6 +178,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
     );
 
+    // キーボードの表示によるビューポートの縮小量を取得する。
+    // Scaffold の body 内では resizeToAvoidBottomInset により viewInsets.bottom が
+    // 取り除かれてしまうため、Scaffold より上位のこのコンテキストで取得して渡す。
+    final viewInsetBottom = MediaQuery.of(context).viewInsets.bottom;
+
     final body = Column(
       children: [
         Expanded(
@@ -188,6 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               controller: _scrollController,
               onMessageSent: _onMessageSent,
               shouldShowSuggestions: _shouldShowSuggestions,
+              viewInsetBottom: viewInsetBottom,
             ),
           ),
         ),
@@ -359,11 +365,18 @@ class _ChatMessageList extends ConsumerStatefulWidget {
     required this.controller,
     required this.onMessageSent,
     required this.shouldShowSuggestions,
+    required this.viewInsetBottom,
   });
 
   final ScrollController controller;
   final VoidCallback onMessageSent;
   final bool shouldShowSuggestions;
+
+  /// キーボードの表示によるビューポート下部の縮小量。
+  ///
+  /// Scaffold の body 内では resizeToAvoidBottomInset により MediaQuery の
+  /// viewInsets.bottom が 0 に置き換えられるため、上位コンテキストの値を受け取る。
+  final double viewInsetBottom;
 
   @override
   ConsumerState<_ChatMessageList> createState() => _ChatMessageListState();
@@ -374,6 +387,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
   int _previousMessageCount = 0;
   bool _previousHasStreamingMessages = false;
   bool _previousStreamingMessageHadContent = false;
+  double _previousViewInsetBottom = 0;
 
   @override
   void initState() {
@@ -443,10 +457,23 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
       HapticFeedbackHelper.onMessageReceiveComplete();
     }
 
-    // メッセージ数が増えた場合、またはストリーミングが終了した場合で、ユーザーが最下部にいる場合のみ自動スクロール
+    // キーボードが表示されて画面が縮小したことを検知する。
+    // 上位コンテキストから受け取った viewInsetBottom が増加したタイミングが
+    // キーボードの出現に対応する。
+    // Scaffold の resizeToAvoidBottomInset によりビューポートが縮小するが、
+    // ListView のスクロール位置は自動調整されないため、明示的に最下部へ移動する必要がある。
+    final currentViewInsetBottom = widget.viewInsetBottom;
+    final isKeyboardAppearing =
+        currentViewInsetBottom > _previousViewInsetBottom;
+    _previousViewInsetBottom = currentViewInsetBottom;
+
+    // メッセージ数が増えた場合、ストリーミングが終了した場合、またはキーボードが表示された場合で、
+    // ユーザーが最下部にいる場合のみ自動スクロール
     final shouldAutoScroll =
         _isAtBottom &&
-        (messages.length > _previousMessageCount || isStreamingCompleted);
+        (messages.length > _previousMessageCount ||
+            isStreamingCompleted ||
+            isKeyboardAppearing);
 
     if (shouldAutoScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
