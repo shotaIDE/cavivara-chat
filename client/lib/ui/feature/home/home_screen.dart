@@ -286,6 +286,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       HapticFeedbackHelper.onMessageSent();
       ref.read(chatMessagesProvider.notifier).sendMessage(message);
       _messageController.clear();
+      _onMessageSent();
     }
   }
 
@@ -301,7 +302,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _onMessageSent() {
-    // メッセージ送信後の処理をここで行う（必要に応じて）
+    // スクロール位置によらず最下部へスクロールし、送信したメッセージと
+    // カヴィヴァラさんのローディング中メッセージが見えるようにする。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack,
+      );
+    });
   }
 
   Widget _messageInput() {
