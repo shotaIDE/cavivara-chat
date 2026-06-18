@@ -178,6 +178,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
     );
 
+    // キーボードの表示によるビューポートの縮小量を取得する。
+    // Scaffold の body 内では resizeToAvoidBottomInset により viewInsets.bottom が
+    // 取り除かれてしまうため、Scaffold より上位のこのコンテキストで取得して渡す。
+    final viewInsetBottom = MediaQuery.of(context).viewInsets.bottom;
+
     final body = Column(
       children: [
         Expanded(
@@ -188,6 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               controller: _scrollController,
               onMessageSent: _onMessageSent,
               shouldShowSuggestions: _shouldShowSuggestions,
+              viewInsetBottom: viewInsetBottom,
             ),
           ),
         ),
@@ -359,11 +365,18 @@ class _ChatMessageList extends ConsumerStatefulWidget {
     required this.controller,
     required this.onMessageSent,
     required this.shouldShowSuggestions,
+    required this.viewInsetBottom,
   });
 
   final ScrollController controller;
   final VoidCallback onMessageSent;
   final bool shouldShowSuggestions;
+
+  /// キーボードの表示によるビューポート下部の縮小量。
+  ///
+  /// Scaffold の body 内では resizeToAvoidBottomInset により MediaQuery の
+  /// viewInsets.bottom が 0 に置き換えられるため、上位コンテキストの値を受け取る。
+  final double viewInsetBottom;
 
   @override
   ConsumerState<_ChatMessageList> createState() => _ChatMessageListState();
@@ -445,10 +458,11 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     }
 
     // キーボードが表示されて画面が縮小したことを検知する。
-    // MediaQuery.viewInsets.bottom が増加したタイミングがキーボードの出現に対応する。
+    // 上位コンテキストから受け取った viewInsetBottom が増加したタイミングが
+    // キーボードの出現に対応する。
     // Scaffold の resizeToAvoidBottomInset によりビューポートが縮小するが、
     // ListView のスクロール位置は自動調整されないため、明示的に最下部へ移動する必要がある。
-    final currentViewInsetBottom = MediaQuery.of(context).viewInsets.bottom;
+    final currentViewInsetBottom = widget.viewInsetBottom;
     final isKeyboardAppearing =
         currentViewInsetBottom > _previousViewInsetBottom;
     _previousViewInsetBottom = currentViewInsetBottom;
