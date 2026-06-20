@@ -79,6 +79,31 @@ void main() {
         expect(dates, equals([DateTime(2026, 6, 19), DateTime(2026, 6, 20)]));
       });
 
+      test('同一日付を重複して追加した場合は1件のみ保持されること', () async {
+        final notifier = container.read(
+          loginBonusGrantedDatesRepositoryProvider.notifier,
+        );
+
+        await notifier.add(DateTime(2026, 6, 20));
+        await notifier.add(DateTime(2026, 6, 20));
+
+        final dates = await container.read(
+          loginBonusGrantedDatesRepositoryProvider.future,
+        );
+        expect(dates, equals([DateTime(2026, 6, 20)]));
+      });
+
+      test('時刻付きのDateTimeを渡した場合に日付のみに正規化されること', () async {
+        await container
+            .read(loginBonusGrantedDatesRepositoryProvider.notifier)
+            .add(DateTime(2026, 6, 20, 12, 34, 56));
+
+        final dates = await container.read(
+          loginBonusGrantedDatesRepositoryProvider.future,
+        );
+        expect(dates, equals([DateTime(2026, 6, 20)]));
+      });
+
       test('付与日が永続化されること', () async {
         await container
             .read(loginBonusGrantedDatesRepositoryProvider.notifier)

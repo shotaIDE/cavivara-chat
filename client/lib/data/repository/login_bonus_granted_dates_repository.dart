@@ -27,9 +27,24 @@ class LoginBonusGrantedDatesRepository
   }
 
   /// 付与した日付を追加する。
+  ///
+  /// [date] の時刻は切り捨てて日付単位で保存する。同一日付がすでに存在する
+  /// 場合は何もしない。
   Future<void> add(DateTime date) async {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
     final currentDates = await future;
-    final newDates = [...currentDates, date];
+
+    final alreadyGranted = currentDates.any(
+      (d) =>
+          d.year == normalizedDate.year &&
+          d.month == normalizedDate.month &&
+          d.day == normalizedDate.day,
+    );
+    if (alreadyGranted) {
+      return;
+    }
+
+    final newDates = [...currentDates, normalizedDate];
 
     final preferenceService = ref.read(preferenceServiceProvider);
     await preferenceService.setStringList(
