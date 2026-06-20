@@ -9,20 +9,17 @@ import 'package:house_worker/ui/feature/home/home_presenter.dart';
 ///
 /// 初回サジェストと同様に、サジェストが現れてから少し遅延した後、
 /// フェードインで表示する。
+///
+/// 遅延中（フェードイン前）は、表示時とまったく同じUIを非表示で描画して
+/// 余白だけを先に確保する。これにより、サジェストがフェードインしても
+/// レイアウトが変化せず、最下部へのスクロールが不要になる。
 class SuggestedReplyList extends ConsumerStatefulWidget {
   const SuggestedReplyList({
     super.key,
     required this.onSuggestionTap,
-    this.onSuggestionsVisible,
   });
 
   final ValueChanged<String> onSuggestionTap;
-
-  /// サジェストが遅延後に表示され始めるタイミングで呼ばれるコールバック。
-  ///
-  /// `SizedBox.shrink()` からサジェストリストへの遷移タイミング（レイアウト変更前）
-  /// に呼ばれるため、呼び出し元は `addPostFrameCallback` でスクロールを予約すること。
-  final VoidCallback? onSuggestionsVisible;
 
   @override
   ConsumerState<SuggestedReplyList> createState() => _SuggestedReplyListState();
@@ -76,9 +73,6 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
       setState(() {
         _isVisible = true;
       });
-      // SizedBox.shrink() → サジェストリストへの遷移を親に通知する。
-      // 親はこれを受けて addPostFrameCallback でスクロールを予約できる。
-      widget.onSuggestionsVisible?.call();
       _animationController.forward(from: 0);
     });
   }
@@ -105,31 +99,54 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
       }
     }
 
-    if (isEmpty || !_isVisible) {
+    // サジェストが存在しない場合は余白も確保しない。
+    if (isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 横スクロール可能なボタンリストを構築
+    final list = _buildSuggestionList(context, suggestions);
+
+    // 遅延中（フェードイン前）は、表示時とまったく同じUIを非表示で描画して
+    // 余白だけを先に確保する。サイズを維持したまま描画・ヒットテストのみ無効化
+    // することで、フェードイン時にレイアウトが変化せずスクロールが不要になる。
+    if (!_isVisible) {
+      return Visibility(
+        visible: false,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: list,
+      );
+    }
+
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: SizedBox(
-        height: 48,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.only(
-            left: 16 + MediaQuery.of(context).viewPadding.left,
-            right: 16 + MediaQuery.of(context).viewPadding.right,
-          ),
-          itemBuilder: (context, index) {
-            final suggestion = suggestions[index];
-            return SuggestedReplyButton(
-              text: suggestion,
-              onTap: () => widget.onSuggestionTap(suggestion),
-            );
-          },
-          separatorBuilder: (_, _) => const SizedBox(width: 8),
-          itemCount: suggestions.length,
+      child: list,
+    );
+  }
+
+  /// 横スクロール可能なサジェストボタンリストを構築する。
+  ///
+  /// 表示時と余白確保時（非表示）で同一のUIを使うことで、両者の高さを
+  /// 完全に一致させる。
+  Widget _buildSuggestionList(BuildContext context, List<String> suggestions) {
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.only(
+          left: 16 + MediaQuery.of(context).viewPadding.left,
+          right: 16 + MediaQuery.of(context).viewPadding.right,
         ),
+        itemBuilder: (context, index) {
+          final suggestion = suggestions[index];
+          return SuggestedReplyButton(
+            text: suggestion,
+            onTap: () => widget.onSuggestionTap(suggestion),
+          );
+        },
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemCount: suggestions.length,
       ),
     );
   }

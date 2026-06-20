@@ -1,92 +1,79 @@
-# 返信サジェスト表示時の最下部スクロール維持
+# 返信サジェスト表示時のスクロール不要化（余白の事前確保）
 
 ## 概要
 
-トーク画面で最下部にスクロールした状態で返信サジェストが新しく表示されたとき、自動的に最下部へスクロールしてサジェストが見えるようにする。
+トーク画面で最下部にスクロールした状態で返信サジェストが新しく表示されるとき、
+追加のスクロールなしでサジェストが見えるようにする。
+
+カヴィヴァラの吹き出しの下に、返信サジェストとまったく同じ高さの余白をあらかじめ
+確保しておき、サジェストはその余白の中にフェードインさせる。これによりフェードイン時に
+レイアウトが変化せず、最下部スクロールが不要になる。
 
 ## 問題
 
-既存の自動スクロール処理は以下の条件で最下部へスクロールする。
+返信サジェスト（`SuggestedReplyList`）は AI の返信ストリーミング完了後に 1 秒の遅延を
+挟んでフェードインで表示される。
 
-- メッセージ数が増えた場合
-- ストリーミングが完了した場合
-- キーボードが表示された場合
-
-しかし、返信サジェスト（`SuggestedReplyList`）は AI の返信ストリーミング完了後に 1 秒の遅延を挟んでフェードインで表示される。このタイミングには既存の自動スクロール条件が一致しないため、ユーザーが最下部にいてもサジェストが画面外に表示されたままになっていた。
+従来は遅延中に `SizedBox.shrink()`（高さ 0）を描画し、フェードイン時に高さ 0 → 48px へ
+レイアウトが変化していた。このためサジェストが画面下端からはみ出し、表示に合わせて
+最下部へスクロールし直す処理（`onSuggestionsVisible` コールバック）が必要だった。
 
 ## 解決策
 
-`SuggestedReplyList` に `onSuggestionsVisible` コールバックを追加し、サジェストが表示され始めるタイミングで `_ChatMessageListState` へ通知する。通知を受けた `_ChatMessageListState` はユーザーが最下部にいる場合に最下部へスクロールする。
+遅延中（フェードイン前）に、**表示時とまったく同じ UI を非表示で描画して余白だけを
+先に確保する**。サジェストはその余白の中にフェードインするため、表示前後で高さが
+変化しない。
+
+余白の高さを表示時と完全に一致させるため、専用の固定値ではなく表示時と同一の
+ウィジェット（`_buildSuggestionList`）を共通利用する。
 
 ### 実装詳細
 
 #### `SuggestedReplyList` への変更
 
-`onSuggestionsVisible` コールバックを追加する。
+表示用と余白確保用で同一の UI を構築するヘルパー `_buildSuggestionList` を用意し、
+状態に応じてラップを切り替える。
 
 ```dart
-class SuggestedReplyList extends ConsumerStatefulWidget {
-  const SuggestedReplyList({
-    super.key,
-    required this.onSuggestionTap,
-    this.onSuggestionsVisible,  // 追加
-  });
-
-  final ValueChanged<String> onSuggestionTap;
-
-  /// サジェストが遅延後に表示され始めるタイミングで呼ばれるコールバック。
-  ///
-  /// `SizedBox.shrink()` からサジェストリストへの遷移タイミング（レイアウト変更前）
-  /// に呼ばれるため、呼び出し元は `addPostFrameCallback` でスクロールを予約すること。
-  final VoidCallback? onSuggestionsVisible;
+// サジェストが存在しない場合は余白も確保しない。
+if (isEmpty) {
+  return const SizedBox.shrink();
 }
-```
 
-タイマー満了時（1 秒後）に `setState(() { _isVisible = true; })` した直後にコールバックを呼ぶ。
+final list = _buildSuggestionList(context, suggestions);
 
-```dart
-_displayTimer = Timer(_displayDelay, () {
-  if (!mounted) return;
-  setState(() {
-    _isVisible = true;
-  });
-  // SizedBox.shrink() → サジェストリストへの遷移を親に通知する。
-  widget.onSuggestionsVisible?.call();
-  _animationController.forward(from: 0);
-});
-```
-
-#### `_ChatMessageListState` への変更
-
-`_onSuggestionsVisible()` メソッドを追加し、`SuggestedReplyList` に渡す。
-
-```dart
-void _onSuggestionsVisible() {
-  if (!_isAtBottom) {
-    return;
-  }
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _scrollToBottom();
-  });
+// 遅延中（フェードイン前）は同じ UI を非表示で描画して余白を確保する。
+if (!_isVisible) {
+  return Visibility(
+    visible: false,
+    maintainSize: true,
+    maintainAnimation: true,
+    maintainState: true,
+    child: list,
+  );
 }
+
+// 遅延後はフェードインで表示する。
+return FadeTransition(
+  opacity: _fadeAnimation,
+  child: list,
+);
 ```
 
-```dart
-SuggestedReplyList(
-  onSuggestionTap: _sendSuggestion,
-  onSuggestionsVisible: _onSuggestionsVisible,  // 追加
-)
-```
+`Visibility` の `maintainSize: true` により、描画とヒットテストのみ無効化したまま
+レイアウト上のサイズ（高さ 48 + 余白）は維持される。
 
-### タイミングについて
-
-コールバックは `setState(() { _isVisible = true; })` の直後・`addPostFrameCallback` 登録前に呼ばれる。この時点では `SizedBox.shrink()` から 48px 高のリストへのレイアウト変更はまだ反映されていない。
-
-`_onSuggestionsVisible()` 内で `addPostFrameCallback` を登録することで、レイアウト変更後（`maxScrollExtent` 増加後）に `_scrollToBottom()` が実行される。これにより正しい最下部位置へのスクロールが保証される。
+`onSuggestionsVisible` コールバックは不要になったため削除した。
 
 ### 既存の自動スクロールとの関係
 
-サジェストはストリーミング完了後に表示されることが多い。ストリーミング完了時点で既存の自動スクロール（`isStreamingCompleted` 条件）が発火し、その後 1 秒の遅延を経てサジェスト表示時に本機能のスクロールが発火する。これらは独立したタイミングで動作し、二重スクロールにはならない（後者発火時はすでに最下部に到達済みのため、1px 未満の差分スクロールになる）。
+サジェストは AI の返信ストリーミング完了時に保存される。保存された時点で `isEmpty` が
+false になり、遅延中の余白（非表示の同一 UI）が描画される。同じタイミングで既存の
+自動スクロール（`isStreamingCompleted` 条件）が発火するため、ユーザーが最下部にいれば
+余白を含めて最下部までスクロールされる。
+
+その後 1 秒の遅延を経てフェードインしても、すでに確保済みの余白の中に表示されるだけで
+レイアウトは変化しない。よってフェードイン時の追加スクロールは不要となる。
 
 ## 対象ファイル
 

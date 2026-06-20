@@ -460,18 +460,6 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     );
   }
 
-  /// サジェストリストが表示され始めたときに呼ばれる。
-  ///
-  /// ユーザーが最下部にいる場合、サジェストリストのレイアウト反映後に最下部へスクロールする。
-  void _onSuggestionsVisible() {
-    if (!_isAtBottom) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatMessagesProvider);
@@ -554,7 +542,6 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: SuggestedReplyList(
               onSuggestionTap: _sendSuggestion,
-              onSuggestionsVisible: _onSuggestionsVisible,
             ),
           );
         }

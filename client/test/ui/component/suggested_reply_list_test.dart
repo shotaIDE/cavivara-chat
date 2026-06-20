@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:house_worker/ui/component/suggested_reply_button.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 
@@ -99,20 +100,18 @@ void main() {
       expect(tappedText, equals('質問2'));
     });
 
-    testWidgets('サジェストが表示され始めるタイミングで onSuggestionsVisible コールバックが呼ばれること',
-        (tester) async {
+    testWidgets('遅延中はサジェストと同じ高さの余白が非表示で確保されること', (tester) async {
       final testSuggestions = ['質問1', '質問2'];
-      var visibleCallCount = 0;
 
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: SuggestedReplyList(
-                onSuggestionTap: (_) {},
-                onSuggestionsVisible: () {
-                  visibleCallCount++;
-                },
+              body: Align(
+                alignment: Alignment.topCenter,
+                child: SuggestedReplyList(
+                  onSuggestionTap: (_) {},
+                ),
               ),
             ),
           ),
@@ -125,13 +124,36 @@ void main() {
       );
       container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
-      // 遅延前はコールバックが呼ばれていないことを確認
+      // 遅延中（フェードイン前）も同じUIが構築され、表示時と同じ高さ(48)の
+      // 余白が確保されること。この時点ではまだフェードイン表示はされていない。
       await tester.pump();
-      expect(visibleCallCount, equals(0));
+      expect(
+        tester.getSize(find.byType(SuggestedReplyList)).height,
+        equals(48),
+      );
+      expect(find.byType(SuggestedReplyButton), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byType(SuggestedReplyList),
+          matching: find.byType(FadeTransition),
+        ),
+        findsNothing,
+      );
 
-      // 遅延後にコールバックが呼ばれることを確認
+      // 遅延後にフェードインで表示されても高さは変化しないこと。
       await tester.pump(const Duration(seconds: 1));
-      expect(visibleCallCount, equals(1));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byType(SuggestedReplyList)).height,
+        equals(48),
+      );
+      expect(
+        find.descendant(
+          of: find.byType(SuggestedReplyList),
+          matching: find.byType(FadeTransition),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('横スクロールが可能であること', (tester) async {
