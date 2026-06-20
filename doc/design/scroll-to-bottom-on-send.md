@@ -26,9 +26,9 @@ void _onMessageSent() {
   // メッセージ増加に伴う自動スクロールに委ね、animateTo の二重実行を避ける。
   // この判定は新メッセージのレイアウト前（リビルド前）に同期的に行う必要がある。
   // post-frame まで遅らせると maxScrollExtent が増加し、判定が壊れるため。
-  const threshold = 100.0; // _ChatMessageList の最下部判定と揃える
   final position = _scrollController.position;
-  final isAtBottom = (position.maxScrollExtent - position.pixels) <= threshold;
+  final isAtBottom =
+      (position.maxScrollExtent - position.pixels) <= _scrollAtBottomThresholdSize;
   if (isAtBottom) {
     return;
   }
@@ -40,7 +40,7 @@ void _onMessageSent() {
     _scrollController.animateTo(
       _scrollController.position.maxScrollExtent,
       duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutCubic,
     );
   });
 }
