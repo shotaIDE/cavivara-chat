@@ -6,6 +6,7 @@ import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
+import 'package:house_worker/data/repository/last_login_bonus_date_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
@@ -322,5 +323,52 @@ class AwardReceivedChatString extends _$AwardReceivedChatString {
             .read(hasEarnedPartTimeLeaderRewardRepositoryProvider.notifier)
             .markAsEarned();
     }
+  }
+}
+
+/// ログインボーナスで付与するVP
+const _dailyLoginBonusVP = 1;
+
+/// 1日1回のログインボーナスを付与するプロバイダー。
+///
+/// 画面表示などでこのプロバイダーが監視されたタイミングで、その日初めての起動であれば
+/// VPを付与し、アプリ内通知を表示する。付与日は[LastLoginBonusDateRepository]で
+/// 永続化し、同一日中の重複付与を防ぐ。
+@riverpod
+class AwardDailyLoginBonus extends _$AwardDailyLoginBonus {
+  @override
+  void build() {
+    unawaited(_tryAwardDailyLoginBonus());
+  }
+
+  Future<void> _tryAwardDailyLoginBonus() async {
+    final lastDate = await ref.read(
+      lastLoginBonusDateRepositoryProvider.future,
+    );
+
+    // 日付単位で比較するため、時刻部分を切り捨てた当日の日付を求める
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 本日すでに付与済みの場合は何もしない
+    if (lastDate != null &&
+        lastDate.year == today.year &&
+        lastDate.month == today.month &&
+        lastDate.day == today.day) {
+      return;
+    }
+
+    // VPを付与
+    final currentVP = await ref.read(vivaPointRepositoryProvider.future);
+    final newTotalVP = currentVP + _dailyLoginBonusVP;
+    await ref.read(vivaPointRepositoryProvider.notifier).setPoint(newTotalVP);
+
+    // 付与日を記録
+    await ref.read(lastLoginBonusDateRepositoryProvider.notifier).save(today);
+
+    // 通知を表示
+    ref
+        .read(headsUpNotificationProvider.notifier)
+        .showDailyLoginBonus(earnedVP: _dailyLoginBonusVP);
   }
 }

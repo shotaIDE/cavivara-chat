@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
+import 'package:house_worker/data/repository/last_login_bonus_date_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
@@ -42,6 +43,7 @@ class DebugScreen extends StatelessWidget {
           SectionHeader(title: 'VP設定'),
           _ResetVPTile(),
           _SetVPToCustomValueTile(),
+          _ResetLoginBonusTile(),
           Divider(),
           SectionHeader(title: 'アカウント管理'),
           _LogoutTile(),
@@ -299,6 +301,27 @@ class _ResetVPTile extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('VPを0にリセットしました')),
+          );
+        }
+      },
+    );
+  }
+}
+
+class _ResetLoginBonusTile extends ConsumerWidget {
+  const _ResetLoginBonusTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      title: const Text('ログインボーナスの付与状態をリセット'),
+      onTap: () async {
+        await ref
+            .read(lastLoginBonusDateRepositoryProvider.notifier)
+            .resetForDebug();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ログインボーナスの付与状態をリセットしました')),
           );
         }
       },

@@ -20,6 +20,11 @@ sealed class HeadsUpNotificationState with _$HeadsUpNotificationState {
     required int earnedVP,
     required String newTitleName,
   }) = _FirstMessageBonus;
+
+  /// ログインボーナスの通知
+  const factory HeadsUpNotificationState.dailyLoginBonus({
+    required int earnedVP,
+  }) = _DailyLoginBonus;
 }
 
 @riverpod
@@ -50,6 +55,13 @@ class HeadsUpNotification extends _$HeadsUpNotification {
       earnedVP: earnedVP,
       newTitleName: newTitleName,
     );
+    _dismissTimer = Timer(const Duration(seconds: 5), hide);
+  }
+
+  /// ログインボーナスの通知を表示
+  void showDailyLoginBonus({required int earnedVP}) {
+    _dismissTimer?.cancel();
+    state = HeadsUpNotificationState.dailyLoginBonus(earnedVP: earnedVP);
     _dismissTimer = Timer(const Duration(seconds: 5), hide);
   }
 
