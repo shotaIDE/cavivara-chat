@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
-import 'package:house_worker/data/repository/last_login_bonus_date_repository.dart';
+import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
@@ -317,7 +317,7 @@ class _ResetLoginBonusTile extends ConsumerWidget {
       title: const Text('ログインボーナスの付与状態をリセット'),
       onTap: () async {
         await ref
-            .read(lastLoginBonusDateRepositoryProvider.notifier)
+            .read(loginBonusGrantedDatesRepositoryProvider.notifier)
             .resetForDebug();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

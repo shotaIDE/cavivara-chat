@@ -6,5 +6,5 @@ enum PreferenceKey {
   hasEarnedPartTimeLeaderReward,
   totalVivaPoint,
   supportHistoryList,
-  lastLoginBonusDate,
+  loginBonusGrantedDates,
 }

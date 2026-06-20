@@ -69,10 +69,12 @@
 
 1. ログイン後にホーム画面が表示されると、[HomeScreen](../../../client/lib/ui/feature/home/home_screen.dart) の `initState()` が `AwardDailyLoginBonus` を `listenManual` で監視し、プロバイダーをビルドする
 2. `AwardDailyLoginBonus.build()` が `_tryAwardDailyLoginBonus()` を実行
-3. [LastLoginBonusDateRepository](../../../client/lib/data/repository/last_login_bonus_date_repository.dart) から最後に付与した日付を取得し、当日（時刻を切り捨てた日付）と比較
-4. 当日すでに付与済みの場合は何もしない
-5. 未付与の場合、`VivaPointRepository` に 1 VP を加算し、付与日を `LastLoginBonusDateRepository` に保存
+3. [LoginBonusGrantedDatesRepository](../../../client/lib/data/repository/login_bonus_granted_dates_repository.dart) から付与済みの日付一覧を取得し、当日（時刻を切り捨てた日付）が含まれるか判定
+4. 当日がすでに含まれている場合は何もしない
+5. 含まれていない場合、`VivaPointRepository` に 1 VP を加算し、当日を付与済み日付一覧に追加して `LoginBonusGrantedDatesRepository` に保存
 6. `HeadsUpNotification` の `showDailyLoginBonus()` で称号獲得と同じ仕組みのアプリ内通知を表示
+
+> 付与済み日付を配列で保持しているため、同一日付には一度しか付与されない。端末の日付を過去・未来に変更した場合でも、その日付がまだ含まれていなければ付与されうるが、同じ日付を行き来して無制限に獲得することはできない。
 
 ### 業績画面表示時
 
@@ -91,7 +93,7 @@
 - `totalReceivedChatStringCount`: 総受信文字数（[ReceivedChatStringCountRepository](../../../client/lib/data/repository/received_chat_string_count_repository.dart) が管理）
 - `totalSentChatStringCount`: 総送信文字数
 - `totalVivaPoint`: 総 VP（[VivaPointRepository](../../../client/lib/data/repository/viva_point_repository.dart) が管理）
-- `lastLoginBonusDate`: ログインボーナスを最後に付与した日付（[LastLoginBonusDateRepository](../../../client/lib/data/repository/last_login_bonus_date_repository.dart) が管理。1日1回付与の重複防止に使用）
+- `loginBonusGrantedDates`: ログインボーナスを付与した日付の一覧（[LoginBonusGrantedDatesRepository](../../../client/lib/data/repository/login_bonus_granted_dates_repository.dart) が管理。1日1回付与の重複防止に使用）
 
 **注意**: 古いドキュメントで言及されていた `maxReceivedChatRewardThresholdNotified` は現在の実装では使用されていない。重複通知防止は `hasEarnedXxxReward` フラグのみで管理している。
 
