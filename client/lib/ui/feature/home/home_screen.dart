@@ -24,7 +24,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 /// `maxScrollExtent - pixels` がこの値以下であれば「最下部付近」とみなす。
 /// `_HomeScreenState._onMessageSent()` と `_ChatMessageListState._onScroll()` の
 /// 両方で使用するため、ここで一元管理する。
-const _scrollAtBottomThresholdPixels = 100.0;
+const _scrollAtBottomThresholdSize = 100.0;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -320,7 +320,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final position = _scrollController.position;
     final isAtBottom =
         (position.maxScrollExtent - position.pixels) <=
-        _scrollAtBottomThresholdPixels;
+        _scrollAtBottomThresholdSize;
     if (isAtBottom) {
       return;
     }
@@ -445,7 +445,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     final currentPosition = widget.controller.position.pixels;
 
     _isAtBottom =
-        (maxScrollExtent - currentPosition) <= _scrollAtBottomThresholdPixels;
+        (maxScrollExtent - currentPosition) <= _scrollAtBottomThresholdSize;
   }
 
   void _scrollToBottom() {
