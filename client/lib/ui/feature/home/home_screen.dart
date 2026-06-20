@@ -536,13 +536,12 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
       controller: widget.controller,
       itemCount: messages.length + 1, // サジェストリスト分を追加
       itemBuilder: (context, index) {
-        // 最後のアイテムはサジェストリスト
+        // 最後のアイテムはサジェストリスト。
+        // 上下の余白は SuggestedReplyList が内部で持つため、サジェストが
+        // 存在しないときは余白も発生しない。
         if (index == messages.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: SuggestedReplyList(
-              onSuggestionTap: _sendSuggestion,
-            ),
+          return SuggestedReplyList(
+            onSuggestionTap: _sendSuggestion,
           );
         }
 

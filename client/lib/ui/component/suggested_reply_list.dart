@@ -129,24 +129,30 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
   ///
   /// 表示時と余白確保時（非表示）で同一のUIを使うことで、両者の高さを
   /// 完全に一致させる。
+  ///
+  /// 上下の余白もこのUIに含めることで、サジェストが存在しないとき
+  /// （`SizedBox.shrink()`）には余白も発生しないようにする。
   Widget _buildSuggestionList(BuildContext context, List<String> suggestions) {
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.only(
-          left: 16 + MediaQuery.of(context).viewPadding.left,
-          right: 16 + MediaQuery.of(context).viewPadding.right,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: SizedBox(
+        height: 48,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.only(
+            left: 16 + MediaQuery.of(context).viewPadding.left,
+            right: 16 + MediaQuery.of(context).viewPadding.right,
+          ),
+          itemBuilder: (context, index) {
+            final suggestion = suggestions[index];
+            return SuggestedReplyButton(
+              text: suggestion,
+              onTap: () => widget.onSuggestionTap(suggestion),
+            );
+          },
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemCount: suggestions.length,
         ),
-        itemBuilder: (context, index) {
-          final suggestion = suggestions[index];
-          return SuggestedReplyButton(
-            text: suggestion,
-            onTap: () => widget.onSuggestionTap(suggestion),
-          );
-        },
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemCount: suggestions.length,
       ),
     );
   }

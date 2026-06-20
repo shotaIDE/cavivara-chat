@@ -61,9 +61,17 @@ return FadeTransition(
 ```
 
 `Visibility` の `maintainSize: true` により、描画とヒットテストのみ無効化したまま
-レイアウト上のサイズ（高さ 48 + 余白）は維持される。
+レイアウト上のサイズ（高さ 48 + 上下余白）は維持される。
 
 `onSuggestionsVisible` コールバックは不要になったため削除した。
+
+#### 上下余白の扱い
+
+サジェスト枠の上下余白（`Padding(vertical: 16)`）は `_buildSuggestionList` の内部に
+含める。これにより、サジェストが存在せず `SizedBox.shrink()` を返すときには余白も
+発生しない。以前は呼び出し元（`_ChatMessageListState`）側で `SuggestedReplyList` を
+`Padding` で包んでいたため、サジェストが無くても上下 16px ずつ（計 32px）の余白が
+残っていた。
 
 ### 既存の自動スクロールとの関係
 

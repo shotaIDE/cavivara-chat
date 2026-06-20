@@ -124,13 +124,13 @@ void main() {
       );
       container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
 
-      // 遅延中（フェードイン前）も同じUIが構築され、表示時と同じ高さ(48)の
-      // 余白が確保されること。この時点ではまだフェードイン表示はされていない。
+      // 遅延中（フェードイン前）も同じUIが構築され、余白が確保されること。
+      // この時点ではまだフェードイン表示はされていない。
       await tester.pump();
-      expect(
-        tester.getSize(find.byType(SuggestedReplyList)).height,
-        equals(48),
-      );
+      final reservedHeight = tester
+          .getSize(find.byType(SuggestedReplyList))
+          .height;
+      expect(reservedHeight, greaterThan(0));
       expect(find.byType(SuggestedReplyButton), findsWidgets);
       expect(
         find.descendant(
@@ -140,12 +140,13 @@ void main() {
         findsNothing,
       );
 
-      // 遅延後にフェードインで表示されても高さは変化しないこと。
+      // 遅延後にフェードインで表示されても、確保済みの余白と高さが
+      // 一致する（レイアウトが変化しない）こと。
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       expect(
         tester.getSize(find.byType(SuggestedReplyList)).height,
-        equals(48),
+        equals(reservedHeight),
       );
       expect(
         find.descendant(
