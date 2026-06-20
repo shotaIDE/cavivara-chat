@@ -366,12 +366,9 @@ class AwardDailyLoginBonus extends _$AwardDailyLoginBonus {
     }
 
     // VPを付与
-    final currentVP = await ref.read(vivaPointRepositoryProvider.future);
-    if (!ref.mounted) {
-      return;
-    }
-    final newTotalVP = currentVP + _dailyLoginBonusVP;
-    await ref.read(vivaPointRepositoryProvider.notifier).setPoint(newTotalVP);
+    await ref
+        .read(vivaPointRepositoryProvider.notifier)
+        .addPoint(_dailyLoginBonusVP);
     if (!ref.mounted) {
       return;
     }
