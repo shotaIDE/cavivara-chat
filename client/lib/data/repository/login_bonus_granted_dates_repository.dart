@@ -34,6 +34,10 @@ class LoginBonusGrantedDatesRepository
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final currentDates = await future;
 
+    if (!ref.mounted) {
+      return;
+    }
+
     final alreadyGranted = currentDates.any(
       (d) =>
           d.year == normalizedDate.year &&
@@ -55,6 +59,7 @@ class LoginBonusGrantedDatesRepository
     if (!ref.mounted) {
       return;
     }
+
     state = AsyncValue.data(newDates);
   }
 
