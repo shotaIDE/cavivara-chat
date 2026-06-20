@@ -9,6 +9,10 @@ import 'package:house_worker/ui/feature/home/home_presenter.dart';
 ///
 /// 初回サジェストと同様に、サジェストが現れてから少し遅延した後、
 /// フェードインで表示する。
+///
+/// 遅延中（フェードイン前）は、表示時とまったく同じUIを非表示で描画して
+/// 余白だけを先に確保する。これにより、サジェストがフェードインしても
+/// レイアウトが変化せず、最下部へのスクロールが不要になる。
 class SuggestedReplyList extends ConsumerStatefulWidget {
   const SuggestedReplyList({
     super.key,
@@ -95,13 +99,42 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
       }
     }
 
-    if (isEmpty || !_isVisible) {
+    // サジェストが存在しない場合は余白も確保しない。
+    if (isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 横スクロール可能なボタンリストを構築
+    final list = _buildSuggestionList(context, suggestions);
+
+    // 遅延中（フェードイン前）は、表示時とまったく同じUIを非表示で描画して
+    // 余白だけを先に確保する。サイズを維持したまま描画・ヒットテストのみ無効化
+    // することで、フェードイン時にレイアウトが変化せずスクロールが不要になる。
+    if (!_isVisible) {
+      return Visibility(
+        visible: false,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: list,
+      );
+    }
+
     return FadeTransition(
       opacity: _fadeAnimation,
+      child: list,
+    );
+  }
+
+  /// 横スクロール可能なサジェストボタンリストを構築する。
+  ///
+  /// 表示時と余白確保時（非表示）で同一のUIを使うことで、両者の高さを
+  /// 完全に一致させる。
+  ///
+  /// 上下の余白もこのUIに含めることで、サジェストが存在しないとき
+  /// （`SizedBox.shrink()`）には余白も発生しないようにする。
+  Widget _buildSuggestionList(BuildContext context, List<String> suggestions) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: SizedBox(
         height: 48,
         child: ListView.separated(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:house_worker/ui/component/suggested_reply_button.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 
@@ -97,6 +98,69 @@ void main() {
 
       // コールバックが正しいテキストで呼ばれたことを確認
       expect(tappedText, equals('質問2'));
+    });
+
+    testWidgets('遅延中はサジェストと同じ高さの余白が非表示で確保されること', (tester) async {
+      final testSuggestions = ['質問1', '質問2'];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topCenter,
+                child: SuggestedReplyList(
+                  onSuggestionTap: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // プロバイダーにサジェストを設定
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SuggestedReplyList)),
+      );
+      container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
+
+      // 遅延中（フェードイン前）も同じUIが構築され、余白が確保されること。
+      // この時点ではまだフェードイン表示はされていない。
+      await tester.pump();
+      final suggestionListPaddingFinder = find
+          .descendant(
+            of: find.byType(SuggestedReplyList),
+            matching: find.byType(Padding),
+          )
+          .first;
+      final reservedHeight = tester
+          .getSize(suggestionListPaddingFinder)
+          .height;
+      expect(reservedHeight, greaterThan(0));
+      expect(find.byType(SuggestedReplyButton), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byType(SuggestedReplyList),
+          matching: find.byType(FadeTransition),
+        ),
+        findsNothing,
+      );
+
+      // 遅延後にフェードインで表示されても、確保済みの余白と高さが
+      // 一致する（レイアウトが変化しない）こと。
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(suggestionListPaddingFinder).height,
+        equals(reservedHeight),
+      );
+      expect(
+        find.descendant(
+          of: find.byType(SuggestedReplyList),
+          matching: find.byType(FadeTransition),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('横スクロールが可能であること', (tester) async {
