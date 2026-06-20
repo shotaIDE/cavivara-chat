@@ -99,6 +99,41 @@ void main() {
       expect(tappedText, equals('質問2'));
     });
 
+    testWidgets('サジェストが表示され始めるタイミングで onSuggestionsVisible コールバックが呼ばれること',
+        (tester) async {
+      final testSuggestions = ['質問1', '質問2'];
+      var visibleCallCount = 0;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SuggestedReplyList(
+                onSuggestionTap: (_) {},
+                onSuggestionsVisible: () {
+                  visibleCallCount++;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // プロバイダーにサジェストを設定
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SuggestedReplyList)),
+      );
+      container.read(suggestedRepliesProvider.notifier).save(testSuggestions);
+
+      // 遅延前はコールバックが呼ばれていないことを確認
+      await tester.pump();
+      expect(visibleCallCount, equals(0));
+
+      // 遅延後にコールバックが呼ばれることを確認
+      await tester.pump(const Duration(seconds: 1));
+      expect(visibleCallCount, equals(1));
+    });
+
     testWidgets('横スクロールが可能であること', (tester) async {
       final testSuggestions = [
         '非常に長い質問1',

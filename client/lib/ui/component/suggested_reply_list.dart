@@ -13,9 +13,16 @@ class SuggestedReplyList extends ConsumerStatefulWidget {
   const SuggestedReplyList({
     super.key,
     required this.onSuggestionTap,
+    this.onSuggestionsVisible,
   });
 
   final ValueChanged<String> onSuggestionTap;
+
+  /// サジェストが遅延後に表示され始めるタイミングで呼ばれるコールバック。
+  ///
+  /// `SizedBox.shrink()` からサジェストリストへの遷移タイミング（レイアウト変更前）
+  /// に呼ばれるため、呼び出し元は `addPostFrameCallback` でスクロールを予約すること。
+  final VoidCallback? onSuggestionsVisible;
 
   @override
   ConsumerState<SuggestedReplyList> createState() => _SuggestedReplyListState();
@@ -69,6 +76,9 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
       setState(() {
         _isVisible = true;
       });
+      // SizedBox.shrink() → サジェストリストへの遷移を親に通知する。
+      // 親はこれを受けて addPostFrameCallback でスクロールを予約できる。
+      widget.onSuggestionsVisible?.call();
       _animationController.forward(from: 0);
     });
   }
