@@ -127,8 +127,14 @@ void main() {
       // 遅延中（フェードイン前）も同じUIが構築され、余白が確保されること。
       // この時点ではまだフェードイン表示はされていない。
       await tester.pump();
+      final suggestionListPaddingFinder = find
+          .descendant(
+            of: find.byType(SuggestedReplyList),
+            matching: find.byType(Padding),
+          )
+          .first;
       final reservedHeight = tester
-          .getSize(find.byType(SuggestedReplyList))
+          .getSize(suggestionListPaddingFinder)
           .height;
       expect(reservedHeight, greaterThan(0));
       expect(find.byType(SuggestedReplyButton), findsWidgets);
@@ -145,7 +151,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       expect(
-        tester.getSize(find.byType(SuggestedReplyList)).height,
+        tester.getSize(suggestionListPaddingFinder).height,
         equals(reservedHeight),
       );
       expect(
