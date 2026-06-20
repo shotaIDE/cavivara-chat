@@ -334,7 +334,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
+        curve: Curves.easeOutBack,
       );
     });
   }
@@ -456,7 +456,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
     widget.controller.animateTo(
       widget.controller.position.maxScrollExtent,
       duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOutBack,
     );
   }
 
