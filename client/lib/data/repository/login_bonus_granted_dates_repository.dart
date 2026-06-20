@@ -31,12 +31,10 @@ class LoginBonusGrantedDatesRepository
   /// [date] の時刻は切り捨てて日付単位で保存する。同一日付がすでに存在する
   /// 場合は何もしない。
   Future<void> add(DateTime date) async {
+    final preferenceService = ref.read(preferenceServiceProvider);
+
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final currentDates = await future;
-
-    if (!ref.mounted) {
-      return;
-    }
 
     final alreadyGranted = currentDates.any(
       (d) =>
@@ -50,7 +48,6 @@ class LoginBonusGrantedDatesRepository
 
     final newDates = [...currentDates, normalizedDate];
 
-    final preferenceService = ref.read(preferenceServiceProvider);
     await preferenceService.setStringList(
       PreferenceKey.loginBonusGrantedDates,
       value: newDates.map((date) => date.toIso8601String()).toList(),
