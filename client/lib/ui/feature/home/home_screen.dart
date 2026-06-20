@@ -19,6 +19,13 @@ import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+/// スクロール位置が最下部付近かどうかを判定するピクセル単位のしきい値。
+///
+/// `maxScrollExtent - pixels` がこの値以下であれば「最下部付近」とみなす。
+/// `_HomeScreenState._onMessageSent()` と `_ChatMessageListState._onScroll()` の
+/// 両方で使用するため、ここで一元管理する。
+const _scrollAtBottomThresholdSize = 100.0;
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -286,6 +293,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       HapticFeedbackHelper.onMessageSent();
       ref.read(chatMessagesProvider.notifier).sendMessage(message);
       _messageController.clear();
+      _onMessageSent();
     }
   }
 
@@ -301,7 +309,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _onMessageSent() {
-    // メッセージ送信後の処理をここで行う（必要に応じて）
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    // 送信前の時点ですでに最下部付近にいる場合は、_ChatMessageList 側の
+    // メッセージ増加に伴う自動スクロールに委ね、animateTo の二重実行を避ける。
+    // この判定は新メッセージのレイアウト前（リビルド前）に同期的に行う必要がある。
+    // post-frame まで遅らせると maxScrollExtent が増加し、判定が壊れるため。
+    final position = _scrollController.position;
+    final isAtBottom =
+        (position.maxScrollExtent - position.pixels) <=
+        _scrollAtBottomThresholdSize;
+    if (isAtBottom) {
+      return;
+    }
+
+    // 最下部から離れている場合は、送信したメッセージとカヴィヴァラさんの
+    // ローディング中メッセージが見えるよう、明示的に最下部へスクロールする。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack,
+      );
+    });
   }
 
   Widget _messageInput() {
@@ -408,9 +443,9 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
     final maxScrollExtent = widget.controller.position.maxScrollExtent;
     final currentPosition = widget.controller.position.pixels;
-    const threshold = 100.0; // 100px以内なら「最下部」とみなす
 
-    _isAtBottom = (maxScrollExtent - currentPosition) <= threshold;
+    _isAtBottom =
+        (maxScrollExtent - currentPosition) <= _scrollAtBottomThresholdSize;
   }
 
   void _scrollToBottom() {
