@@ -64,7 +64,7 @@ void _sendMessage() {
 
 最下部判定（`isAtBottom`）は `addPostFrameCallback` を使わず**同期的**に行う。`_onMessageSent()` は `_sendMessage()` 内で `sendMessage()` の直後・リビルド前に呼ばれるため、この時点の `_scrollController.position` は新メッセージ追加前のレイアウトを指す。post-frame まで遅らせると新メッセージのレイアウトで `maxScrollExtent` が増加し、「送信前に最下部にいたか」の判定が壊れてしまう。
 
-実際のスクロールは `addPostFrameCallback` で次フレームに予約する。`sendMessage()` 内ではユーザーメッセージとAIの思考中メッセージの両方が `await` に到達する前に同期的に state へ追加される（`home_presenter.dart` の行 49 と 74）。そのため次フレームでは両メッセージがすでにリストに存在し、`maxScrollExtent` も両メッセージを含めた値となるため、1回のスクロールで送信メッセージとローディング中メッセージの両方を表示できる。
+実際のスクロールは `addPostFrameCallback` で次フレームに予約する。`ChatMessages.sendMessage()` 内ではユーザーメッセージの state 追加と AI の思考中メッセージ（thinkingMessage）の state 追加が、どちらも最初の `await`（AIレスポンスのストリーム待機）より前に同期的に実行される。そのため次フレームでは両メッセージがすでにリストに存在し、`maxScrollExtent` も両メッセージを含めた値となるため、1回のスクロールで送信メッセージとローディング中メッセージの両方を表示できる。
 
 ### 既存の自動スクロールとの関係
 
