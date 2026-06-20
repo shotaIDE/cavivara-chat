@@ -52,6 +52,8 @@ class HeadsUpNotificationOverlay extends ConsumerWidget {
                         earnedVP: earnedVP,
                         newTitleName: newTitleName,
                       ),
+                  dailyLoginBonus: (earnedVP) =>
+                      _DailyLoginBonusNotificationBody(earnedVP: earnedVP),
                 ),
               ),
             ),
@@ -154,6 +156,57 @@ class _FirstMessageBonusNotificationBody extends StatelessWidget {
           children: [
             Icon(
               Icons.stars,
+              size: 28,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 4,
+                children: [
+                  title,
+                  message,
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyLoginBonusNotificationBody extends StatelessWidget {
+  const _DailyLoginBonusNotificationBody({
+    required this.earnedVP,
+  });
+
+  final int earnedVP;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = Text(
+      'ログインボーナス',
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+
+    final message = Text(
+      '+$earnedVP VP を獲得しました！',
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
+
+    return Material(
+      elevation: 6,
+      borderRadius: BorderRadius.circular(16),
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.card_giftcard,
               size: 28,
               color: Theme.of(context).colorScheme.primary,
             ),

@@ -15,6 +15,29 @@ class VivaPointRepository extends _$VivaPointRepository {
     return vivaPoint ?? 0;
   }
 
+  /// VPを加算
+  Future<int> addPoint(int delta) async {
+    final preferenceService = ref.read(preferenceServiceProvider);
+
+    final currentPoint = await preferenceService.getInt(
+      PreferenceKey.totalVivaPoint,
+    );
+    final newPoint = (currentPoint ?? 0) + delta;
+
+    await preferenceService.setInt(
+      PreferenceKey.totalVivaPoint,
+      value: newPoint,
+    );
+
+    if (!ref.mounted) {
+      return newPoint;
+    }
+
+    state = AsyncValue.data(newPoint);
+
+    return newPoint;
+  }
+
   /// VPを設定
   Future<void> setPoint(int point) async {
     final preferenceService = ref.read(preferenceServiceProvider);

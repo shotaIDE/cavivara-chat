@@ -6,6 +6,7 @@ import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
 import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
+import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
 import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
@@ -237,12 +238,8 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
   Future<void> _handleFirstMessageSent(
     VivaPointRepository vivaPointRepository,
   ) async {
-    // ボーナスを付与
-    final currentVP = await ref.read(vivaPointRepositoryProvider.future);
-    final newTotalVP = currentVP + _firstMessageBonusVP;
-    await vivaPointRepository.setPoint(newTotalVP);
+    final newTotalVP = await vivaPointRepository.addPoint(_firstMessageBonusVP);
 
-    // 新しい称号を取得
     final newTitle = SupporterTitleLogic.fromTotalVP(newTotalVP);
 
     // 通知を表示
@@ -322,5 +319,67 @@ class AwardReceivedChatString extends _$AwardReceivedChatString {
             .read(hasEarnedPartTimeLeaderRewardRepositoryProvider.notifier)
             .markAsEarned();
     }
+  }
+}
+
+/// ログインボーナスで付与するVP
+const _dailyLoginBonusVP = 1;
+
+/// 1日1回のログインボーナスを付与するプロバイダー。
+///
+/// 画面表示などでこのプロバイダーが監視されたタイミングで、当日がまだ付与済み
+/// でなければVPを付与し、アプリ内通知を表示する。付与した日付は
+/// [LoginBonusGrantedDatesRepository]で配列として永続化し、同一日付に対する
+/// 重複付与を防ぐ。
+@riverpod
+class AwardDailyLoginBonus extends _$AwardDailyLoginBonus {
+  @override
+  void build() {
+    unawaited(_tryAwardDailyLoginBonus());
+  }
+
+  Future<void> _tryAwardDailyLoginBonus() async {
+    final grantedDates = await ref.read(
+      loginBonusGrantedDatesRepositoryProvider.future,
+    );
+    if (!ref.mounted) {
+      return;
+    }
+
+    // 日付単位で比較するため、時刻部分を切り捨てた当日の日付を求める
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 当日がすでに付与済みの日付に含まれる場合は何もしない
+    final hasGrantedToday = grantedDates.any(
+      (date) =>
+          date.year == today.year &&
+          date.month == today.month &&
+          date.day == today.day,
+    );
+    if (hasGrantedToday) {
+      return;
+    }
+
+    // VPを付与
+    await ref
+        .read(vivaPointRepositoryProvider.notifier)
+        .addPoint(_dailyLoginBonusVP);
+    if (!ref.mounted) {
+      return;
+    }
+
+    // 付与日を記録
+    await ref
+        .read(loginBonusGrantedDatesRepositoryProvider.notifier)
+        .add(today);
+    if (!ref.mounted) {
+      return;
+    }
+
+    // 通知を表示
+    ref
+        .read(headsUpNotificationProvider.notifier)
+        .showDailyLoginBonus(earnedVP: _dailyLoginBonusVP);
   }
 }

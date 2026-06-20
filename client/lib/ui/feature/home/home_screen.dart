@@ -92,6 +92,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       })
       ..listenManual(awardFirstMessageBonusProvider, (_, _) {
         // Providerの副作用のみを利用するため、何もしない
+      })
+      ..listenManual(awardDailyLoginBonusProvider, (_, _) {
+        // Providerの副作用のみを利用するため、何もしない
       });
   }
 

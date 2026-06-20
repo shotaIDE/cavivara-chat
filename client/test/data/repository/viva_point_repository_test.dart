@@ -112,6 +112,47 @@ void main() {
       });
     });
 
+    group('VPの加算', () {
+      test('初期状態からdeltaを加算できること', () async {
+        await container
+            .read(vivaPointRepositoryProvider.notifier)
+            .addPoint(10);
+
+        final vivaPoint = await container.read(
+          vivaPointRepositoryProvider.future,
+        );
+        expect(vivaPoint, equals(10));
+      });
+
+      test('既存のVPにdeltaを加算できること', () async {
+        final notifier = container.read(
+          vivaPointRepositoryProvider.notifier,
+        );
+
+        await notifier.setPoint(100);
+        await notifier.addPoint(5);
+
+        final vivaPoint = await container.read(
+          vivaPointRepositoryProvider.future,
+        );
+        expect(vivaPoint, equals(105));
+      });
+
+      test('加算が永続化されること', () async {
+        await container
+            .read(vivaPointRepositoryProvider.notifier)
+            .addPoint(50);
+
+        final newContainer = ProviderContainer();
+        addTearDown(newContainer.dispose);
+        final vivaPoint = await newContainer.read(
+          vivaPointRepositoryProvider.future,
+        );
+
+        expect(vivaPoint, equals(50));
+      });
+    });
+
     group('VPのリセット', () {
       test('リセット後に0になること', () async {
         final notifier = container.read(
