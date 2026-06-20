@@ -346,6 +346,9 @@ class AwardDailyLoginBonus extends _$AwardDailyLoginBonus {
     final grantedDates = await ref.read(
       loginBonusGrantedDatesRepositoryProvider.future,
     );
+    if (!ref.mounted) {
+      return;
+    }
 
     // 日付単位で比較するため、時刻部分を切り捨てた当日の日付を求める
     final now = DateTime.now();
@@ -364,13 +367,22 @@ class AwardDailyLoginBonus extends _$AwardDailyLoginBonus {
 
     // VPを付与
     final currentVP = await ref.read(vivaPointRepositoryProvider.future);
+    if (!ref.mounted) {
+      return;
+    }
     final newTotalVP = currentVP + _dailyLoginBonusVP;
     await ref.read(vivaPointRepositoryProvider.notifier).setPoint(newTotalVP);
+    if (!ref.mounted) {
+      return;
+    }
 
     // 付与日を記録
     await ref
         .read(loginBonusGrantedDatesRepositoryProvider.notifier)
         .add(today);
+    if (!ref.mounted) {
+      return;
+    }
 
     // 通知を表示
     ref
