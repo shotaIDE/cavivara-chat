@@ -19,6 +19,13 @@ import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+/// スクロール位置が最下部付近かどうかを判定するピクセル単位のしきい値。
+///
+/// `maxScrollExtent - pixels` がこの値以下であれば「最下部付近」とみなす。
+/// `_HomeScreenState._onMessageSent()` と `_ChatMessageListState._onScroll()` の
+/// 両方で使用するため、ここで一元管理する。
+const _scrollAtBottomThresholdPixels = 100.0;
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -310,10 +317,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // メッセージ増加に伴う自動スクロールに委ね、animateTo の二重実行を避ける。
     // この判定は新メッセージのレイアウト前（リビルド前）に同期的に行う必要がある。
     // post-frame まで遅らせると maxScrollExtent が増加し、判定が壊れるため。
-    const threshold = 100.0; // _ChatMessageList の最下部判定と揃える
     final position = _scrollController.position;
     final isAtBottom =
-        (position.maxScrollExtent - position.pixels) <= threshold;
+        (position.maxScrollExtent - position.pixels) <=
+        _scrollAtBottomThresholdPixels;
     if (isAtBottom) {
       return;
     }
@@ -436,9 +443,9 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 
     final maxScrollExtent = widget.controller.position.maxScrollExtent;
     final currentPosition = widget.controller.position.pixels;
-    const threshold = 100.0; // 100px以内なら「最下部」とみなす
 
-    _isAtBottom = (maxScrollExtent - currentPosition) <= threshold;
+    _isAtBottom =
+        (maxScrollExtent - currentPosition) <= _scrollAtBottomThresholdPixels;
   }
 
   void _scrollToBottom() {
