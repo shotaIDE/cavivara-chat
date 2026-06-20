@@ -89,11 +89,10 @@ class SupportCavivaraPresenter extends _$SupportCavivaraPresenter {
     await inAppPurchaseService.purchaseProduct(product);
 
     // 購入成功後、VPを加算
-    final currentState = await future;
-    final currentVP = currentState.totalVP;
-    final newTotalVP = currentVP + product.plan.vivaPoint;
     final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
-    await vivaPointRepository.setPoint(newTotalVP);
+    final newTotalVP = await vivaPointRepository.addPoint(
+      product.plan.vivaPoint,
+    );
 
     // 履歴を記録
     final supportHistory = SupportHistory(

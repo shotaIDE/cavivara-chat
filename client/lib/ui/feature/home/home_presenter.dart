@@ -238,12 +238,8 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
   Future<void> _handleFirstMessageSent(
     VivaPointRepository vivaPointRepository,
   ) async {
-    // ボーナスを付与
-    final currentVP = await ref.read(vivaPointRepositoryProvider.future);
-    final newTotalVP = currentVP + _firstMessageBonusVP;
-    await vivaPointRepository.setPoint(newTotalVP);
+    final newTotalVP = await vivaPointRepository.addPoint(_firstMessageBonusVP);
 
-    // 新しい称号を取得
     final newTitle = SupporterTitleLogic.fromTotalVP(newTotalVP);
 
     // 通知を表示
