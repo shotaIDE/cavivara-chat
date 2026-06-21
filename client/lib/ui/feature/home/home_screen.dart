@@ -87,9 +87,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
 
     ref
-      ..listenManual(awardReceivedChatStringProvider, (_, _) {
-        // Providerの副作用のみを利用するため、何もしない
-      })
       ..listenManual(awardFirstMessageBonusProvider, (_, _) {
         // Providerの副作用のみを利用するため、何もしない
       })

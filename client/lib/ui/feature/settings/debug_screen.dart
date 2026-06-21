@@ -1,11 +1,7 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
-import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
 import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
-import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
-import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
@@ -34,12 +30,6 @@ class DebugScreen extends StatelessWidget {
           _ForceCrashTile(),
           SectionHeader(title: '設定リセット'),
           _ResetConfirmationSettingsTile(),
-          SectionHeader(title: '統計設定'),
-          _ResetReceivedChatCountAndAchievementsTile(),
-          _SetReceivedChatCountTo999Tile(),
-          _SetReceivedChatCountTo9999Tile(),
-          _ResetSentChatCountTile(),
-          Divider(),
           SectionHeader(title: 'VP設定'),
           _ResetVPTile(),
           _SetVPToCustomValueTile(),
@@ -86,60 +76,6 @@ class _ResetConfirmationSettingsTile extends ConsumerWidget {
         await ref
             .read(skipClearChatConfirmationProvider.notifier)
             .resetForDebug();
-      },
-    );
-  }
-}
-
-class _ResetReceivedChatCountAndAchievementsTile extends ConsumerWidget {
-  const _ResetReceivedChatCountAndAchievementsTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      title: const Text('受信チャット文字数と称号をリセット'),
-      onTap: () async {
-        await ref
-            .read(receivedChatStringCountRepositoryProvider.notifier)
-            .resetForDebug();
-        await ref
-            .read(hasEarnedPartTimeLeaderRewardRepositoryProvider.notifier)
-            .resetForDebug();
-        await ref
-            .read(hasEarnedPartTimerRewardRepositoryProvider.notifier)
-            .resetForDebug();
-      },
-    );
-  }
-}
-
-class _SetReceivedChatCountTo999Tile extends ConsumerWidget {
-  const _SetReceivedChatCountTo999Tile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      title: const Text('受信チャット文字数を999にする'),
-      onTap: () async {
-        await ref
-            .read(receivedChatStringCountRepositoryProvider.notifier)
-            .setForDebug(999);
-      },
-    );
-  }
-}
-
-class _SetReceivedChatCountTo9999Tile extends ConsumerWidget {
-  const _SetReceivedChatCountTo9999Tile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      title: const Text('受信チャット文字数を9999にする'),
-      onTap: () async {
-        await ref
-            .read(receivedChatStringCountRepositoryProvider.notifier)
-            .setForDebug(9999);
       },
     );
   }
@@ -418,27 +354,6 @@ class _SetVPToCustomValueTile extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ResetSentChatCountTile extends ConsumerWidget {
-  const _ResetSentChatCountTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      title: const Text('送信チャット文字数をリセット'),
-      onTap: () async {
-        await ref
-            .read(sentChatStringCountRepositoryProvider.notifier)
-            .resetForDebug();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('送信チャット文字数をリセットしました')),
-          );
-        }
-      },
     );
   }
 }
