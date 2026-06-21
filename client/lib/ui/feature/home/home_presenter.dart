@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
@@ -45,9 +46,7 @@ class ChatMessages extends _$ChatMessages {
     state = [...state, userMessage];
 
     unawaited(
-      ref
-          .read(hasEverSentMessageRepositoryProvider.notifier)
-          .markAsSent(),
+      ref.read(hasEverSentMessageRepositoryProvider.notifier).markAsSent(),
     );
 
     final aiChatService = ref.read(aiChatServiceProvider);
@@ -133,9 +132,14 @@ class ChatMessages extends _$ChatMessages {
           );
 
         case SendMessageExceptionUncategorized(message: final errorMessage):
+          // 一般公開アプリのリリースビルドでは、内部的なエラー詳細をユーザーに見せない
+          const baseMessage = '原因不明のエラーが発生しました。カヴィヴァラさんが疲れているのかもしれません';
+          final content = showErrorDetail
+              ? '$baseMessage: $errorMessage'
+              : baseMessage;
           updateAiMessage(
             (message) => message.copyWith(
-              content: '原因不明のエラーが発生しました。カヴィヴァラさんが疲れているのかもしれません: $errorMessage',
+              content: content,
               sender: const ChatMessageSender.app(),
               timestamp: DateTime.now(),
               isStreaming: false,
