@@ -134,7 +134,7 @@ class ChatMessages extends _$ChatMessages {
         case SendMessageExceptionUncategorized(message: final errorMessage):
           // 一般公開アプリのリリースビルドでは、内部的なエラー詳細をユーザーに見せない
           const baseMessage = '原因不明のエラーが発生しました。カヴィヴァラさんが疲れているのかもしれません';
-          final content = showsErrorDetail
+          final content = showErrorDetail
               ? '$baseMessage: $errorMessage'
               : baseMessage;
           updateAiMessage(
