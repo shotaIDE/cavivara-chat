@@ -9,6 +9,13 @@ final bool showCustomAppBanner =
 
 final useFirebaseEmulator = flavor == Flavor.emulator;
 
+/// エラーの詳細内容を UI に表示するか否か
+///
+/// 一般公開アプリのリリースビルドでは、内部的なエラー詳細をユーザーに見せないため表示しない。
+/// `kReleaseMode` を先に評価することで、`FLUTTER_APP_FLAVOR` 未指定のテスト環境では
+/// 例外を投げる `flavor` の参照を回避する。
+final bool showsErrorDetail = !(kReleaseMode && flavor == Flavor.prod);
+
 const bool isAnalyticsEnabled =
     String.fromEnvironment('ENABLE_ANALYTICS') == 'true' || kReleaseMode;
 
