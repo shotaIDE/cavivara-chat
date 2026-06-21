@@ -1,20 +1,15 @@
 import 'dart:async';
 
-import 'package:characters/characters.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
-import 'package:house_worker/data/repository/has_earned_part_time_leader_reward_repository.dart';
-import 'package:house_worker/data/repository/has_earned_part_timer_reward_repository.dart';
+import 'package:house_worker/data/repository/has_ever_sent_message_repository.dart';
 import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
-import 'package:house_worker/data/repository/received_chat_string_count_repository.dart';
-import 'package:house_worker/data/repository/sent_chat_string_count_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/heads_up_notification_presenter.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
-import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'home_presenter.g.dart';
@@ -51,8 +46,8 @@ class ChatMessages extends _$ChatMessages {
 
     unawaited(
       ref
-          .read(sentChatStringCountRepositoryProvider.notifier)
-          .add(content.characters.length),
+          .read(hasEverSentMessageRepositoryProvider.notifier)
+          .markAsSent(),
     );
 
     final aiChatService = ref.read(aiChatServiceProvider);
@@ -161,14 +156,6 @@ class ChatMessages extends _$ChatMessages {
       if (lastSuggestedReplies.isNotEmpty) {
         ref.read(suggestedRepliesProvider.notifier).save(lastSuggestedReplies);
       }
-
-      if (buffer.isNotEmpty) {
-        unawaited(
-          ref
-              .read(receivedChatStringCountRepositoryProvider.notifier)
-              .add(buffer.characters.length),
-        );
-      }
     }
   }
 
@@ -222,13 +209,13 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
     final vivaPointRepository = ref.read(vivaPointRepositoryProvider.notifier);
 
     ref.listen(
-      sentChatStringCountRepositoryProvider,
+      hasEverSentMessageRepositoryProvider,
       (previous, next) {
         final previousValue = previous?.whenOrNull(data: (value) => value);
         final currentValue = next.whenOrNull(data: (value) => value);
 
-        // 初回メッセージ送信を検知（0から1以上への変化）
-        if (previousValue == 0 && currentValue != null && currentValue > 0) {
+        // 初回メッセージ送信を検知（falseからtrueへの変化）
+        if (previousValue == false && currentValue == true) {
           _handleFirstMessageSent(vivaPointRepository);
         }
       },
@@ -249,76 +236,6 @@ class AwardFirstMessageBonus extends _$AwardFirstMessageBonus {
           earnedVP: _firstMessageBonusVP,
           newTitleName: newTitle.displayName,
         );
-  }
-}
-
-@riverpod
-class AwardReceivedChatString extends _$AwardReceivedChatString {
-  @override
-  void build() {
-    ref.listen(
-      receivedChatStringCountRepositoryProvider,
-      (previous, next) {
-        final previousValue = previous?.whenOrNull(data: (value) => value);
-        final currentValue = next.whenOrNull(data: (value) => value);
-        if (currentValue == null) {
-          return;
-        }
-
-        _handleReceivedChatStringCountUpdate(
-          previous: previousValue,
-          current: currentValue,
-        );
-      },
-    );
-  }
-
-  Future<void> _handleReceivedChatStringCountUpdate({
-    required int? previous,
-    required int current,
-  }) async {
-    final newlyAchieved = CavivaraReward.highestAchieved(current);
-    if (newlyAchieved == null) {
-      return;
-    }
-
-    final hasEarned = await _checkIfRewardEarned(newlyAchieved);
-
-    if (hasEarned) {
-      return;
-    }
-
-    await _markRewardAsEarned(newlyAchieved);
-
-    ref.read(headsUpNotificationProvider.notifier).show(newlyAchieved);
-  }
-
-  Future<bool> _checkIfRewardEarned(CavivaraReward reward) async {
-    switch (reward) {
-      case CavivaraReward.partTimer:
-        return await ref.read(
-          hasEarnedPartTimerRewardRepositoryProvider.future,
-        );
-
-      case CavivaraReward.leader:
-        return await ref.read(
-          hasEarnedPartTimeLeaderRewardRepositoryProvider.future,
-        );
-    }
-  }
-
-  Future<void> _markRewardAsEarned(CavivaraReward reward) async {
-    switch (reward) {
-      case CavivaraReward.partTimer:
-        await ref
-            .read(hasEarnedPartTimerRewardRepositoryProvider.notifier)
-            .markAsEarned();
-
-      case CavivaraReward.leader:
-        await ref
-            .read(hasEarnedPartTimeLeaderRewardRepositoryProvider.notifier)
-            .markAsEarned();
-    }
   }
 }
 

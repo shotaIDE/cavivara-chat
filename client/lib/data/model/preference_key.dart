@@ -1,9 +1,6 @@
 enum PreferenceKey {
   skipClearChatConfirmation,
-  totalSentChatStringCount,
-  totalReceivedChatStringCount,
-  hasEarnedPartTimerReward,
-  hasEarnedPartTimeLeaderReward,
+  hasEverSentMessage,
   totalVivaPoint,
   supportHistoryList,
   loginBonusGrantedDates,

@@ -14,8 +14,6 @@ import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/heads_up_notification_overlay.dart';
 import 'package:house_worker/ui/feature/auth/login_screen.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
-import 'package:house_worker/ui/feature/stats/cavivara_reward.dart';
-import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:house_worker/ui/feature/update/update_app_screen.dart';
 import 'package:house_worker/ui/root_presenter.dart';
 
@@ -136,10 +134,7 @@ class _RootAppState extends ConsumerState<RootApp> {
       navigatorObservers: navigatorObservers,
       title: 'カヴィヴァラチャット',
       builder: (_, child) {
-        final childWithOverlay = HeadsUpNotificationOverlay(
-          onTapNotification: _onTapNotification,
-          child: child,
-        );
+        final childWithOverlay = HeadsUpNotificationOverlay(child: child);
         return _wrapByAppBanner(childWithOverlay);
       },
       theme: getLightTheme(),
@@ -155,20 +150,6 @@ class _RootAppState extends ConsumerState<RootApp> {
       // `_wrapByAppBanner` でオリジナルのバナーを表示するため、
       // デフォルトのデバッグバナーは無効化する
       debugShowCheckedModeBanner: false,
-    );
-  }
-
-  Future<void> _onTapNotification(CavivaraReward reward) async {
-    final navigator = _navigatorKey.currentState;
-    if (navigator == null) {
-      return;
-    }
-
-    await navigator.pushAndRemoveUntil(
-      UserStatisticsScreen.route(
-        highlightedReward: reward,
-      ),
-      (route) => false,
     );
   }
 
