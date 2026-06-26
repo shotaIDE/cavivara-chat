@@ -53,7 +53,7 @@ class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SupporterTitleImage(title: state.currentTitle, size: 48),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: SupporterTitleCaption(title: state.currentTitle),
                     ),
