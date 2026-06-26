@@ -57,10 +57,9 @@ class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
                         title: state.currentTitle,
                         size: 48,
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: SupporterTitleCaption(title: state.currentTitle),
-                      ),
+                      const SizedBox(width: 24),
+                      SupporterTitleCaption(title: state.currentTitle),
+                      const SizedBox(width: 24),
                     ],
                   ),
                 ),
