@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
+import 'package:house_worker/ui/component/supporter_title_image.dart';
 
 /// 称号バッジウィジェット
 class SupporterTitleBadge extends StatelessWidget {
@@ -31,11 +32,10 @@ class SupporterTitleBadge extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // アイコン
-              Icon(
-                title.icon,
-                size: 32,
-                color: title.color,
+              // 称号画像
+              SupporterTitleImage(
+                title: title,
+                size: 48,
               ),
               const SizedBox(width: 16),
               // テキスト部分

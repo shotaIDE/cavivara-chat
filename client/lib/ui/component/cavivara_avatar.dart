@@ -14,7 +14,7 @@ class CavivaraAvatar extends StatelessWidget {
   final String assetPath;
   final Color? backgroundColor;
 
-  static const String defaultAssetPath = 'assets/image/cavivara.png';
+  static const String defaultAssetPath = 'assets/image/cavivara_01.png';
   static const String _defaultAssetPath = defaultAssetPath;
 
   @override

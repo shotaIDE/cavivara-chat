@@ -11,6 +11,7 @@ import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/component/color.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
+import 'package:house_worker/ui/component/supporter_title_image.dart';
 import 'package:house_worker/ui/feature/settings/debug_screen.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
 import 'package:house_worker/ui/feature/settings/submit_feedback_screen.dart';
@@ -442,9 +443,8 @@ class _SupporterTitleDisplayTile extends ConsumerWidget {
     return presenterState.when(
       data: (state) {
         return ListTile(
-          leading: Icon(
-            state.currentTitle.icon,
-            color: state.currentTitle.color,
+          leading: SupporterTitleImage(
+            title: state.currentTitle,
           ),
           title: const Text('応援ステータス'),
           subtitle: Text(

@@ -62,6 +62,7 @@ class UserStatisticsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             CavivaraPortrait(
               frameColor: supporterState.value?.currentTitle.color,
+              imagePath: supporterState.value?.currentTitle.imagePath,
               animate: true,
             ),
             const SizedBox(height: 32),

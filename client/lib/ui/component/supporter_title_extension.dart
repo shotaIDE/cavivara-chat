@@ -30,6 +30,8 @@ extension SupporterTitleExtension on SupporterTitle {
   }
 
   /// 称号アイコン
+  ///
+  /// 画像の読み込みに失敗した場合のフォールバックとしても利用する。
   IconData get icon {
     return switch (this) {
       SupporterTitle.newbie => Icons.star_border,
@@ -39,6 +41,19 @@ extension SupporterTitleExtension on SupporterTitle {
       SupporterTitle.expert => Icons.workspace_premium,
       SupporterTitle.master => Icons.military_tech,
       SupporterTitle.legend => Icons.emoji_events,
+    };
+  }
+
+  /// 称号画像のアセットパス
+  String get imagePath {
+    return switch (this) {
+      SupporterTitle.newbie => 'assets/image/cavivara_01.png',
+      SupporterTitle.beginner => 'assets/image/cavivara_02.png',
+      SupporterTitle.intermediate => 'assets/image/cavivara_03.png',
+      SupporterTitle.advanced => 'assets/image/cavivara_04.png',
+      SupporterTitle.expert => 'assets/image/cavivara_05.png',
+      SupporterTitle.master => 'assets/image/cavivara_06.png',
+      SupporterTitle.legend => 'assets/image/cavivara_07.png',
     };
   }
 

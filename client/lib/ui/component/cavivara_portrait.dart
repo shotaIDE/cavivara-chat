@@ -8,6 +8,7 @@ import 'package:house_worker/ui/component/cavivara_entrance_animation.dart';
 class CavivaraPortrait extends StatelessWidget {
   const CavivaraPortrait({
     this.frameColor,
+    this.imagePath,
     this.maxWidth = 200,
     this.animate = false,
     this.simplified = false,
@@ -16,6 +17,10 @@ class CavivaraPortrait extends StatelessWidget {
 
   /// 額縁の色。サポーター称号の色に合わせる。null の場合はテーマの既定色を使う。
   final Color? frameColor;
+
+  /// 肖像画として表示する画像のアセットパス。サポーター称号の画像に合わせる。
+  /// null の場合は既定の画像を表示する。
+  final String? imagePath;
 
   /// 額縁の最大幅。
   final double maxWidth;
@@ -47,7 +52,7 @@ class CavivaraPortrait extends StatelessWidget {
     final portrait = AspectRatio(
       aspectRatio: 3 / 4,
       child: Image.asset(
-        CavivaraAvatar.defaultAssetPath,
+        imagePath ?? CavivaraAvatar.defaultAssetPath,
         fit: BoxFit.contain,
       ),
     );

@@ -105,7 +105,7 @@
     <div class="gallery" id="gallery"></div>
 
     <p class="note">
-      肖像画は <code>client/assets/image/cavivara.png</code> を参照。ブラウザで読み込めない場合はプレースホルダを表示する。<br>
+      肖像画は称号ごとに <code>client/assets/image/cavivara_01〜07.png</code> を参照（<code>supporter_title_extension.dart</code> の <code>imagePath</code> に対応）。ブラウザで読み込めない場合はプレースホルダを表示する。<br>
       額縁構造（外側→内側）: モールディング（称号色グラデーション＋発光）→ 溝（最暗部）→ 台紙 → 細い縁取り → 肖像画（3:4）。<br>
       色は「チープ→高級」エスカレート配色（<code>supporter_title_extension.dart</code> に反映済み）。必要 VP・称号名は <code>supporter_title.dart</code> に基づく。
     </p>
@@ -113,19 +113,20 @@
 
   <script>
     // 肖像画アセットへの相対パス（doc/spec/ から client/assets/... へ）
-    const PORTRAIT_SRC = "../../client/assets/image/cavivara.png";
+    // 称号ごとに cavivara_01〜07.png を表示する。
+    const IMAGE_DIR = "../../client/assets/image/";
 
     // サポーター称号（チープ → 高級へエスカレートする配色案）
     // 安価な素材（鉄→銅→銀）→ 貴金属（金）→ 宝石（翠玉→青玉→紫水晶）の順に
     // 上位ほど深く彩度の高い高級感のある色味になるよう設計している。
     const TITLES = [
-      { key: "newbie",       name: "駆け出しヴィヴァサポーター", vp: 0,   color: "#9A9A9A", material: "鉄（くすんだグレー）" },
-      { key: "beginner",     name: "初心ヴィヴァサポーター",     vp: 10,  color: "#C17A3F", material: "ブロンズ（銅）" },
-      { key: "intermediate", name: "一人前ヴィヴァサポーター",   vp: 30,  color: "#EB6A8C", material: "ピンク（紅梅）" },
-      { key: "advanced",     name: "ベテランヴィヴァサポーター", vp: 70,  color: "#E6B422", material: "ゴールド（金）" },
-      { key: "expert",       name: "熟練ヴィヴァサポーター",     vp: 150, color: "#1FA567", material: "エメラルド（翠玉）" },
-      { key: "master",       name: "達人ヴィヴァサポーター",     vp: 300, color: "#2E63D6", material: "サファイア（青玉）" },
-      { key: "legend",       name: "伝説のヴィヴァサポーター",   vp: 500, color: "#7A3FB5", material: "ロイヤルパープル（紫水晶）" },
+      { key: "newbie",       name: "駆け出しヴィヴァサポーター", vp: 0,   color: "#9A9A9A", material: "鉄（くすんだグレー）",     image: "cavivara_01.png" },
+      { key: "beginner",     name: "初心ヴィヴァサポーター",     vp: 10,  color: "#C17A3F", material: "ブロンズ（銅）",         image: "cavivara_02.png" },
+      { key: "intermediate", name: "一人前ヴィヴァサポーター",   vp: 30,  color: "#EB6A8C", material: "ピンク（紅梅）",         image: "cavivara_03.png" },
+      { key: "advanced",     name: "ベテランヴィヴァサポーター", vp: 70,  color: "#E6B422", material: "ゴールド（金）",         image: "cavivara_04.png" },
+      { key: "expert",       name: "熟練ヴィヴァサポーター",     vp: 150, color: "#1FA567", material: "エメラルド（翠玉）",     image: "cavivara_05.png" },
+      { key: "master",       name: "達人ヴィヴァサポーター",     vp: 300, color: "#2E63D6", material: "サファイア（青玉）",     image: "cavivara_06.png" },
+      { key: "legend",       name: "伝説のヴィヴァサポーター",   vp: 500, color: "#7A3FB5", material: "ロイヤルパープル（紫水晶）", image: "cavivara_07.png" },
     ];
 
     // --- 色変換ユーティリティ（Flutter の HSLColor 操作を再現） ---
@@ -173,12 +174,12 @@
       // 肖像画 + 細い縁取り
       const img = document.createElement("img");
       img.className = "portrait";
-      img.src = PORTRAIT_SRC;
-      img.alt = "カヴィヴァラさんの肖像画";
+      img.src = IMAGE_DIR + title.image;
+      img.alt = title.name + "の肖像画";
       img.onerror = function () {
         const fb = document.createElement("div");
         fb.className = "portrait-fallback";
-        fb.textContent = "cavivara.png";
+        fb.textContent = title.image;
         this.replaceWith(fb);
       };
       const line = document.createElement("div");
@@ -251,7 +252,8 @@
         caption.innerHTML =
           `<div class="name">${title.name}</div>` +
           `<div class="sub">${title.vp} VP ・ ${title.material}</div>` +
-          `<div class="sub"><code>${title.key}</code> ・ ${title.color}</div>`;
+          `<div class="sub"><code>${title.key}</code> ・ ${title.color}</div>` +
+          `<div class="sub"><code>${title.image}</code></div>`;
 
         item.appendChild(slot);
         item.appendChild(caption);

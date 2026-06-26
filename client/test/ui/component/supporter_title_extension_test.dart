@@ -46,6 +46,18 @@ void main() {
       }
     });
 
+    test('imagePathがすべての称号に対して定義されていること', () {
+      for (final title in SupporterTitle.values) {
+        expect(title.imagePath, isNotEmpty);
+      }
+    });
+
+    test('imagePathがすべての称号で一意であること', () {
+      final imagePaths = SupporterTitle.values.map((e) => e.imagePath).toList();
+
+      expect(imagePaths.toSet().length, imagePaths.length);
+    });
+
     test('requiredVPが正しい値であること', () {
       expect(SupporterTitle.newbie.requiredVP, 0);
       expect(SupporterTitle.beginner.requiredVP, 10);

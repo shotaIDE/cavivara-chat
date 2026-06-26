@@ -4,6 +4,7 @@ import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/purchase_exception.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_caption.dart';
+import 'package:house_worker/ui/component/supporter_title_image.dart';
 import 'package:house_worker/ui/component/vp_summary_card.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_plan_card.dart';
@@ -47,8 +48,21 @@ class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 現在の称号と説明（業績画面と共有）
-                SupporterTitleCaption(title: state.currentTitle),
+                // 現在の称号（左に簡易版の角丸アイコン）と説明（業績画面と共有）
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SupporterTitleImage(
+                        title: state.currentTitle,
+                        size: 48,
+                      ),
+                      const SizedBox(width: 24),
+                      SupporterTitleCaption(title: state.currentTitle),
+                      const SizedBox(width: 24),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 24),
 
                 // VP進捗表示セクション（業績画面と共有）
