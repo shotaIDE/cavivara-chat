@@ -54,6 +54,7 @@ class AppDrawer extends ConsumerWidget {
         children: [
           CavivaraPortrait(
             frameColor: currentTitle?.color,
+            imagePath: currentTitle?.imagePath,
             maxWidth: 120,
             simplified: true,
           ),
