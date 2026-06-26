@@ -49,15 +49,20 @@ class _SupportCavivaraScreenState extends ConsumerState<SupportCavivaraScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 現在の称号（左に簡易版の角丸アイコン）と説明（業績画面と共有）
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SupporterTitleImage(title: state.currentTitle, size: 48),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: SupporterTitleCaption(title: state.currentTitle),
-                    ),
-                  ],
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SupporterTitleImage(
+                        title: state.currentTitle,
+                        size: 48,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: SupporterTitleCaption(title: state.currentTitle),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
 
