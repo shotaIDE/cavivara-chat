@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/ui/component/app_badge_extension.dart';
 import 'package:house_worker/ui/component/app_badge_icon.dart';
+import 'package:house_worker/ui/component/cavivara_entrance_animation.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 
@@ -33,9 +34,25 @@ class BadgeAcquiredScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final badgeIcon = AppBadgeIcon(
-      badge: badge,
-      size: 160,
+    // 表示時に、拡大しながらふわっとフェードインさせる（業績画面の肖像画と同様）
+    final badgeIcon = TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: CavivaraEntranceAnimation.duration,
+      curve: CavivaraEntranceAnimation.curve,
+      child: AppBadgeIcon(
+        badge: badge,
+        size: 160,
+      ),
+      builder: (context, value, child) {
+        return Opacity(
+          // easeOutBack は終盤で 1.0 を超えるため、不透明度は範囲内に収める
+          opacity: value.clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: 0.7 + 0.3 * value,
+            child: child,
+          ),
+        );
+      },
     );
 
     final congratsText = Text(
