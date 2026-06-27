@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/model/earned_badge.dart';
+import 'package:house_worker/data/repository/earned_badges_repository.dart';
+import 'package:house_worker/ui/component/app_badge_extension.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_portrait.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
@@ -67,6 +70,8 @@ class UserStatisticsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             _buildSupporterSection(context, supporterState),
+            const SizedBox(height: 48),
+            const _EarnedBadgeSection(),
           ],
         ),
       ),
@@ -123,6 +128,111 @@ class UserStatisticsScreen extends ConsumerWidget {
         child: CircularProgressIndicator(),
       ),
       error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// 獲得済みバッジ一覧セクション
+class _EarnedBadgeSection extends ConsumerWidget {
+  const _EarnedBadgeSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final earnedBadgesAsync = ref.watch(earnedBadgesRepositoryProvider);
+
+    return earnedBadgesAsync.when(
+      data: (badges) {
+        if (badges.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final sectionTitle = Text(
+          '獲得済みバッジ',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        );
+
+        // タイルレイアウト（2列グリッド、新しい順に左上から配置）
+        final grid = GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.85,
+          ),
+          itemCount: badges.length,
+          itemBuilder: (context, index) =>
+              _EarnedBadgeTile(earnedBadge: badges[index]),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            sectionTitle,
+            const SizedBox(height: 16),
+            grid,
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// 獲得済みバッジのタイル
+class _EarnedBadgeTile extends StatelessWidget {
+  const _EarnedBadgeTile({required this.earnedBadge});
+
+  final EarnedBadge earnedBadge;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final badgeIcon = Icon(
+      earnedBadge.badge.icon,
+      size: 48,
+      color: theme.colorScheme.primary,
+    );
+
+    final title = Text(
+      earnedBadge.badge.displayName,
+      style: theme.textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
+      textAlign: TextAlign.center,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final earnedAt = earnedBadge.earnedAt;
+    final dateLabel = Text(
+      '${earnedAt.year}/${earnedAt.month.toString().padLeft(2, '0')}/${earnedAt.day.toString().padLeft(2, '0')}',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+      textAlign: TextAlign.center,
+    );
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            badgeIcon,
+            const SizedBox(height: 8),
+            title,
+            const SizedBox(height: 4),
+            dateLabel,
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:house_worker/data/definition/app_feature.dart';
+import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
+import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/has_ever_sent_message_repository.dart';
 import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
@@ -302,5 +305,41 @@ class AwardDailyLoginBonus extends _$AwardDailyLoginBonus {
     ref
         .read(headsUpNotificationProvider.notifier)
         .showDailyLoginBonus(earnedVP: _dailyLoginBonusVP);
+  }
+}
+
+/// アプリ初回起動時にバッジを付与するプロバイダー。
+///
+/// 初回起動バッジがまだ付与されていない場合は付与して返す。
+/// すでに付与済みの場合は null を返す。
+@riverpod
+class AwardFirstLaunchBadge extends _$AwardFirstLaunchBadge {
+  @override
+  Future<EarnedBadge?> build() async {
+    final earnedBadges = await ref.read(
+      earnedBadgesRepositoryProvider.future,
+    );
+
+    // 初回起動バッジがすでに付与済みかチェック
+    final hasFirstLaunchBadge = earnedBadges.any(
+      (b) => b.badge == AppBadge.firstLaunch,
+    );
+    if (hasFirstLaunchBadge) {
+      return null;
+    }
+
+    // バッジを付与
+    final badge = EarnedBadge(
+      badge: AppBadge.firstLaunch,
+      earnedAt: DateTime.now(),
+    );
+
+    await ref.read(earnedBadgesRepositoryProvider.notifier).add(badge);
+
+    if (!ref.mounted) {
+      return null;
+    }
+
+    return badge;
   }
 }
