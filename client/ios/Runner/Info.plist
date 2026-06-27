@@ -42,7 +42,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>イベント会場のQRコードを読み取ってバッジを獲得するためにカメラを使用します。</string>
+	<string>イベント会場の二次元コードを読み取ってバッジを獲得するためにカメラを使用します。</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -4,13 +4,13 @@ import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
-import 'package:house_worker/ui/feature/qr_scanner/qr_scanner_presenter.dart';
+import 'package:house_worker/ui/feature/code_scanner/code_scanner_presenter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 void main() {
-  group('QrScannerPresenter', () {
+  group('CodeScannerPresenter', () {
     late ProviderContainer container;
 
     setUp(() {
@@ -26,10 +26,10 @@ void main() {
 
     test('対象外のURLではバッジもVPも付与されないこと', () async {
       final result = await container
-          .read(qrScannerPresenterProvider.notifier)
+          .read(codeScannerPresenterProvider.notifier)
           .handleScannedValue('https://example.com/other');
 
-      expect(result, QrScanResult.notMatched);
+      expect(result, CodeScanResult.notMatched);
 
       final badges = await container.read(
         earnedBadgesRepositoryProvider.future,
@@ -42,10 +42,10 @@ void main() {
 
     test('対象のURLでバッジとVPが付与されること', () async {
       final result = await container
-          .read(qrScannerPresenterProvider.notifier)
-          .handleScannedValue(plectrumConcertVol11QrUrl);
+          .read(codeScannerPresenterProvider.notifier)
+          .handleScannedValue(plectrumConcertVol11CodeUrl);
 
-      expect(result, QrScanResult.earnedNewBadge);
+      expect(result, CodeScanResult.earnedNewBadge);
 
       final badges = await container.read(
         earnedBadgesRepositoryProvider.future,
@@ -54,7 +54,7 @@ void main() {
 
       expect(badges.length, 1);
       expect(badges.first.badge, AppBadge.plectrumConcertVol11);
-      expect(totalVP, qrEventBonusVP);
+      expect(totalVP, codeScanEventBonusVP);
     });
 
     test('すでに獲得済みの場合はVPが重複付与されないこと', () async {
@@ -69,10 +69,10 @@ void main() {
           );
 
       final result = await container
-          .read(qrScannerPresenterProvider.notifier)
-          .handleScannedValue(plectrumConcertVol11QrUrl);
+          .read(codeScannerPresenterProvider.notifier)
+          .handleScannedValue(plectrumConcertVol11CodeUrl);
 
-      expect(result, QrScanResult.alreadyEarned);
+      expect(result, CodeScanResult.alreadyEarned);
 
       final badges = await container.read(
         earnedBadgesRepositoryProvider.future,

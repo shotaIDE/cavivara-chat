@@ -4,35 +4,35 @@ import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'qr_scanner_presenter.g.dart';
+part 'code_scanner_presenter.g.dart';
 
-/// 結社公演Vol.11のバッジ獲得対象となるQRコードのURL。
+/// 結社公演Vol.11のバッジ獲得対象となる二次元コードのURL。
 ///
-/// QRコードの文字列がこのURLと完全一致した場合のみバッジを付与する。
+/// 二次元コードの文字列がこのURLと完全一致した場合のみバッジを付与する。
 // TODO(team): 本番のイベントURLが確定し次第、差し替える。
-const plectrumConcertVol11QrUrl =
+const plectrumConcertVol11CodeUrl =
     'https://example.com/plectrum-rc/concert/vol11';
 
-/// QRコード読み込み成功時に付与するVP。
-const qrEventBonusVP = 30;
+/// 二次元コード読み込み成功時に付与するVP。
+const codeScanEventBonusVP = 30;
 
-/// QRコード読み取りの判定結果。
-enum QrScanResult {
-  /// 対象のQRコードで、新たにバッジを獲得した
+/// 二次元コード読み取りの判定結果。
+enum CodeScanResult {
+  /// 対象の二次元コードで、新たにバッジを獲得した
   earnedNewBadge,
 
-  /// 対象のQRコードだが、すでにバッジを獲得済み
+  /// 対象の二次元コードだが、すでにバッジを獲得済み
   alreadyEarned,
 
-  /// 対象外のQRコード
+  /// 対象外の二次元コード
   notMatched,
 }
 
-/// QRコード読み取り画面のプレゼンター。
+/// 二次元コード読み取り画面のプレゼンター。
 ///
 /// 読み取った文字列が対象のURLと一致した場合に、バッジとVPを付与する。
 @riverpod
-class QrScannerPresenter extends _$QrScannerPresenter {
+class CodeScannerPresenter extends _$CodeScannerPresenter {
   @override
   void build() {
     // 付与処理の途中（await後）にリポジトリが破棄されないよう、依存関係として
@@ -42,10 +42,10 @@ class QrScannerPresenter extends _$QrScannerPresenter {
       ..watch(vivaPointRepositoryProvider);
   }
 
-  /// 読み取ったQRコードの文字列を処理し、判定結果を返す。
-  Future<QrScanResult> handleScannedValue(String rawValue) async {
-    if (rawValue != plectrumConcertVol11QrUrl) {
-      return QrScanResult.notMatched;
+  /// 読み取った二次元コードの文字列を処理し、判定結果を返す。
+  Future<CodeScanResult> handleScannedValue(String rawValue) async {
+    if (rawValue != plectrumConcertVol11CodeUrl) {
+      return CodeScanResult.notMatched;
     }
 
     // await をまたいで ref を使うと、その間にこのプロバイダーが破棄されて
@@ -64,7 +64,7 @@ class QrScannerPresenter extends _$QrScannerPresenter {
       (badge) => badge.badge == AppBadge.plectrumConcertVol11,
     );
     if (alreadyEarned) {
-      return QrScanResult.alreadyEarned;
+      return CodeScanResult.alreadyEarned;
     }
 
     final badge = EarnedBadge(
@@ -73,8 +73,8 @@ class QrScannerPresenter extends _$QrScannerPresenter {
     );
 
     await earnedBadgesRepository.add(badge);
-    await vivaPointRepository.addPoint(qrEventBonusVP);
+    await vivaPointRepository.addPoint(codeScanEventBonusVP);
 
-    return QrScanResult.earnedNewBadge;
+    return CodeScanResult.earnedNewBadge;
   }
 }

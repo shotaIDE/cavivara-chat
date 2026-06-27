@@ -4,30 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
-import 'package:house_worker/ui/feature/qr_scanner/badge_acquired_screen.dart';
-import 'package:house_worker/ui/feature/qr_scanner/qr_scanner_presenter.dart';
+import 'package:house_worker/ui/feature/code_scanner/badge_acquired_screen.dart';
+import 'package:house_worker/ui/feature/code_scanner/code_scanner_presenter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-/// QRコードを読み取る画面。
+/// 二次元コードを読み取る画面。
 ///
-/// イベント会場のQRコードを読み取り、対象のURLと一致した場合にバッジとVPを付与する。
-class QrScannerScreen extends ConsumerStatefulWidget {
-  const QrScannerScreen({super.key});
+/// イベント会場の二次元コードを読み取り、対象のURLと一致した場合にバッジとVPを付与する。
+class CodeScannerScreen extends ConsumerStatefulWidget {
+  const CodeScannerScreen({super.key});
 
-  static const name = 'QrScannerScreen';
+  static const name = 'CodeScannerScreen';
 
-  static MaterialPageRoute<QrScannerScreen> route() =>
-      MaterialPageRoute<QrScannerScreen>(
-        builder: (_) => const QrScannerScreen(),
+  static MaterialPageRoute<CodeScannerScreen> route() =>
+      MaterialPageRoute<CodeScannerScreen>(
+        builder: (_) => const CodeScannerScreen(),
         settings: const RouteSettings(name: name),
       );
 
   @override
-  ConsumerState<QrScannerScreen> createState() => _QrScannerScreenState();
+  ConsumerState<CodeScannerScreen> createState() => _CodeScannerScreenState();
 }
 
-class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
-  // QRコードのみを対象とし、不要なフォーマットの検出を避ける。
+class _CodeScannerScreenState extends ConsumerState<CodeScannerScreen> {
+  // 二次元コードのみを対象とし、不要なフォーマットの検出を避ける。
   final MobileScannerController _controller = MobileScannerController(
     formats: const [BarcodeFormat.qrCode],
   );
@@ -45,7 +45,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
   Widget build(BuildContext context) {
     // 読み取り処理(handleScannedValue)の途中でプロバイダーが破棄されないよう、
     // 画面が表示されている間はプレゼンターを監視して生存させる。
-    ref.watch(qrScannerPresenterProvider);
+    ref.watch(codeScannerPresenterProvider);
 
     final scanWindowSize = MediaQuery.sizeOf(context).width * 0.7;
 
@@ -78,7 +78,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
           bottom: 48 + MediaQuery.of(context).viewPadding.bottom,
         ),
         child: Text(
-          'イベント会場のQRコードを枠内に収めてください',
+          'イベント会場の二次元コードを枠内に収めてください',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: Colors.white,
@@ -89,7 +89,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QRコードを読み取る'),
+        title: const Text('二次元コードを読み取る'),
       ),
       body: Stack(
         children: [
@@ -118,7 +118,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     });
 
     final result = await ref
-        .read(qrScannerPresenterProvider.notifier)
+        .read(codeScannerPresenterProvider.notifier)
         .handleScannedValue(rawValue);
 
     if (!mounted) {
@@ -126,19 +126,19 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     }
 
     switch (result) {
-      case QrScanResult.earnedNewBadge:
+      case CodeScanResult.earnedNewBadge:
         HapticFeedbackHelper.lightImpact();
         // 読み取り画面はスタックから取り除き、祝福画面に置き換える。
         await Navigator.of(context).pushReplacement(
           BadgeAcquiredScreen.route(
             badge: AppBadge.plectrumConcertVol11,
-            earnedVP: qrEventBonusVP,
+            earnedVP: codeScanEventBonusVP,
           ),
         );
-      case QrScanResult.alreadyEarned:
+      case CodeScanResult.alreadyEarned:
         _showMessageAndResume('このバッジはすでに獲得済みです');
-      case QrScanResult.notMatched:
-        _showMessageAndResume('対象のQRコードではありません');
+      case CodeScanResult.notMatched:
+        _showMessageAndResume('対象の二次元コードではありません');
     }
   }
 

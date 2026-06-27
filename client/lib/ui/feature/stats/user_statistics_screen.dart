@@ -10,8 +10,8 @@ import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_caption.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/component/vp_summary_card.dart';
+import 'package:house_worker/ui/feature/code_scanner/code_scanner_screen.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
-import 'package:house_worker/ui/feature/qr_scanner/qr_scanner_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
@@ -52,7 +52,7 @@ class UserStatisticsScreen extends ConsumerWidget {
           );
         },
         onSelectCamera: () {
-          Navigator.of(context).push(QrScannerScreen.route());
+          Navigator.of(context).push(CodeScannerScreen.route());
         },
         onSelectSettings: () {
           Navigator.of(context).push(SettingsScreen.route());
