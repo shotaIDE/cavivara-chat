@@ -2,3 +2,4 @@ BUNDLE_IDENTIFIER_SUFFIX=.CavivaraTalk
 APP_ICON_NAME_SUFFIX=-prod
 // `GoogleService-Info.plist` に定義されているものをそのまま転記している。URL Schemes に適用するために、重複定義が必要
 GOOGLE_SERVICE_REVERSED_CLIENT_ID=com.googleusercontent.apps.769405875528-noubp6b07ppm85cnnut98njkj9o5rt2e
+IPHONEOS_DEPLOYMENT_TARGET = 15.6
