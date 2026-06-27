@@ -38,7 +38,7 @@ class BadgeAcquiredDialog extends StatelessWidget {
       'おめでとう！',
       style: theme.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
-        color: Colors.orange,
+        color: theme.colorScheme.tertiary,
       ),
     );
 

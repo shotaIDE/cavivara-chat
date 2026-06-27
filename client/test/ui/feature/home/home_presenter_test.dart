@@ -1,15 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/ai_response.dart';
+import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/cavivara_profile.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/model/preference_key.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
+import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/data/service/preference_service.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 class MockAiChatService extends Mock implements AiChatService {}
 
@@ -519,6 +525,86 @@ void main() {
         // サジェストがクリアされていることを確認
         final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, isEmpty);
+      });
+    });
+  });
+
+  group('Home Presenter - AwardFirstLaunchBadge', () {
+    late ProviderContainer container;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      SharedPreferencesAsyncPlatform.instance =
+          InMemorySharedPreferencesAsync.empty();
+      container = ProviderContainer();
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    group('awardFirstLaunchBadgeProvider', () {
+      test('初回起動バッジが未付与の場合、バッジを付与して返すこと', () async {
+        final earnedBadge = await container.read(
+          awardFirstLaunchBadgeProvider.future,
+        );
+
+        expect(earnedBadge, isNotNull);
+        expect(earnedBadge!.badge, AppBadge.firstLaunch);
+      });
+
+      test('初回起動バッジが未付与の場合、リポジトリに追加されること', () async {
+        await container.read(awardFirstLaunchBadgeProvider.future);
+
+        final badges = await container.read(
+          earnedBadgesRepositoryProvider.future,
+        );
+        expect(badges.length, 1);
+        expect(badges.first.badge, AppBadge.firstLaunch);
+      });
+
+      test('初回起動バッジがすでに付与済みの場合、null を返すこと', () async {
+        // 事前にバッジを追加
+        final badge = EarnedBadge(
+          badge: AppBadge.firstLaunch,
+          earnedAt: DateTime(2026, 6, 27, 12),
+        );
+        await container.read(earnedBadgesRepositoryProvider.notifier).add(
+          badge,
+        );
+
+        // 別のコンテナで確認（同一コンテナではキャッシュされるため）
+        final container2 = ProviderContainer();
+        addTearDown(container2.dispose);
+
+        final earnedBadge = await container2.read(
+          awardFirstLaunchBadgeProvider.future,
+        );
+
+        expect(earnedBadge, isNull);
+      });
+
+      test('初回起動バッジがすでに付与済みの場合、リポジトリへの追加が行われないこと', () async {
+        // 事前にバッジを追加
+        final badge = EarnedBadge(
+          badge: AppBadge.firstLaunch,
+          earnedAt: DateTime(2026, 6, 27, 12),
+        );
+        await container.read(earnedBadgesRepositoryProvider.notifier).add(
+          badge,
+        );
+
+        // 別のコンテナで awardFirstLaunchBadgeProvider を呼び出す
+        final container2 = ProviderContainer();
+        addTearDown(container2.dispose);
+
+        await container2.read(awardFirstLaunchBadgeProvider.future);
+
+        final badges = await container2.read(
+          earnedBadgesRepositoryProvider.future,
+        );
+        // 重複追加されず、元の1件のみ
+        expect(badges.length, 1);
       });
     });
   });

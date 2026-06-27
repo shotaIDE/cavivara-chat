@@ -106,11 +106,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 if (!mounted) {
                   return;
                 }
-                await BadgeAcquiredDialog.show(context, earnedBadge: badge);
-                if (!mounted) {
-                  return;
+                try {
+                  await BadgeAcquiredDialog.show(context, earnedBadge: badge);
+                } finally {
+                  if (mounted) {
+                    _activateDailyBonusIfNeeded();
+                  }
                 }
-                _activateDailyBonusIfNeeded();
               });
             } else {
               _activateDailyBonusIfNeeded();
