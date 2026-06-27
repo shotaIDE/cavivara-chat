@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/ui/component/app_badge_extension.dart';
+import 'package:house_worker/ui/component/app_badge_icon.dart';
 
 /// バッジ詳細ダイアログ
 class BadgeDetailDialog extends StatelessWidget {
@@ -26,10 +27,9 @@ class BadgeDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final badgeIcon = Icon(
-      earnedBadge.badge.icon,
-      size: 64,
-      color: theme.colorScheme.primary,
+    final badgeIcon = AppBadgeIcon(
+      badge: earnedBadge.badge,
+      size: 88,
     );
 
     final badgeTitle = Text(

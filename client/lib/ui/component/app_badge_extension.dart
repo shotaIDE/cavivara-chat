@@ -7,7 +7,17 @@ extension AppBadgeExtension on AppBadge {
   };
 
   IconData get icon => switch (this) {
-    AppBadge.firstLaunch => Icons.emoji_events,
+    // 「足を踏み入れる」をモチーフにした歩くアイコン
+    AppBadge.firstLaunch => Icons.directions_walk,
+  };
+
+  /// バッジの背景に使うグラデーション色（左上→右下）
+  List<Color> get gradientColors => switch (this) {
+    AppBadge.firstLaunch => const [
+      Color(0xFFFFE082),
+      Color(0xFFFFB300),
+      Color(0xFFEF6C00),
+    ],
   };
 
   String get description => switch (this) {

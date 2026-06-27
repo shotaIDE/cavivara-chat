@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/ui/component/app_badge_extension.dart';
+import 'package:house_worker/ui/component/app_badge_icon.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cavivara_portrait.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
@@ -194,10 +195,9 @@ class _EarnedBadgeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final badgeIcon = Icon(
-      earnedBadge.badge.icon,
-      size: 48,
-      color: theme.colorScheme.primary,
+    final badgeIcon = AppBadgeIcon(
+      badge: earnedBadge.badge,
+      size: 64,
     );
 
     final title = Text(
@@ -219,26 +219,23 @@ class _EarnedBadgeTile extends StatelessWidget {
       textAlign: TextAlign.center,
     );
 
-    return Card(
-      elevation: 2,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          HapticFeedbackHelper.lightImpact();
-          BadgeDetailDialog.show(context, earnedBadge: earnedBadge);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              badgeIcon,
-              const SizedBox(height: 8),
-              title,
-              const SizedBox(height: 4),
-              dateLabel,
-            ],
-          ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        HapticFeedbackHelper.lightImpact();
+        BadgeDetailDialog.show(context, earnedBadge: earnedBadge);
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            badgeIcon,
+            const SizedBox(height: 8),
+            title,
+            const SizedBox(height: 4),
+            dateLabel,
+          ],
         ),
       ),
     );
