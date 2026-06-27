@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/ui/component/app_badge_extension.dart';
 
-/// バッジ獲得ダイアログ
-class BadgeAcquiredDialog extends StatelessWidget {
-  const BadgeAcquiredDialog({
+/// バッジ詳細ダイアログ
+class BadgeDetailDialog extends StatelessWidget {
+  const BadgeDetailDialog({
     required this.earnedBadge,
     super.key,
   });
@@ -18,7 +18,7 @@ class BadgeAcquiredDialog extends StatelessWidget {
   }) {
     return showDialog<void>(
       context: context,
-      builder: (_) => BadgeAcquiredDialog(earnedBadge: earnedBadge),
+      builder: (_) => BadgeDetailDialog(earnedBadge: earnedBadge),
     );
   }
 
@@ -32,19 +32,6 @@ class BadgeAcquiredDialog extends StatelessWidget {
       color: theme.colorScheme.primary,
     );
 
-    final congratsText = Text(
-      'おめでとう！',
-      style: theme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: Colors.orange,
-      ),
-    );
-
-    final description = Text(
-      'バッジを獲得しました',
-      style: theme.textTheme.bodyMedium,
-    );
-
     final badgeTitle = Text(
       earnedBadge.badge.displayName,
       style: theme.textTheme.titleMedium?.copyWith(
@@ -53,9 +40,18 @@ class BadgeAcquiredDialog extends StatelessWidget {
       textAlign: TextAlign.center,
     );
 
-    final badgeDescription = Text(
+    final description = Text(
       earnedBadge.badge.description,
       style: theme.textTheme.bodyMedium,
+      textAlign: TextAlign.center,
+    );
+
+    final earnedAt = earnedBadge.earnedAt;
+    final dateLabel = Text(
+      '獲得日: ${earnedAt.year}/${earnedAt.month.toString().padLeft(2, '0')}/${earnedAt.day.toString().padLeft(2, '0')}',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
       textAlign: TextAlign.center,
     );
 
@@ -78,13 +74,11 @@ class BadgeAcquiredDialog extends StatelessWidget {
           children: [
             badgeIcon,
             const SizedBox(height: 16),
-            congratsText,
-            const SizedBox(height: 8),
-            description,
-            const SizedBox(height: 12),
             badgeTitle,
-            const SizedBox(height: 8),
-            badgeDescription,
+            const SizedBox(height: 12),
+            description,
+            const SizedBox(height: 16),
+            dateLabel,
             const SizedBox(height: 24),
             closeButton,
           ],

@@ -9,4 +9,8 @@ extension AppBadgeExtension on AppBadge {
   IconData get icon => switch (this) {
     AppBadge.firstLaunch => Icons.emoji_events,
   };
+
+  String get description => switch (this) {
+    AppBadge.firstLaunch => 'アプリを始めて起動しました。',
+  };
 }

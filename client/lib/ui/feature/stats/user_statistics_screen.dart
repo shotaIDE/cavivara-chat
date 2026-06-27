@@ -13,6 +13,7 @@ import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
+import 'package:house_worker/ui/feature/stats/badge_detail_dialog.dart';
 
 class UserStatisticsScreen extends ConsumerWidget {
   const UserStatisticsScreen({super.key});
@@ -220,17 +221,24 @@ class _EarnedBadgeTile extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            badgeIcon,
-            const SizedBox(height: 8),
-            title,
-            const SizedBox(height: 4),
-            dateLabel,
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          HapticFeedbackHelper.lightImpact();
+          BadgeDetailDialog.show(context, earnedBadge: earnedBadge);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              badgeIcon,
+              const SizedBox(height: 8),
+              title,
+              const SizedBox(height: 4),
+              dateLabel,
+            ],
+          ),
         ),
       ),
     );
