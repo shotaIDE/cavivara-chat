@@ -38,7 +38,7 @@ extension AppBadgeExtension on AppBadge {
   };
 
   String get description => switch (this) {
-    AppBadge.firstLaunch => 'アプリを始めて起動しました。',
+    AppBadge.firstLaunch => 'アプリを初めて起動しました。',
     AppBadge.plectrumConcertVol11 => 'プレクトラム結社公演Vol.11に来場しました。',
   };
 }
