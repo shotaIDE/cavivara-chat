@@ -9,9 +9,8 @@ part 'code_scanner_presenter.g.dart';
 /// 結社公演Vol.11のバッジ獲得対象となる二次元コードのURL。
 ///
 /// 二次元コードの文字列がこのURLと完全一致した場合のみバッジを付与する。
-// TODO(team): 本番のイベントURLが確定し次第、差し替える。
 const plectrumConcertVol11CodeUrl =
-    'https://example.com/plectrum-rc/concert/vol11';
+    'cavivara-chat:achievement/plectrum-rc/vol11';
 
 /// 二次元コード読み込み成功時に付与するVP。
 const codeScanEventBonusVP = 30;
