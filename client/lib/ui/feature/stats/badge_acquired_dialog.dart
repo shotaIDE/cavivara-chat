@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/ui/component/app_badge_extension.dart';
 import 'package:house_worker/ui/component/app_badge_icon.dart';
+import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
+import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 
 /// バッジ獲得ダイアログ
 class BadgeAcquiredDialog extends StatelessWidget {
@@ -59,9 +61,22 @@ class BadgeAcquiredDialog extends StatelessWidget {
       textAlign: TextAlign.center,
     );
 
-    final closeButton = SizedBox(
+    final checkAllBadgesButton = SizedBox(
       width: double.infinity,
       child: ElevatedButton(
+        onPressed: () {
+          HapticFeedbackHelper.lightImpact();
+          Navigator.of(context)
+            ..pop()
+            ..push(UserStatisticsScreen.route());
+        },
+        child: const Text('全てのバッジを確認する'),
+      ),
+    );
+
+    final closeButton = SizedBox(
+      width: double.infinity,
+      child: TextButton(
         onPressed: () => Navigator.of(context).pop(),
         child: const Text('閉じる'),
       ),
@@ -86,6 +101,8 @@ class BadgeAcquiredDialog extends StatelessWidget {
             const SizedBox(height: 8),
             badgeDescription,
             const SizedBox(height: 24),
+            checkAllBadgesButton,
+            const SizedBox(height: 8),
             closeButton,
           ],
         ),
