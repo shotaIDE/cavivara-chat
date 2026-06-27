@@ -14,6 +14,7 @@ import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
+import 'package:house_worker/ui/feature/code_scanner/code_scanner_screen.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/stats/badge_acquired_dialog.dart';
@@ -268,6 +269,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             UserStatisticsScreen.route(),
             (route) => false,
           );
+        },
+        onSelectCamera: () {
+          Navigator.of(context).push(CodeScannerScreen.route());
         },
         onSelectSettings: () {
           Navigator.of(context).push(SettingsScreen.route());

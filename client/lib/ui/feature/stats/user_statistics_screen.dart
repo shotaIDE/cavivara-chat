@@ -10,6 +10,7 @@ import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_caption.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/component/vp_summary_card.dart';
+import 'package:house_worker/ui/feature/code_scanner/code_scanner_screen.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_presenter.dart';
@@ -49,6 +50,9 @@ class UserStatisticsScreen extends ConsumerWidget {
             UserStatisticsScreen.route(),
             (route) => false,
           );
+        },
+        onSelectCamera: () {
+          Navigator.of(context).push(CodeScannerScreen.route());
         },
         onSelectSettings: () {
           Navigator.of(context).push(SettingsScreen.route());
@@ -155,15 +159,29 @@ class _EarnedBadgeSection extends ConsumerWidget {
           ),
         );
 
+        // タイルの内容（パディング + アイコン + 余白 + タイトル2行 + 余白 + 日付1行）
+        // がちょうど収まる高さを算出し、余分な余白が出ないようにする。
+        // 文字サイズ設定にも追従させるため textScaler で換算する。
+        final textScaler = MediaQuery.textScalerOf(context);
+        final lineHeight =
+            (Theme.of(context).textTheme.bodySmall?.fontSize ?? 12) * 1.4;
+        final tileExtent =
+            _tilePadding * 2 +
+            _tileIconSize +
+            8 +
+            textScaler.scale(lineHeight * 2) +
+            4 +
+            textScaler.scale(lineHeight);
+
         // タイルレイアウト（2列グリッド、新しい順に左上から配置）
         final grid = GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.85,
+            mainAxisExtent: tileExtent,
           ),
           itemCount: badges.length,
           itemBuilder: (context, index) =>
@@ -185,6 +203,12 @@ class _EarnedBadgeSection extends ConsumerWidget {
   }
 }
 
+/// 獲得済みバッジタイルの内側パディング
+const _tilePadding = 8.0;
+
+/// 獲得済みバッジタイルのアイコンの一辺の長さ
+const _tileIconSize = 64.0;
+
 /// 獲得済みバッジのタイル
 class _EarnedBadgeTile extends StatelessWidget {
   const _EarnedBadgeTile({required this.earnedBadge});
@@ -197,17 +221,26 @@ class _EarnedBadgeTile extends StatelessWidget {
 
     final badgeIcon = AppBadgeIcon(
       badge: earnedBadge.badge,
-      size: 64,
+      size: _tileIconSize,
     );
 
-    final title = Text(
-      earnedBadge.badge.displayName,
-      style: theme.textTheme.bodySmall?.copyWith(
-        fontWeight: FontWeight.bold,
+    final titleStyle = theme.textTheme.bodySmall?.copyWith(
+      fontWeight: FontWeight.bold,
+    );
+    // タイトルが1行か2行かでアイコンや日付の位置がずれないよう、
+    // 常に2行分の高さを確保してタイトル領域の高さを揃える。
+    final titleLineHeight = (titleStyle?.fontSize ?? 12) * 1.4;
+    final title = SizedBox(
+      height: MediaQuery.textScalerOf(context).scale(titleLineHeight * 2),
+      child: Center(
+        child: Text(
+          earnedBadge.badge.displayName,
+          style: titleStyle,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      textAlign: TextAlign.center,
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
     );
 
     final earnedAt = earnedBadge.earnedAt;
@@ -226,9 +259,9 @@ class _EarnedBadgeTile extends StatelessWidget {
         BadgeDetailDialog.show(context, earnedBadge: earnedBadge);
       },
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(_tilePadding),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          // アイコンを各セルの上端で揃えるため、上詰め(既定)で配置する。
           children: [
             badgeIcon,
             const SizedBox(height: 8),
