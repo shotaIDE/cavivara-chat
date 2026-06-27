@@ -31,6 +31,28 @@ class AppBadgeIcon extends StatelessWidget {
       offset: Offset(0, size * 0.08),
     );
 
+    // 画像を持つバッジは、グラデーションとアイコンの代わりに画像を表示する。
+    final imagePath = badge.imagePath;
+    if (imagePath != null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: ShapeDecoration(
+          image: DecorationImage(
+            image: AssetImage(imagePath),
+            fit: BoxFit.cover,
+          ),
+          shape: shape.copyWith(
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.6),
+              width: size * 0.03,
+            ),
+          ),
+          shadows: [shadow],
+        ),
+      );
+    }
+
     // アイコンの背面に敷く半透明の円（リッチさを演出）
     final iconBackdrop = Container(
       width: size * 0.62,

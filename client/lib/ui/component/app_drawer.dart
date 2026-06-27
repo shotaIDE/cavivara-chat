@@ -14,6 +14,7 @@ class AppDrawer extends ConsumerWidget {
     required this.isAchievementSelected,
     required this.onSelectTalk,
     required this.onSelectAchievement,
+    required this.onSelectCamera,
     required this.onSelectSettings,
   });
 
@@ -21,6 +22,7 @@ class AppDrawer extends ConsumerWidget {
   final bool isAchievementSelected;
   final VoidCallback onSelectTalk;
   final VoidCallback onSelectAchievement;
+  final VoidCallback onSelectCamera;
   final VoidCallback onSelectSettings;
 
   @override
@@ -39,6 +41,7 @@ class AppDrawer extends ConsumerWidget {
             _buildHeader(context, currentTitle),
             const Divider(),
             _buildTalkTile(context),
+            _buildCameraTile(context),
             _buildSettingsTile(context),
           ],
         ),
@@ -93,6 +96,18 @@ class AppDrawer extends ConsumerWidget {
         if (!isTalkSelected) {
           onSelectTalk();
         }
+      },
+    );
+  }
+
+  Widget _buildCameraTile(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.camera_alt),
+      title: const Text('カメラ'),
+      onTap: () {
+        HapticFeedbackHelper.onNavigationTap();
+        Navigator.of(context).pop();
+        onSelectCamera();
       },
     );
   }
