@@ -117,9 +117,19 @@ class _CodeScannerScreenState extends ConsumerState<CodeScannerScreen> {
       _isHandling = true;
     });
 
-    final result = await ref
-        .read(codeScannerPresenterProvider.notifier)
-        .handleScannedValue(rawValue);
+    // 例外が発生した場合でも _isHandling を復帰させるため、try-catch で囲む。
+    final CodeScanResult result;
+    try {
+      result = await ref
+          .read(codeScannerPresenterProvider.notifier)
+          .handleScannedValue(rawValue);
+    } on Exception catch (_) {
+      if (!mounted) {
+        return;
+      }
+      _showMessageAndResume('読み取り中にエラーが発生しました');
+      return;
+    }
 
     if (!mounted) {
       return;
