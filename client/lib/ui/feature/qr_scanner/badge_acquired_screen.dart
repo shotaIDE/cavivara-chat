@@ -92,7 +92,7 @@ class BadgeAcquiredScreen extends StatelessWidget {
       width: double.infinity,
       child: TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('とじる'),
+        child: const Text('閉じる'),
       ),
     );
 
