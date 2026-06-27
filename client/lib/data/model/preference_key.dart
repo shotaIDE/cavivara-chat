@@ -4,4 +4,5 @@ enum PreferenceKey {
   totalVivaPoint,
   supportHistoryList,
   loginBonusGrantedDates,
+  earnedBadgeList,
 }

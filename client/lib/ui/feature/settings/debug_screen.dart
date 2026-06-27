@@ -1,6 +1,7 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
@@ -34,6 +35,8 @@ class DebugScreen extends StatelessWidget {
           _ResetVPTile(),
           _SetVPToCustomValueTile(),
           _ResetLoginBonusTile(),
+          SectionHeader(title: 'バッジ設定'),
+          _ResetEarnedBadgesTile(),
           Divider(),
           SectionHeader(title: 'アカウント管理'),
           _LogoutTile(),
@@ -258,6 +261,25 @@ class _ResetLoginBonusTile extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('ログインボーナスの付与状態をリセットしました')),
+          );
+        }
+      },
+    );
+  }
+}
+
+class _ResetEarnedBadgesTile extends ConsumerWidget {
+  const _ResetEarnedBadgesTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      title: const Text('獲得済みバッジをリセット (獲得なしに戻す)'),
+      onTap: () async {
+        await ref.read(earnedBadgesRepositoryProvider.notifier).resetForDebug();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('獲得済みバッジをリセットしました')),
           );
         }
       },

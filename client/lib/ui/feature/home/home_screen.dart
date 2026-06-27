@@ -16,6 +16,7 @@ import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
+import 'package:house_worker/ui/feature/stats/badge_acquired_dialog.dart';
 import 'package:house_worker/ui/feature/stats/user_statistics_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -51,6 +52,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   bool _isMessageEmpty = true;
   bool _shouldShowSuggestions = false;
   Timer? _suggestionTimer;
+
+  /// ログインボーナスがすでに有効化済みかどうか。
+  ///
+  /// バッジダイアログの表示後にログインボーナスを開始するため、重複起動を防ぐフラグ。
+  bool _dailyBonusActivated = false;
 
   late final AnimationController _entranceController;
   late final Animation<double> _entranceFade;
@@ -90,9 +96,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ..listenManual(awardFirstMessageBonusProvider, (_, _) {
         // Providerの副作用のみを利用するため、何もしない
       })
-      ..listenManual(awardDailyLoginBonusProvider, (_, _) {
-        // Providerの副作用のみを利用するため、何もしない
+      // バッジダイアログ → ログインボーナス通知の順に表示するため、
+      // ログインボーナスの有効化はバッジダイアログを閉じた後まで遅延させる。
+      ..listenManual(awardFirstLaunchBadgeProvider, (_, next) {
+        next.whenOrNull(
+          data: (badge) {
+            if (badge != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!mounted) {
+                  return;
+                }
+                try {
+                  await BadgeAcquiredDialog.show(context, earnedBadge: badge);
+                } finally {
+                  if (mounted) {
+                    _activateDailyBonusIfNeeded();
+                  }
+                }
+              });
+            } else {
+              _activateDailyBonusIfNeeded();
+            }
+          },
+          error: (_, _) {
+            _activateDailyBonusIfNeeded();
+          },
+        );
       });
+  }
+
+  /// ログインボーナスプロバイダーを有効化する（重複起動防止）
+  void _activateDailyBonusIfNeeded() {
+    if (_dailyBonusActivated) {
+      return;
+    }
+    _dailyBonusActivated = true;
+    ref.listenManual(awardDailyLoginBonusProvider, (_, _) {
+      // Providerの副作用のみを利用するため、何もしない
+    });
   }
 
   void _onFocusChanged() {
