@@ -48,4 +48,15 @@ class EarnedBadgesRepository extends _$EarnedBadgesRepository {
 
     state = AsyncValue.data(updated);
   }
+
+  /// 獲得済みバッジの一覧をリセットする (デバッグ用)
+  Future<void> resetForDebug() async {
+    final preferenceService = ref.read(preferenceServiceProvider);
+    await preferenceService.remove(PreferenceKey.earnedBadgeList);
+
+    if (!ref.mounted) {
+      return;
+    }
+    state = const AsyncValue.data(<EarnedBadge>[]);
+  }
 }

@@ -105,5 +105,51 @@ void main() {
         expect(badges.last.earnedAt, DateTime(2026, 6, 27, 10));
       });
     });
+
+    group('バッジのリセット', () {
+      test('獲得済みバッジをリセットできること', () async {
+        final notifier = container.read(
+          earnedBadgesRepositoryProvider.notifier,
+        );
+
+        final badge = EarnedBadge(
+          badge: AppBadge.firstLaunch,
+          earnedAt: DateTime(2026, 6, 27, 12),
+        );
+
+        await notifier.add(badge);
+        await notifier.resetForDebug();
+
+        final badges = await container.read(
+          earnedBadgesRepositoryProvider.future,
+        );
+
+        expect(badges, isEmpty);
+      });
+
+      test('リセット後は永続化された状態も空になること', () async {
+        final notifier = container.read(
+          earnedBadgesRepositoryProvider.notifier,
+        );
+
+        final badge = EarnedBadge(
+          badge: AppBadge.firstLaunch,
+          earnedAt: DateTime(2026, 6, 27, 12),
+        );
+
+        await notifier.add(badge);
+        await notifier.resetForDebug();
+
+        // 新しいコンテナで再読み込みして永続化状態を確認
+        final newContainer = ProviderContainer();
+        addTearDown(newContainer.dispose);
+
+        final reloadedBadges = await newContainer.read(
+          earnedBadgesRepositoryProvider.future,
+        );
+
+        expect(reloadedBadges, isEmpty);
+      });
+    });
   });
 }
