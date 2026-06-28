@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,14 +37,7 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp(options: _getFirebaseOptions());
 
-    if (isAppCheckEnabled) {
-      await FirebaseAppCheck.instance.activate(
-        providerApple: const AppleAppAttestProvider(),
-      );
-      _logger.info('Firebase App Check: true');
-    } else {
-      _logger.info('Firebase App Check: false');
-    }
+    await _setupFirebaseAppCheck();
 
     if (useFirebaseEmulator) {
       await _setupFirebaseEmulators();
@@ -113,6 +107,31 @@ FirebaseOptions? _getFirebaseOptions() {
     case Flavor.prod:
       return prod.DefaultFirebaseOptions.currentPlatform;
   }
+}
+
+/// App Check をセットアップする
+///
+/// App Check のプロバイダーは iOS 向けのみ用意しているため、iOS でのみ有効にする。
+/// iOS シミュレーターでは App Attest が利用できないため、デバッグプロバイダーを使用する。
+/// シミュレーターか否かは `isPhysicalDevice` で判定する。
+Future<void> _setupFirebaseAppCheck() async {
+  if (!Platform.isIOS) {
+    _logger.info('Firebase App Check: false');
+    return;
+  }
+
+  final iosDeviceInfo = await DeviceInfoPlugin().iosInfo;
+  final useDebugProvider = !iosDeviceInfo.isPhysicalDevice;
+
+  await FirebaseAppCheck.instance.activate(
+    providerApple: useDebugProvider
+        ? const AppleDebugProvider()
+        : const AppleAppAttestProvider(),
+  );
+
+  _logger.info(
+    'Firebase App Check: true (debug provider: $useDebugProvider)',
+  );
 }
 
 Future<void> _setupFirebaseEmulators() async {
