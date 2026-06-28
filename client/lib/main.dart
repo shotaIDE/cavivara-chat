@@ -36,9 +36,14 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp(options: _getFirebaseOptions());
 
-    await FirebaseAppCheck.instance.activate(
-      providerApple: const AppleAppAttestProvider(),
-    );
+    if (isAppCheckEnabled) {
+      await FirebaseAppCheck.instance.activate(
+        providerApple: const AppleAppAttestProvider(),
+      );
+      _logger.info('Firebase App Check: true');
+    } else {
+      _logger.info('Firebase App Check: false');
+    }
 
     if (useFirebaseEmulator) {
       await _setupFirebaseEmulators();

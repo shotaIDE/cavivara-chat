@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:house_worker/data/definition/flavor.dart';
 
@@ -8,6 +10,11 @@ final bool showCustomAppBanner =
     (flavor == Flavor.prod && !kReleaseMode) || flavor != Flavor.prod;
 
 final useFirebaseEmulator = flavor == Flavor.emulator;
+
+/// App Check を有効にするか否か
+///
+/// App Check のプロバイダーは iOS 向けのみ用意しているため、iOS でのみ有効にする。
+final bool isAppCheckEnabled = Platform.isIOS;
 
 /// エラーの詳細内容を UI に表示するか否か
 ///
