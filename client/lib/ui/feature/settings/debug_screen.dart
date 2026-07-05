@@ -1,10 +1,13 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
+import 'package:house_worker/ui/feature/code_scanner/badge_acquired_screen.dart';
+import 'package:house_worker/ui/feature/code_scanner/code_scanner_presenter.dart';
 import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -36,6 +39,7 @@ class DebugScreen extends StatelessWidget {
           _SetVPToCustomValueTile(),
           _ResetLoginBonusTile(),
           SectionHeader(title: 'バッジ設定'),
+          _SimulatePlectrumConcertVol11Tile(),
           _ResetEarnedBadgesTile(),
           Divider(),
           SectionHeader(title: 'アカウント管理'),
@@ -262,6 +266,46 @@ class _ResetLoginBonusTile extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('ログインボーナスの付与状態をリセットしました')),
           );
+        }
+      },
+    );
+  }
+}
+
+class _SimulatePlectrumConcertVol11Tile extends ConsumerWidget {
+  const _SimulatePlectrumConcertVol11Tile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      title: const Text('結社公演Vol.11の獲得画面に遷移 (バッジ付与)'),
+      subtitle: const Text('二次元コードを読み取った場合と同じ処理を実行する'),
+      onTap: () async {
+        // 二次元コードの読み取りと同じ処理を実行し、バッジとVPを付与する。
+        final result = await ref
+            .read(codeScannerPresenterProvider.notifier)
+            .handleScannedValue(plectrumConcertVol11CodeUrl);
+
+        if (!context.mounted) {
+          return;
+        }
+
+        switch (result) {
+          case CodeScanResult.earnedNewBadge:
+            await Navigator.of(context).push(
+              BadgeAcquiredScreen.route(
+                badge: AppBadge.plectrumConcertVol11,
+                earnedVP: codeScanEventBonusVP,
+              ),
+            );
+          case CodeScanResult.alreadyEarned:
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('このバッジはすでに獲得済みです')),
+            );
+          case CodeScanResult.notMatched:
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('対象の二次元コードではありません')),
+            );
         }
       },
     );
