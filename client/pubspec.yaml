@@ -2,7 +2,7 @@ name: house_worker
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.0+8
+version: 1.0.0+9
 
 environment:
   # Flutter 3.44.0 or 3.44.1に上げると、CrashlyticsのdSYMアップロードに失敗するため、
