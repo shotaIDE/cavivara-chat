@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:house_worker/data/model/preference_key.dart';
@@ -8,6 +9,7 @@ import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/data/service/firebase_installations_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
+import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -175,5 +177,130 @@ void main() {
       // 駆け出し称号が表示されていること
       expect(find.textContaining('駆け出しヴィヴァサポーター'), findsOneWidget);
     });
+
+    testWidgets(
+      'Install IDが表示され、コピーボタンをタップするとクリップボードにコピーされてSnackBarが表示されること',
+      (tester) async {
+        // Arrange
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: SettingsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final copyButtonFinder = find.byTooltip('Install ID をコピー');
+        await tester.scrollUntilVisible(copyButtonFinder, 200);
+        await tester.pumpAndSettle();
+
+        // Assert
+        // Install IDが表示されていること
+        expect(find.text('Install ID: test-installation-id'), findsOneWidget);
+
+        // Act - コピーボタンをタップ
+        await tester.tap(copyButtonFinder);
+        await tester.pumpAndSettle();
+
+        // Assert
+        // クリップボードにコピーされていること
+        final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+        expect(clipboardData?.text, 'test-installation-id');
+
+        // コピーした旨のSnackBarが表示されていること
+        expect(find.text('Install ID をコピーしました'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'showDebugFeatureOnProdReleaseがtrueの場合、デバッグ機能が表示されること',
+      (tester) async {
+        // Arrange
+        container.dispose();
+        container = ProviderContainer(
+          overrides: [
+            currentUserProfileProvider.overrideWith((ref) {
+              return Stream.value(
+                const UserProfileWithGoogleAccount(
+                  id: 'test-id',
+                  displayName: 'Test User',
+                  email: 'test@example.com',
+                  photoUrl: null,
+                ),
+              );
+            }),
+            currentPackagesProvider.overrideWith(
+              (ref) => Future.value(<ProductPackage>[]),
+            ),
+            firebaseInstallationIdProvider.overrideWith(
+              (ref) => Future.value('test-installation-id'),
+            ),
+            showDebugFeatureOnProdReleaseProvider.overrideWith((ref) => true),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: SettingsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Assert
+        await tester.scrollUntilVisible(find.text('デバッグ画面'), 200);
+        expect(find.text('デバッグ画面'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'showDebugFeatureOnProdReleaseがfalseでも、Production-Release以外ではデバッグ機能が表示されること',
+      (tester) async {
+        // Arrange
+        // useRemoteConfigForShowDebugFeatureはkReleaseMode && flavor == Flavor.prodで
+        // 決まり、flutter testの実行はReleaseモードではないため常にfalseになる。
+        // そのため、showDebugFeatureOnProdReleaseの値に関わらずデバッグ機能は表示される。
+        container.dispose();
+        container = ProviderContainer(
+          overrides: [
+            currentUserProfileProvider.overrideWith((ref) {
+              return Stream.value(
+                const UserProfileWithGoogleAccount(
+                  id: 'test-id',
+                  displayName: 'Test User',
+                  email: 'test@example.com',
+                  photoUrl: null,
+                ),
+              );
+            }),
+            currentPackagesProvider.overrideWith(
+              (ref) => Future.value(<ProductPackage>[]),
+            ),
+            firebaseInstallationIdProvider.overrideWith(
+              (ref) => Future.value('test-installation-id'),
+            ),
+            showDebugFeatureOnProdReleaseProvider.overrideWith((ref) => false),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: SettingsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Assert
+        await tester.scrollUntilVisible(find.text('デバッグ画面'), 200);
+        expect(find.text('デバッグ画面'), findsOneWidget);
+      },
+    );
   });
 }
