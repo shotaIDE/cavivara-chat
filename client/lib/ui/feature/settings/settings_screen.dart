@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:house_worker/data/definition/app_definition.dart';
+import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/sign_in_result.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
+import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/component/color.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
@@ -42,6 +44,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
 
+    // Production-Release Suite では Remote Config でデバッグ機能の表示可否を制御する。
+    // それ以外の Suite では常に表示する。
+    final showDebugFeature =
+        !useRemoteConfigForShowDebugFeature ||
+        ref.watch(showDebugFeatureOnProdReleaseProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('設定')),
       body: userProfileAsync.when(
@@ -64,8 +72,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildPrivacyPolicyTile(context),
               _buildLicenseTile(context),
               const Divider(),
-              const SectionHeader(title: 'デバッグ'),
-              _buildDebugTile(context),
+              if (showDebugFeature) ...[
+                const SectionHeader(title: 'デバッグ'),
+                _buildDebugTile(context),
+              ],
               const _AppVersionTile(),
             ],
           );
