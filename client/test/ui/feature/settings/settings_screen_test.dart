@@ -6,6 +6,7 @@ import 'package:house_worker/data/model/product_package.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/auth_service.dart';
+import 'package:house_worker/data/service/firebase_installations_service.dart';
 import 'package:house_worker/data/service/in_app_purchase_service.dart';
 import 'package:house_worker/ui/feature/settings/settings_screen.dart';
 import 'package:house_worker/ui/feature/settings/support_cavivara_screen.dart';
@@ -48,6 +49,12 @@ void main() {
           // InAppPurchaseのパッケージリストをモック化（空リストを返す）
           currentPackagesProvider.overrideWith(
             (ref) => Future.value(<ProductPackage>[]),
+          ),
+          // Firebase Installation ID は Firebase 未初期化の環境ではエラーになるため、
+          // Skeletonizer のシマーが止まらず pumpAndSettle がタイムアウトする。
+          // そのためモック化する。
+          firebaseInstallationIdProvider.overrideWith(
+            (ref) => Future.value('test-installation-id'),
           ),
         ],
       );
@@ -99,6 +106,12 @@ void main() {
           // InAppPurchaseのパッケージリストをモック化（空リストを返す）
           currentPackagesProvider.overrideWith(
             (ref) => Future.value(<ProductPackage>[]),
+          ),
+          // Firebase Installation ID は Firebase 未初期化の環境ではエラーになるため、
+          // Skeletonizer のシマーが止まらず pumpAndSettle がタイムアウトする。
+          // そのためモック化する。
+          firebaseInstallationIdProvider.overrideWith(
+            (ref) => Future.value('test-installation-id'),
           ),
         ],
       );
