@@ -21,7 +21,29 @@ void main() {
   group('SettingsScreen - 称号表示機能', () {
     late ProviderContainer container;
 
+    // Clipboard は実プラットフォームチャネルを経由するため、testWidgets の
+    // fake-async ゾーン内では応答が返らず await Clipboard.setData / getData が
+    // 永久にハングする。そのためインメモリのモックハンドラを登録する。
+    Object? clipboardContents;
+
     setUp(() {
+      final binding = TestWidgetsFlutterBinding.ensureInitialized();
+      clipboardContents = null;
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (methodCall) async {
+          switch (methodCall.method) {
+            case 'Clipboard.setData':
+              clipboardContents = methodCall.arguments;
+              return null;
+            case 'Clipboard.getData':
+              return clipboardContents;
+            default:
+              return null;
+          }
+        },
+      );
+
       // _AppVersionTile が参照する currentAppVersionProvider は
       // PackageInfo.fromPlatform() を待つため、モックしないと
       // Skeletonizer のシマーが永久に動き pumpAndSettle がタイムアウトする。
@@ -63,6 +85,8 @@ void main() {
     });
 
     tearDown(() {
+      TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
       container.dispose();
     });
 
@@ -211,6 +235,10 @@ void main() {
 
         // コピーした旨のSnackBarが表示されていること
         expect(find.text('Install ID をコピーしました'), findsOneWidget);
+
+        // SnackBar の自動非表示タイマーが残っているとテスト終了時に
+        // pending timer として検出されるため、時間を進めて解消する。
+        await tester.pumpAndSettle(const Duration(seconds: 5));
       },
     );
 
