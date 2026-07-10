@@ -28,3 +28,12 @@ int? minimumBuildNumber(Ref ref) {
 
   return minimumBuildNumber;
 }
+
+/// Production-Release Suite でデバッグ機能を表示するか否か
+///
+/// デフォルト値は false。`getBool` は未設定時に false を返すため、
+/// Remote Config に値が設定されていない場合はデバッグ機能を表示しない。
+@riverpod
+bool showDebugFeatureOnProdRelease(Ref ref) {
+  return FirebaseRemoteConfig.instance.getBool('showDebugFeatureOnProdRelease');
+}

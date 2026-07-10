@@ -24,6 +24,7 @@ dependencies:
   firebase_ai: 3.13.1
   firebase_analytics: 12.4.3
   firebase_app_check: 0.4.5
+  firebase_app_installations: 0.4.2+4
   firebase_auth: 6.5.4
   firebase_core: 4.11.0
   firebase_crashlytics: 5.2.4

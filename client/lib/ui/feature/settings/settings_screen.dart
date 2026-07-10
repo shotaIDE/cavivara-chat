@@ -1,13 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:house_worker/data/definition/app_definition.dart';
+import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/sign_in_result.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
+import 'package:house_worker/data/service/firebase_installations_service.dart';
+import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/component/color.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
@@ -42,6 +46,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
 
+    // Production-Release Suite では Remote Config でデバッグ機能の表示可否を制御する。
+    // それ以外の Suite では常に表示する。
+    final showDebugFeature =
+        !useRemoteConfigForShowDebugFeature ||
+        ref.watch(showDebugFeatureOnProdReleaseProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('設定')),
       body: userProfileAsync.when(
@@ -64,8 +74,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildPrivacyPolicyTile(context),
               _buildLicenseTile(context),
               const Divider(),
-              const SectionHeader(title: 'デバッグ'),
-              _buildDebugTile(context),
+              if (showDebugFeature) ...[
+                const SectionHeader(title: 'デバッグ'),
+                _buildDebugTile(context),
+              ],
               const _AppVersionTile(),
             ],
           );
@@ -403,17 +415,20 @@ class _AppVersionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appVersionAsync = ref.watch(currentAppVersionProvider);
 
+    // バージョン名と Install ID で共通の Typography を使用する。
+    final labelStyle = Theme.of(
+      context,
+    ).textTheme.labelLarge!.copyWith(color: Theme.of(context).dividerColor);
+
     final versionString = appVersionAsync.when(
       data: (appVersion) =>
           'バージョン: ${appVersion.version} (${appVersion.buildNumber})',
       loading: () => 'バージョン: n.n.n (nnn)',
       error: (_, _) => 'バージョン情報を取得できませんでした',
     );
-    final versionText = Text(
-      versionString,
-      style: Theme.of(
-        context,
-      ).textTheme.labelLarge!.copyWith(color: Theme.of(context).dividerColor),
+    final versionText = Skeletonizer(
+      enabled: appVersionAsync.isLoading,
+      child: Text(versionString, style: labelStyle),
     );
 
     return Center(
@@ -422,13 +437,89 @@ class _AppVersionTile extends ConsumerWidget {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Skeletonizer(
-            enabled: appVersionAsync.isLoading,
-            child: versionText,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              versionText,
+              const SizedBox(height: 8),
+              _InstallationId(labelStyle: labelStyle),
+            ],
           ),
         ),
       ),
     );
+  }
+}
+
+/// Firebase Installation ID を表示し、コピーボタンを提供するウィジェット
+class _InstallationId extends ConsumerWidget {
+  const _InstallationId({required this.labelStyle});
+
+  final TextStyle labelStyle;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final installationIdAsync = ref.watch(firebaseInstallationIdProvider);
+
+    final installationId = installationIdAsync.whenOrNull(data: (id) => id);
+    final installationIdString = installationIdAsync.when(
+      data: (id) => 'Install ID: $id',
+      loading: () => 'Install ID: nnnnnnnnnnnnnnnnnnnnnn',
+      error: (_, _) => 'Install ID を取得できませんでした',
+    );
+    final installationIdText = Skeletonizer(
+      enabled: installationIdAsync.isLoading,
+      child: Text(
+        installationIdString,
+        style: labelStyle,
+        textAlign: TextAlign.center,
+      ),
+    );
+
+    if (installationId == null) {
+      return installationIdText;
+    }
+
+    // コピーボタンの横幅。左側にも同じ幅の余白を設けて、テキストを中央に見せる。
+    const copyButtonSize = 32.0;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 右側のコピーボタンと釣り合いを取り、テキストを中央に配置する。
+        const SizedBox(width: copyButtonSize),
+        Flexible(child: installationIdText),
+        SizedBox(
+          width: copyButtonSize,
+          child: IconButton(
+            icon: const Icon(Icons.copy, size: 16),
+            color: labelStyle.color,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Install ID をコピー',
+            onPressed: () => _copyInstallationId(context, installationId),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _copyInstallationId(
+    BuildContext context,
+    String installationId,
+  ) async {
+    HapticFeedbackHelper.lightImpact();
+
+    await Clipboard.setData(ClipboardData(text: installationId));
+
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Install ID をコピーしました')));
   }
 }
 
