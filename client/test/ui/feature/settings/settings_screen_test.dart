@@ -258,11 +258,13 @@ void main() {
     );
 
     testWidgets(
-      'showDebugFeatureOnProdReleaseがfalseでも、Production-Release以外ではデバッグ機能が表示されること',
+      'showDebugFeatureOnProdReleaseがfalseでも、'
+      'Production-Release以外ではデバッグ機能が表示されること',
       (tester) async {
         // Arrange
-        // useRemoteConfigForShowDebugFeatureはkReleaseMode && flavor == Flavor.prodで
-        // 決まり、flutter testの実行はReleaseモードではないため常にfalseになる。
+        // useRemoteConfigForShowDebugFeatureは
+        // kReleaseMode && flavor == Flavor.prodで決まり、
+        // flutter testの実行はReleaseモードではないため常にfalseになる。
         // そのため、showDebugFeatureOnProdReleaseの値に関わらずデバッグ機能は表示される。
         container.dispose();
         container = ProviderContainer(
