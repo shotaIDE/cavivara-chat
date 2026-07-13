@@ -39,13 +39,25 @@ class HeadsUpNotificationOverlay extends ConsumerWidget {
                 ),
                 child: state.when(
                   hidden: () => const SizedBox.shrink(),
-                  firstMessageBonus: (earnedVP, newTitleName) =>
-                      _FirstMessageBonusNotificationBody(
-                        earnedVP: earnedVP,
-                        newTitleName: newTitleName,
-                      ),
-                  dailyLoginBonus: (earnedVP) =>
-                      _DailyLoginBonusNotificationBody(earnedVP: earnedVP),
+                  firstMessageBonus: (earnedVP, newTitleName) => Dismissible(
+                    key: const ValueKey('firstMessageBonus'),
+                    direction: DismissDirection.horizontal,
+                    onDismissed: (_) =>
+                        ref.read(headsUpNotificationProvider.notifier).hide(),
+                    child: _FirstMessageBonusNotificationBody(
+                      earnedVP: earnedVP,
+                      newTitleName: newTitleName,
+                    ),
+                  ),
+                  dailyLoginBonus: (earnedVP) => Dismissible(
+                    key: const ValueKey('dailyLoginBonus'),
+                    direction: DismissDirection.horizontal,
+                    onDismissed: (_) =>
+                        ref.read(headsUpNotificationProvider.notifier).hide(),
+                    child: _DailyLoginBonusNotificationBody(
+                      earnedVP: earnedVP,
+                    ),
+                  ),
                 ),
               ),
             ),
