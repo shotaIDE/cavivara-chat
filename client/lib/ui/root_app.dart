@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
@@ -28,12 +29,19 @@ class _RootAppState extends ConsumerState<RootApp> {
   /// スプラッシュ画面の最小表示時間。
   static const _minSplashDuration = Duration(seconds: 1);
 
+  /// スプラッシュ画面でウインクが発生する確率。
+  static const _splashWinkProbability = 1 / 3;
+
   final _navigatorKey = GlobalKey<NavigatorState>();
 
   Timer? _splashTimer;
 
   /// スプラッシュ画面の最小表示時間が経過したかどうか。
   bool _minSplashElapsed = false;
+
+  /// スプラッシュ画面で表示する目のアニメーション。
+  /// [_splashWinkProbability] の確率でウインクとし、それ以外はまばたきにする。
+  late final _splashEyeAnimation = _pickSplashEyeAnimation();
 
   @override
   void initState() {
@@ -98,8 +106,8 @@ class _RootAppState extends ConsumerState<RootApp> {
                     fillColor: CatFurBubblePainter.innerSilhouetteColor(
                       Theme.of(context).brightness,
                     ),
-                    // スプラッシュ画面ではウインクさせる。
-                    eyeAnimation: CavivaraEyeAnimation.wink,
+                    // スプラッシュ画面では確率でウインクさせる。
+                    eyeAnimation: _splashEyeAnimation,
                   );
                 },
               ),
@@ -176,5 +184,12 @@ class _RootAppState extends ConsumerState<RootApp> {
       color: color,
       child: child,
     );
+  }
+
+  /// [_splashWinkProbability] の確率でウインク、それ以外はまばたきを返す。
+  static CavivaraEyeAnimation _pickSplashEyeAnimation() {
+    return Random().nextDouble() < _splashWinkProbability
+        ? CavivaraEyeAnimation.wink
+        : CavivaraEyeAnimation.blink;
   }
 }
