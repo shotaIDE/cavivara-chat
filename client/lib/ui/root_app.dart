@@ -30,7 +30,7 @@ class _RootAppState extends ConsumerState<RootApp> {
   static const _minSplashDuration = Duration(seconds: 1);
 
   /// スプラッシュ画面でウインクが発生する確率。
-  static const _splashWinkProbability = 1 / 3;
+  static const double _splashWinkProbability = 1 / 3;
 
   final _navigatorKey = GlobalKey<NavigatorState>();
 
@@ -40,8 +40,10 @@ class _RootAppState extends ConsumerState<RootApp> {
   bool _minSplashElapsed = false;
 
   /// スプラッシュ画面で表示する目のアニメーション。
-  /// [_splashWinkProbability] の確率でウインクとし、それ以外はまばたきにする。
-  late final _splashEyeAnimation = _pickSplashEyeAnimation();
+  /// [_splashWinkProbability] の確率でウインクとし、それ以外は
+  /// 目を見開いたままアニメーションなしにする。
+  late final CavivaraEyeAnimation _splashEyeAnimation =
+      _pickSplashEyeAnimation();
 
   @override
   void initState() {
@@ -186,10 +188,11 @@ class _RootAppState extends ConsumerState<RootApp> {
     );
   }
 
-  /// [_splashWinkProbability] の確率でウインク、それ以外はまばたきを返す。
+  /// [_splashWinkProbability] の確率でウインク、それ以外は
+  /// アニメーションなし（目を見開いたまま）を返す。
   static CavivaraEyeAnimation _pickSplashEyeAnimation() {
     return Random().nextDouble() < _splashWinkProbability
         ? CavivaraEyeAnimation.wink
-        : CavivaraEyeAnimation.blink;
+        : CavivaraEyeAnimation.none;
   }
 }

@@ -56,6 +56,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('アニメーションなし(none)では時間を進めても例外が出ないこと', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                child: AnimatedCavivara(
+                  eyeAnimation: CavivaraEyeAnimation.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // タイマーを開始しないため、まばたき間隔を超えて進めても
+      // アニメーションもタイマーも発生せず、目を見開いたままとなる。
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(find.byType(AnimatedCavivara), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('strokeColor を指定してもビルドできること', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
