@@ -41,6 +41,7 @@ class HeadsUpNotificationOverlay extends ConsumerWidget {
                   hidden: () => const SizedBox.shrink(),
                   firstMessageBonus: (earnedVP, newTitleName) => Dismissible(
                     key: const ValueKey('firstMessageBonus'),
+                    direction: DismissDirection.up,
                     onDismissed: (_) =>
                         ref.read(headsUpNotificationProvider.notifier).hide(),
                     child: _FirstMessageBonusNotificationBody(
@@ -50,6 +51,7 @@ class HeadsUpNotificationOverlay extends ConsumerWidget {
                   ),
                   dailyLoginBonus: (earnedVP) => Dismissible(
                     key: const ValueKey('dailyLoginBonus'),
+                    direction: DismissDirection.up,
                     onDismissed: (_) =>
                         ref.read(headsUpNotificationProvider.notifier).hide(),
                     child: _DailyLoginBonusNotificationBody(
