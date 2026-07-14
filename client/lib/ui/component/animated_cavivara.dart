@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 
 /// カヴィヴァラの目のアニメーションの種類。
 enum CavivaraEyeAnimation {
+  /// 目を見開いたまま、アニメーションを再生しない。
+  none,
+
   /// 両目を同時に閉じてまばたきする。
   blink,
 
@@ -34,7 +37,7 @@ class AnimatedCavivara extends StatefulWidget {
   /// 小さいサイズで表示する場合は大きめの値を指定すると視認性が上がる。
   final double strokeWidth;
 
-  /// 目のアニメーションの種類（両目のまばたき／右目のウインク）。
+  /// 目のアニメーションの種類（アニメーションなし／両目のまばたき／右目のウインク）。
   final CavivaraEyeAnimation eyeAnimation;
 
   @override
@@ -83,7 +86,10 @@ class _AnimatedCavivaraState extends State<AnimatedCavivara>
       ),
     ]).animate(_controller);
 
-    _blinkTimer = Timer(_initialDelay, _playBlink);
+    // アニメーションなしの場合は目を見開いたままにし、タイマーを開始しない。
+    if (widget.eyeAnimation != CavivaraEyeAnimation.none) {
+      _blinkTimer = Timer(_initialDelay, _playBlink);
+    }
   }
 
   void _playBlink() {
@@ -471,7 +477,7 @@ class _CavivaraPainter extends CustomPainter {
   /// 目のまばたき進捗。0 で開眼、1 で閉眼。
   final double blinkProgress;
 
-  /// 目のアニメーションの種類（両目のまばたき／右目のウインク）。
+  /// 目のアニメーションの種類（アニメーションなし／両目のまばたき／右目のウインク）。
   final CavivaraEyeAnimation eyeAnimation;
 
   @override
