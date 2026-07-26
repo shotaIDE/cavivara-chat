@@ -1,5 +1,13 @@
 const appStoreId = '000000000';
 
+/// 利用規約ページの URL
+const termsOfServiceUrl =
+    'https://tricolor-fright-c89.notion.site/3a935dfd37af805a85d2e826048770d2';
+
+/// プライバシーポリシーページの URL
+const privacyPolicyUrl =
+    'https://tricolor-fright-c89.notion.site/29e35dfd37af80059ab2eb1cf50e1058';
+
 const revenueCatProjectTestApiKey = String.fromEnvironment(
   'REVENUE_CAT_PROJECT_TEST_API_KEY',
 );

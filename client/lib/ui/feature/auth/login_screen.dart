@@ -1,8 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/definition/app_definition.dart';
 import 'package:house_worker/ui/component/cavivara_avatar.dart';
 import 'package:house_worker/ui/feature/auth/login_presenter.dart';
 import 'package:house_worker/ui/feature/home/home_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -47,14 +50,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 60),
       continueWithoutAccountButton,
+      const SizedBox(height: 32),
+      const _AgreementText(),
     ];
 
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: children,
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // 横向きなどで縦幅が足りない場合はスクロールできるようにしつつ、
+          // 縦幅に余裕がある場合は従来どおり中央に配置する。
+          // セーフエリア分の余白はスクロール内容側の余白に含めることで、
+          // スクロール中はコンテンツがセーフエリア外にも描画されるようにする。
+          final safeAreaPadding = MediaQuery.paddingOf(context);
+
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  32 + safeAreaPadding.left,
+                  24 + safeAreaPadding.top,
+                  32 + safeAreaPadding.right,
+                  24 + safeAreaPadding.bottom,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: children,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -69,5 +95,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await Navigator.of(context).pushReplacement(
       HomeScreen.route(),
     );
+  }
+}
+
+/// 「はじめる」をタップして利用を開始すると、利用規約とプライバシーポリシーに
+/// 同意したものとみなす旨を表示するウィジェット。
+///
+/// 「利用規約」「プライバシーポリシー」の文言はそれぞれのページへのリンクになっている。
+class _AgreementText extends StatefulWidget {
+  const _AgreementText();
+
+  @override
+  State<_AgreementText> createState() => _AgreementTextState();
+}
+
+class _AgreementTextState extends State<_AgreementText> {
+  final _termsOfServiceRecognizer = TapGestureRecognizer();
+  final _privacyPolicyRecognizer = TapGestureRecognizer();
+
+  @override
+  void initState() {
+    super.initState();
+    _termsOfServiceRecognizer.onTap = () => _launch(termsOfServiceUrl);
+    _privacyPolicyRecognizer.onTap = () => _launch(privacyPolicyUrl);
+  }
+
+  @override
+  void dispose() {
+    _termsOfServiceRecognizer.dispose();
+    _privacyPolicyRecognizer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+    final linkStyle = baseStyle?.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+      decoration: TextDecoration.underline,
+    );
+
+    return Text.rich(
+      TextSpan(
+        style: baseStyle,
+        children: [
+          const TextSpan(text: '「はじめる」をタップして利用を開始すると、\n'),
+          TextSpan(
+            text: '利用規約',
+            style: linkStyle,
+            recognizer: _termsOfServiceRecognizer,
+          ),
+          const TextSpan(text: 'と'),
+          TextSpan(
+            text: 'プライバシーポリシー',
+            style: linkStyle,
+            recognizer: _privacyPolicyRecognizer,
+          ),
+          const TextSpan(text: 'に同意したものとみなされます。'),
+        ],
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
+
+  Future<void> _launch(String urlString) async {
+    final url = Uri.parse(urlString);
+    final launched = await launchUrl(url);
+
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
+    }
   }
 }

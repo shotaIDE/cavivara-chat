@@ -163,15 +163,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () async {
         HapticFeedbackHelper.lightImpact();
         // 利用規約ページへのリンク
-        final url = Uri.parse('https://example.com/terms');
-        if (await canLaunchUrl(url)) {
-          await launchUrl(url);
-        } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
-          }
+        final url = Uri.parse(termsOfServiceUrl);
+        final launched = await launchUrl(url);
+
+        if (!launched && context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
         }
       },
     );
@@ -185,15 +183,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () async {
         HapticFeedbackHelper.lightImpact();
         // プライバシーポリシーページへのリンク
-        final url = Uri.parse('https://example.com/privacy');
-        if (await canLaunchUrl(url)) {
-          await launchUrl(url);
-        } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
-          }
+        final url = Uri.parse(privacyPolicyUrl);
+        final launched = await launchUrl(url);
+
+        if (!launched && context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
         }
       },
     );
