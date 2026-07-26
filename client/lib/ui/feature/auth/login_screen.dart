@@ -59,22 +59,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         builder: (context, constraints) {
           // 横向きなどで縦幅が足りない場合はスクロールできるようにしつつ、
           // 縦幅に余裕がある場合は従来どおり中央に配置する。
-          // スクロールビュー自体は画面全体に広げ、スクロール中はコンテンツが
-          // セーフエリア外にも描画されるようにする。静止時のコンテンツ位置は
-          // 内側の SafeArea で確保する。
+          // セーフエリア分の余白はスクロール内容側の余白に含めることで、
+          // スクロール中はコンテンツがセーフエリア外にも描画されるようにする。
+          final safeAreaPadding = MediaQuery.paddingOf(context);
+
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 24,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: children,
-                  ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  32 + safeAreaPadding.left,
+                  24 + safeAreaPadding.top,
+                  32 + safeAreaPadding.right,
+                  24 + safeAreaPadding.bottom,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: children,
                 ),
               ),
             ),
