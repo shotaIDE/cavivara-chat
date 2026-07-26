@@ -161,14 +161,12 @@ class _AgreementTextState extends State<_AgreementText> {
 
   Future<void> _launch(String urlString) async {
     final url = Uri.parse(urlString);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
-      }
+    final launched = await launchUrl(url);
+
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('URLを開けませんでした')));
     }
   }
 }
