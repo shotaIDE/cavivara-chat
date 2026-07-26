@@ -163,7 +163,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () async {
         HapticFeedbackHelper.lightImpact();
         // 利用規約ページへのリンク
-        final url = Uri.parse('https://example.com/terms');
+        final url = Uri.parse(termsOfServiceUrl);
         if (await canLaunchUrl(url)) {
           await launchUrl(url);
         } else {
@@ -185,7 +185,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () async {
         HapticFeedbackHelper.lightImpact();
         // プライバシーポリシーページへのリンク
-        final url = Uri.parse('https://example.com/privacy');
+        final url = Uri.parse(privacyPolicyUrl);
         if (await canLaunchUrl(url)) {
           await launchUrl(url);
         } else {
