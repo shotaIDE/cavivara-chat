@@ -55,14 +55,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ];
 
     return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // 横向きなどで縦幅が足りない場合はスクロールできるようにしつつ、
-            // 縦幅に余裕がある場合は従来どおり中央に配置する。
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // 横向きなどで縦幅が足りない場合はスクロールできるようにしつつ、
+          // 縦幅に余裕がある場合は従来どおり中央に配置する。
+          // スクロールビュー自体は画面全体に広げ、スクロール中はコンテンツが
+          // セーフエリア外にも描画されるようにする。静止時のコンテンツ位置は
+          // 内側の SafeArea で確保する。
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
@@ -74,9 +77,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
