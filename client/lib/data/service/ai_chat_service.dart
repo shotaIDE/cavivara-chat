@@ -53,6 +53,19 @@ class AiChatService {
     optionalProperties: ['suggestedReplies'],
   );
 
+  /// 結社マスターモードで、モデルに Function Calling の利用を促すための追加指示。
+  ///
+  /// カヴィヴァラのプロンプトは自身を「百科事典級の知識を持つ専門家」と規定しており、
+  /// この指示がないとモデルは結社の公式情報も自前の知識で答えてしまい、
+  /// 提供済みの関数を呼び出さない（Function Calling が働かない）。
+  /// そのため、結社の公式情報・日時は必ず関数経由で取得するよう明示する。
+  static const String _plectrumSocietyToolInstruction = '''
+
+## 情報の取得ルール（厳守）
+- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。
+- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。
+- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。''';
+
   /// Gemini 2.5 Flashモデルを取得（systemPromptとChatModeを指定可能）
   ///
   /// FunctionCallingとレスポンススキーマは同時に指定できないため、
@@ -79,7 +92,12 @@ class AiChatService {
           ChatMode.chitChatMaster => _aiResponseSchema,
         },
       ),
-      systemInstruction: Content.system(systemPrompt),
+      // 結社マスターモードでは、Function Calling の利用を促す追加指示を付与する
+      systemInstruction: Content.system(switch (mode) {
+        ChatMode.plectrumSocietyMaster =>
+          '$systemPrompt$_plectrumSocietyToolInstruction',
+        ChatMode.chitChatMaster => systemPrompt,
+      }),
       // 結社マスターモードのみ、FunctionCallingを使用する
       tools: switch (mode) {
         ChatMode.plectrumSocietyMaster => knowledgeBase.tools,
