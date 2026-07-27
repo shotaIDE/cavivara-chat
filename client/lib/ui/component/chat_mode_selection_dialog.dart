@@ -31,33 +31,37 @@ class _ChatModeSelectionDialogState extends State<ChatModeSelectionDialog> {
     return AlertDialog(
       title: const Text('人格の選択'),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.isLocked)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  '会話が始まると、人格は変更できません。'
-                  '記憶を消去すると、再び選べるようになります。',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+        child: RadioGroup<ChatModeSelection>(
+          groupValue: _selection,
+          onChanged: _onOptionChanged,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.isLocked)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    '会話が始まると、人格は変更できません。'
+                    '記憶を消去すると、再び選べるようになります。',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-            _buildOption(
-              value: const ChatModeSelection.auto(),
-              title: '人格の自動選択',
-              subtitle: '会話の内容にあわせて、最適な人格を自動的に選びます。',
-            ),
-            for (final mode in ChatMode.values)
               _buildOption(
-                value: ChatModeSelection.fixed(mode),
-                title: mode.displayName,
-                subtitle: mode.description,
+                value: const ChatModeSelection.auto(),
+                title: '人格の自動選択',
+                subtitle: '会話の内容にあわせて、最適な人格を自動的に選びます。',
               ),
-          ],
+              for (final mode in ChatMode.values)
+                _buildOption(
+                  value: ChatModeSelection.fixed(mode),
+                  title: mode.displayName,
+                  subtitle: mode.description,
+                ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -80,6 +84,16 @@ class _ChatModeSelectionDialogState extends State<ChatModeSelectionDialog> {
     );
   }
 
+  void _onOptionChanged(ChatModeSelection? selected) {
+    if (selected == null) {
+      return;
+    }
+    HapticFeedbackHelper.onToggle();
+    setState(() {
+      _selection = selected;
+    });
+  }
+
   Widget _buildOption({
     required ChatModeSelection value,
     required String title,
@@ -87,22 +101,11 @@ class _ChatModeSelectionDialogState extends State<ChatModeSelectionDialog> {
   }) {
     return RadioListTile<ChatModeSelection>(
       value: value,
-      groupValue: _selection,
       contentPadding: EdgeInsets.zero,
       title: Text(title),
       subtitle: Text(subtitle),
       // 会話が開始済みのときは選択を変更できないようにする。
-      onChanged: widget.isLocked
-          ? null
-          : (selected) {
-              if (selected == null) {
-                return;
-              }
-              HapticFeedbackHelper.onToggle();
-              setState(() {
-                _selection = selected;
-              });
-            },
+      enabled: !widget.isLocked,
     );
   }
 }

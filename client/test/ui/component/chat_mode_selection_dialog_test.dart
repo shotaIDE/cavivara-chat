@@ -50,13 +50,15 @@ void main() {
         onResult: (_) {},
       );
 
-      final radio = tester.widget<RadioListTile<ChatModeSelection>>(
-        find.widgetWithText(
-          RadioListTile<ChatModeSelection>,
-          ChatMode.plectrumSocietyMaster.displayName,
+      final group = tester.widget<RadioGroup<ChatModeSelection>>(
+        find.byType(RadioGroup<ChatModeSelection>),
+      );
+      expect(
+        group.groupValue,
+        equals(
+          const ChatModeSelection.fixed(ChatMode.plectrumSocietyMaster),
         ),
       );
-      expect(radio.groupValue, equals(radio.value));
     });
 
     testWidgets('モードを選択して決定すると、選択結果が返されること', (tester) async {
@@ -110,14 +112,14 @@ void main() {
         isLocked: true,
       );
 
-      // 選択肢は無効化されており、onChanged が設定されていないこと。
+      // 選択肢は無効化されており、操作できないこと。
       final radio = tester.widget<RadioListTile<ChatModeSelection>>(
         find.widgetWithText(
           RadioListTile<ChatModeSelection>,
           ChatMode.chitChatMaster.displayName,
         ),
       );
-      expect(radio.onChanged, isNull);
+      expect(radio.enabled, isFalse);
 
       // 決定ボタンは表示されず、閉じるボタンのみが表示されること。
       expect(find.text('決定'), findsNothing);
