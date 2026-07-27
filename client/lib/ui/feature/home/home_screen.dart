@@ -226,14 +226,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2,
                 ),
-                _ChatModeIndicator(
-                  label: _chatModeLabel(
-                    selection: chatModeSelection,
-                    resolvedMode: resolvedChatMode,
-                  ),
-                  mode: _chatModeForBadge(
-                    selection: chatModeSelection,
-                    resolvedMode: resolvedChatMode,
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: _ChatModeIndicator(
+                    label: _chatModeLabel(
+                      selection: chatModeSelection,
+                      resolvedMode: resolvedChatMode,
+                    ),
+                    mode: _chatModeForBadge(
+                      selection: chatModeSelection,
+                      resolvedMode: resolvedChatMode,
+                    ),
                   ),
                 ),
               ],
@@ -333,9 +336,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           data: (value) => switch (value) {
             ChatModeSelectionFixed(:final mode) => mode.shortLabel,
             ChatModeSelectionAuto() =>
-              resolvedMode != null
-                  ? '人格の自動選択（${resolvedMode.shortLabel}）'
-                  : '人格の自動選択',
+              resolvedMode != null ? resolvedMode.shortLabel : '人格の自動選択',
           },
         ) ??
         '人格の自動選択';
