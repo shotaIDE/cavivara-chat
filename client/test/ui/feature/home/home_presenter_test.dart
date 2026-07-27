@@ -4,6 +4,7 @@ import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/cavivara_profile.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/chat_mode.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/model/preference_key.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
@@ -25,6 +26,7 @@ void main() {
   setUpAll(() {
     // Register fallback values for mocktail matchers
     registerFallbackValue(PreferenceKey.skipClearChatConfirmation);
+    registerFallbackValue(ChatMode.chitChatMaster);
   });
 
   group('Home Presenter - Chat Messages', () {
@@ -54,6 +56,11 @@ void main() {
           value: any(named: 'value'),
         ),
       ).thenAnswer((_) async {});
+
+      // ChatModeSelectionRepository用のモック（未設定時は自動選択扱い）
+      when(
+        () => mockPreferenceService.getString(any()),
+      ).thenAnswer((_) async => null);
 
       // テスト用のカヴィヴァラプロフィールを作成
       const testCavivaraProfile = CavivaraProfile(
@@ -99,6 +106,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             messageText,
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -133,6 +141,7 @@ void main() {
             () => mockAiChatService.sendMessageStream(
               messageText,
               systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: any(named: 'mode'),
               conversationHistory: any<List<ChatMessage>?>(
                 named: 'conversationHistory',
               ),
@@ -151,6 +160,119 @@ void main() {
             () => mockAiChatService.sendMessageStream(
               messageText,
               systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: any(named: 'mode'),
+              conversationHistory: any<List<ChatMessage>?>(
+                named: 'conversationHistory',
+              ),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        '雑談を示唆する文言の場合、雑談マスターモードで呼び出されること',
+        () async {
+          const messageText = '今日はいい天気だね';
+
+          when(
+            () => mockAiChatService.sendMessageStream(
+              messageText,
+              systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: any(named: 'mode'),
+              conversationHistory: any<List<ChatMessage>?>(
+                named: 'conversationHistory',
+              ),
+            ),
+          ).thenAnswer(
+            (_) => Stream.value(
+              const AiResponse(content: 'AIからの返信'),
+            ),
+          );
+
+          final notifier = container.read(chatMessagesProvider.notifier);
+          await notifier.sendMessage(messageText);
+
+          verify(
+            () => mockAiChatService.sendMessageStream(
+              messageText,
+              systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: ChatMode.chitChatMaster,
+              conversationHistory: any<List<ChatMessage>?>(
+                named: 'conversationHistory',
+              ),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        '結社の知識に関連する文言の場合、結社マスターモードで呼び出されること',
+        () async {
+          const messageText = '次の定期演奏会はいつ開催されますか？';
+
+          when(
+            () => mockAiChatService.sendMessageStream(
+              messageText,
+              systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: any(named: 'mode'),
+              conversationHistory: any<List<ChatMessage>?>(
+                named: 'conversationHistory',
+              ),
+            ),
+          ).thenAnswer(
+            (_) => Stream.value(
+              const AiResponse(content: 'AIからの返信'),
+            ),
+          );
+
+          final notifier = container.read(chatMessagesProvider.notifier);
+          await notifier.sendMessage(messageText);
+
+          verify(
+            () => mockAiChatService.sendMessageStream(
+              messageText,
+              systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: ChatMode.plectrumSocietyMaster,
+              conversationHistory: any<List<ChatMessage>?>(
+                named: 'conversationHistory',
+              ),
+            ),
+          ).called(1);
+        },
+      );
+
+      test(
+        '自動選択モードでは、会話中の2通目以降は初回の判定結果が使われ続けること',
+        () async {
+          const firstMessage = '次の定期演奏会はいつ開催されますか？';
+          const secondMessage = '今日はいい天気だね';
+
+          when(
+            () => mockAiChatService.sendMessageStream(
+              any<String>(),
+              systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: any(named: 'mode'),
+              conversationHistory: any<List<ChatMessage>?>(
+                named: 'conversationHistory',
+              ),
+            ),
+          ).thenAnswer(
+            (_) => Stream.value(
+              const AiResponse(content: 'AIからの返信'),
+            ),
+          );
+
+          final notifier = container.read(chatMessagesProvider.notifier);
+          await notifier.sendMessage(firstMessage);
+          await notifier.sendMessage(secondMessage);
+
+          // 2通目は雑談を示唆する文言だが、初回に判定した結社マスターモードが
+          // 維持されること
+          verify(
+            () => mockAiChatService.sendMessageStream(
+              secondMessage,
+              systemPrompt: any<String>(named: 'systemPrompt'),
+              mode: ChatMode.plectrumSocietyMaster,
               conversationHistory: any<List<ChatMessage>?>(
                 named: 'conversationHistory',
               ),
@@ -166,6 +288,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             messageText,
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -199,6 +322,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             messageText,
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -230,6 +354,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             any<String>(),
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -350,6 +475,9 @@ void main() {
             value: any(named: 'value'),
           ),
         ).thenAnswer((_) async {});
+        when(
+          () => mockPreferenceService.getString(any()),
+        ).thenAnswer((_) async => null);
 
         container = ProviderContainer(
           overrides: [
@@ -392,6 +520,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             any<String>(),
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -420,6 +549,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             messageText,
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -450,6 +580,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             messageText,
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),
@@ -477,6 +608,7 @@ void main() {
           () => mockAiChatService.sendMessageStream(
             messageText,
             systemPrompt: any<String>(named: 'systemPrompt'),
+            mode: any(named: 'mode'),
             conversationHistory: any<List<ChatMessage>?>(
               named: 'conversationHistory',
             ),

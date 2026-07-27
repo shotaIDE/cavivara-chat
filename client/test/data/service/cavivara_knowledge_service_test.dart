@@ -81,6 +81,26 @@ void main() {
       },
     );
 
+    test(
+      'returns true from hasRelevantKnowledge when query matches a keyword',
+      () {
+        expect(
+          knowledgeBase.hasRelevantKnowledge('定期演奏会はいつ開催されるの？'),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'returns false from hasRelevantKnowledge when query matches nothing',
+      () {
+        expect(
+          knowledgeBase.hasRelevantKnowledge('今日の天気は？'),
+          isFalse,
+        );
+      },
+    );
+
     test('returns current date time information', () async {
       final start = DateTime.now().toUtc();
 

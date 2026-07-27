@@ -5,12 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/chat_mode.dart';
+import 'package:house_worker/data/model/chat_mode_selection.dart';
+import 'package:house_worker/data/repository/chat_mode_selection_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
+import 'package:house_worker/ui/component/chat_mode_extension.dart';
+import 'package:house_worker/ui/component/chat_mode_selection_dialog.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
@@ -181,6 +186,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final cavivaraProfile = ref.watch(cavivaraProfileProvider);
+    final chatModeSelection = ref.watch(chatModeSelectionRepositoryProvider);
+    final resolvedChatMode = ref.watch(resolvedChatModeProvider);
 
     final title = Row(
       children: [
@@ -207,10 +214,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            cavivaraProfile.displayName,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
+          child: InkWell(
+            onTap: _showChatModeSelectionDialog,
+            borderRadius: BorderRadius.circular(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  cavivaraProfile.displayName,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+                _ChatModeIndicator(
+                  label: _chatModeLabel(
+                    selection: chatModeSelection,
+                    resolvedMode: resolvedChatMode,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -296,6 +319,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: scaffold,
       ),
     );
+  }
+
+  String _chatModeLabel({
+    required AsyncValue<ChatModeSelection> selection,
+    required ChatMode? resolvedMode,
+  }) {
+    return selection.whenOrNull(
+          data: (value) => switch (value) {
+            ChatModeSelectionFixed(:final mode) => mode.shortLabel,
+            ChatModeSelectionAuto() => resolvedMode != null
+                ? '自動選択（${resolvedMode.shortLabel}）'
+                : '自動選択',
+          },
+        ) ??
+        '自動選択';
+  }
+
+  Future<void> _showChatModeSelectionDialog() async {
+    HapticFeedbackHelper.onDialogShow();
+
+    final currentSelection = await ref.read(
+      chatModeSelectionRepositoryProvider.future,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final result = await showDialog<ChatModeSelection>(
+      context: context,
+      builder: (context) =>
+          ChatModeSelectionDialog(initialSelection: currentSelection),
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    await ref.read(chatModeSelectionRepositoryProvider.notifier).save(result);
+
+    // 選択が変わった場合に備え、自動選択の判定結果をリセットし、次のメッセージで
+    // 改めて判定できるようにする
+    ref.read(resolvedChatModeProvider.notifier).reset();
   }
 
   Future<void> _clearChat() async {
@@ -436,6 +502,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+/// チャット画面のタイトル下に、現在の回答モードをさりげなく表示するインジケーター
+class _ChatModeIndicator extends StatelessWidget {
+  const _ChatModeIndicator({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.tune, size: 12, color: mutedColor),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: mutedColor),
+          ),
+        ),
+      ],
     );
   }
 }

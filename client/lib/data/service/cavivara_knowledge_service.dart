@@ -68,6 +68,19 @@ class CavivaraKnowledgeBase {
 
   List<Tool> get tools => _knowledgeTools;
 
+  /// 指定した文言が、結社の知識ベースに関連する内容かどうかを判定する。
+  ///
+  /// 自動選択モードでの初回メッセージに対し、プレクトラム結社マスターモードと
+  /// 雑談マスターモードのどちらを使うか判断する材料として利用する。
+  bool hasRelevantKnowledge(String query) {
+    final normalizedQuery = _normalizeQuery(query);
+    if (normalizedQuery == null) {
+      return false;
+    }
+
+    return _entries.values.any((entry) => entry.matches(normalizedQuery));
+  }
+
   Future<Map<String, dynamic>> execute({
     required String functionName,
     Map<String, dynamic> arguments = const <String, dynamic>{},
