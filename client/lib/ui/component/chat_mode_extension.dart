@@ -5,7 +5,7 @@ extension ChatModeExtension on ChatMode {
   String get displayName {
     switch (this) {
       case ChatMode.plectrumSocietyMaster:
-        return 'プレクトラム結社マスター';
+        return '結社マスター';
       case ChatMode.chitChatMaster:
         return '雑談マスター';
     }

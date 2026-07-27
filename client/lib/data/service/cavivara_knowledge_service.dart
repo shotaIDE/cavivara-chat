@@ -70,7 +70,7 @@ class CavivaraKnowledgeBase {
 
   /// 指定した文言が、結社の知識ベースに関連する内容かどうかを判定する。
   ///
-  /// 自動選択モードでの初回メッセージに対し、プレクトラム結社マスターモードと
+  /// 自動選択モードでの初回メッセージに対し、結社マスターモードと
   /// 雑談マスターモードのどちらを使うか判断する材料として利用する。
   bool hasRelevantKnowledge(String query) {
     final normalizedQuery = _normalizeQuery(query);

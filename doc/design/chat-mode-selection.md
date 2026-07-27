@@ -2,7 +2,7 @@
 
 ## 目的
 
-カヴィヴァラの回答モードを「プレクトラム結社マスターモード（Function Calling を利用し、結社の演奏会情報などを回答する）」と「雑談マスターモード（返信サジェストを付与して雑談する）」から選択できる機能の技術的な設計概要を示す。
+カヴィヴァラの回答モードを「結社マスターモード（Function Calling を利用し、結社の演奏会情報などを回答する）」と「雑談マスターモード（返信サジェストを付与して雑談する）」から選択できる機能の技術的な設計概要を示す。
 
 Gemini API は Function Calling とレスポンススキーマ（構造化出力）を同一リクエストで併用できないため、これら 2 つの回答方式は排他的に切り替える必要がある。
 
@@ -13,21 +13,17 @@ Gemini API は Function Calling とレスポンススキーマ（構造化出力
 本機能は以下の層で実装する：
 
 1. **UI Layer** - ユーザーインターフェース
-
    - チャット画面タイトル下のモードインジケーター（HomeScreen 内）
    - モード選択ダイアログ（ChatModeSelectionDialog）
 
 2. **Presenter Layer** - 状態管理・判定ロジック
-
    - `ChatMessages`（送信時のモード解決）
    - `ResolvedChatMode`（自動選択モードでの会話中の判定結果保持）
 
 3. **Repository Layer** - データ永続化
-
    - `ChatModeSelectionRepository`
 
 4. **Service Layer** - Gemini API 呼び出し
-
    - `AiChatService`（モードに応じたモデル設定の切り替え）
    - `CavivaraKnowledgeBase`（自動選択判定のための知識ベース参照）
 
@@ -105,7 +101,7 @@ Gemini API 側の制約上、同一会話中でレスポンススキーマと Fu
 **内容**:
 
 - チャット画面タイトル（カヴィヴァラの表示名）の下に、現在の回答モードを示す小さなラベルを表示
-- ラベルをタップすると `ChatModeSelectionDialog` を表示し、「自動選択」「プレクトラム結社マスターモード」「雑談マスターモード」を `RadioListTile` で選択できる
+- ラベルをタップすると `ChatModeSelectionDialog` を表示し、「自動選択」「結社マスターモード」「雑談マスターモード」を `RadioListTile` で選択できる
 - 選択を保存すると、自動選択の判定結果（`ResolvedChatMode`）をリセットし、次のメッセージから改めて判定できるようにする
 
 ## データフロー

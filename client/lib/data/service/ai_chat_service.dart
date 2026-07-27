@@ -80,7 +80,7 @@ class AiChatService {
         },
       ),
       systemInstruction: Content.system(systemPrompt),
-      // プレクトラム結社マスターモードのみ、FunctionCallingを使用する
+      // 結社マスターモードのみ、FunctionCallingを使用する
       tools: switch (mode) {
         ChatMode.plectrumSocietyMaster => knowledgeBase.tools,
         ChatMode.chitChatMaster => null,
