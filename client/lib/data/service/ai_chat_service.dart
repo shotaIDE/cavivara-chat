@@ -6,6 +6,7 @@ import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/chat_mode.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/service/cavivara_knowledge_service.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
@@ -32,10 +33,13 @@ class AiChatService {
   final CavivaraKnowledgeBase knowledgeBase;
   final Logger _logger = Logger('AiChatService');
 
-  /// チャットセッションのキャッシュ（systemPromptごとに保持）
+  /// チャットセッションのキャッシュ（systemPromptとChatModeの組み合わせごとに保持）
   final Map<String, ChatSession> _chatSessions = {};
 
   /// Response Schema定義（AIの返答形式を指定）
+  ///
+  /// FunctionCallingとレスポンススキーマの併用は不可なため、
+  /// [ChatMode.chitChatMaster] でのみ使用する。
   static final _aiResponseSchema = Schema.object(
     properties: {
       'content': Schema.string(
@@ -49,8 +53,24 @@ class AiChatService {
     optionalProperties: ['suggestedReplies'],
   );
 
-  /// Gemini 2.5 Flashモデルを取得（systemPromptを指定可能）
-  GenerativeModel _getModel(String systemPrompt) {
+  /// 結社マスターモードで、モデルに Function Calling の利用を促すための追加指示。
+  ///
+  /// カヴィヴァラのプロンプトは自身を「百科事典級の知識を持つ専門家」と規定しており、
+  /// この指示がないとモデルは結社の公式情報も自前の知識で答えてしまい、
+  /// 提供済みの関数を呼び出さない（Function Calling が働かない）。
+  /// そのため、結社の公式情報・日時は必ず関数経由で取得するよう明示する。
+  static const String _plectrumSocietyToolInstruction = '''
+
+## 情報の取得ルール（厳守）
+- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。
+- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。
+- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。''';
+
+  /// Gemini 2.5 Flashモデルを取得（systemPromptとChatModeを指定可能）
+  ///
+  /// FunctionCallingとレスポンススキーマは同時に指定できないため、
+  /// [mode] に応じてどちらか一方のみをモデルに設定する。
+  GenerativeModel _getModel(String systemPrompt, ChatMode mode) {
     return FirebaseAI.googleAI().generativeModel(
       model: 'gemini-2.5-flash',
       generationConfig: GenerationConfig(
@@ -62,13 +82,27 @@ class AiChatService {
         topK: 40,
         // 生成する最大トークン数
         maxOutputTokens: 2048,
-        // Response Schemaを使用して構造化レスポンスを取得
-        responseMimeType: 'application/json',
-        responseSchema: _aiResponseSchema,
+        // 雑談マスターモードのみ、Response Schemaを使用して構造化レスポンスを取得
+        responseMimeType: switch (mode) {
+          ChatMode.plectrumSocietyMaster => null,
+          ChatMode.chitChatMaster => 'application/json',
+        },
+        responseSchema: switch (mode) {
+          ChatMode.plectrumSocietyMaster => null,
+          ChatMode.chitChatMaster => _aiResponseSchema,
+        },
       ),
-      systemInstruction: Content.system(systemPrompt),
-      // FunctionCallingとレスポンススキーマの併用は不可なので、一旦レスポンススキーマを優先
-      // tools: knowledgeBase.tools,
+      // 結社マスターモードでは、Function Calling の利用を促す追加指示を付与する
+      systemInstruction: Content.system(switch (mode) {
+        ChatMode.plectrumSocietyMaster =>
+          '$systemPrompt$_plectrumSocietyToolInstruction',
+        ChatMode.chitChatMaster => systemPrompt,
+      }),
+      // 結社マスターモードのみ、FunctionCallingを使用する
+      tools: switch (mode) {
+        ChatMode.plectrumSocietyMaster => knowledgeBase.tools,
+        ChatMode.chitChatMaster => null,
+      },
     );
   }
 
@@ -76,28 +110,34 @@ class AiChatService {
   ///
   /// [message] - 送信するメッセージ
   /// [systemPrompt] - 使用するシステムプロンプト（必須）
+  /// [mode] - 使用する回答モード（必須）
   /// [conversationHistory] - 会話履歴（指定された場合、新しいセッションを開始してhistoryを設定）
   ///
-  /// Response Schemaを使用して構造化されたAIレスポンスを返す
+  /// [ChatMode.chitChatMaster] の場合はResponse Schemaを使用して構造化された
+  /// AIレスポンスを返し、[ChatMode.plectrumSocietyMaster] の場合はFunction Calling
+  /// を使用してプレーンテキストのレスポンスを返す。
   Stream<AiResponse> sendMessageStream(
     String message, {
     required String systemPrompt,
+    required ChatMode mode,
     List<ChatMessage>? conversationHistory,
   }) {
     _logger.info(
       'Send message: $message with systemPrompt hash: '
-      '${systemPrompt.hashCode}',
+      '${systemPrompt.hashCode}, mode: $mode',
     );
 
     try {
       final chatSession = _createOrReuseChatSession(
         systemPrompt: systemPrompt,
+        mode: mode,
         conversationHistory: conversationHistory,
       );
 
       return _startMessageProcessing(
         chatSession: chatSession,
         message: message,
+        mode: mode,
       );
     } catch (e, stackTrace) {
       _logger.severe('ストリーミングチャットメッセージの送信に失敗: $e');
@@ -110,24 +150,33 @@ class AiChatService {
 
   ChatSession _createOrReuseChatSession({
     required String systemPrompt,
+    required ChatMode mode,
     List<ChatMessage>? conversationHistory,
   }) {
     if (conversationHistory != null) {
       // 会話履歴が指定された場合は新しいセッションを作成
-      final model = _getModel(systemPrompt);
+      final model = _getModel(systemPrompt, mode);
       final history = _convertChatHistoryToContent(conversationHistory);
       return model.startChat(history: history);
     }
 
     // 既存のセッションを取得または新規作成
-    final sessionKey = systemPrompt.hashCode.toString();
-    return _chatSessions[sessionKey] ??= _getModel(systemPrompt).startChat();
+    final sessionKey = _sessionKey(systemPrompt: systemPrompt, mode: mode);
+    return _chatSessions[sessionKey] ??= _getModel(
+      systemPrompt,
+      mode,
+    ).startChat();
+  }
+
+  String _sessionKey({required String systemPrompt, required ChatMode mode}) {
+    return '${systemPrompt.hashCode}_${mode.name}';
   }
 
   /// メッセージ処理を開始する
   Stream<AiResponse> _startMessageProcessing({
     required ChatSession chatSession,
     required String message,
+    required ChatMode mode,
   }) {
     final controller = StreamController<AiResponse>();
 
@@ -140,6 +189,7 @@ class AiChatService {
         chatSession: chatSession,
         responseStream: responseStream,
         controller: controller,
+        mode: mode,
       );
 
       await controller.close();
@@ -152,6 +202,7 @@ class AiChatService {
     required ChatSession chatSession,
     required Stream<GenerateContentResponse> responseStream,
     required StreamController<AiResponse> controller,
+    required ChatMode mode,
     int functionCallDepth = 0,
   }) async {
     // 関数呼び出しの最大深度を制限（無限再帰を防ぐ）
@@ -170,8 +221,8 @@ class AiChatService {
       return;
     }
     try {
-      // Response Schema使用時は、レスポンス全体がJSON形式で返される
-      // ストリーミング中のJSONテキストを蓄積
+      // Response Schema使用時（雑談マスターモード）は、レスポンス全体がJSON形式で
+      // 返されるため、ストリーミング中のJSONテキストを蓄積する
       final jsonBuffer = StringBuffer();
 
       await for (final chunk in responseStream) {
@@ -182,6 +233,7 @@ class AiChatService {
               chatSession: chatSession,
               functionCall: functionCall,
               controller: controller,
+              mode: mode,
               functionCallDepth: functionCallDepth,
             );
           }
@@ -199,7 +251,19 @@ class AiChatService {
         }
 
         _logger.info('応答チャンクを受信: $text');
-        jsonBuffer.write(text);
+
+        switch (mode) {
+          case ChatMode.plectrumSocietyMaster:
+            // Function Calling使用時はレスポンススキーマを使えないため、
+            // プレーンテキストのままチャンクごとに送出する
+            controller.add(AiResponse(content: text));
+          case ChatMode.chitChatMaster:
+            jsonBuffer.write(text);
+        }
+      }
+
+      if (mode == ChatMode.plectrumSocietyMaster) {
+        return;
       }
 
       // ストリーミング完了後、JSONをパースしてAiResponseを送信
@@ -252,6 +316,7 @@ class AiChatService {
     required ChatSession chatSession,
     required FunctionCall functionCall,
     required StreamController<AiResponse> controller,
+    required ChatMode mode,
     required int functionCallDepth,
   }) async {
     _logger.info(
@@ -275,6 +340,7 @@ class AiChatService {
         chatSession: chatSession,
         responseStream: chatSession.sendMessageStream(functionResponseContent),
         controller: controller,
+        mode: mode,
         functionCallDepth: functionCallDepth + 1,
       );
     } on Exception catch (e, stackTrace) {
@@ -338,10 +404,12 @@ class AiChatService {
         .toList();
   }
 
-  /// 特定のsystemPromptのチャットセッションをクリア
+  /// 特定のsystemPromptのチャットセッションをクリア（全ChatMode分）
   void clearChatSession(String systemPrompt) {
-    final sessionKey = systemPrompt.hashCode.toString();
-    _chatSessions.remove(sessionKey);
+    for (final mode in ChatMode.values) {
+      final sessionKey = _sessionKey(systemPrompt: systemPrompt, mode: mode);
+      _chatSessions.remove(sessionKey);
+    }
     _logger.info(
       'Chat session cleared for systemPrompt hash: '
       '${systemPrompt.hashCode}',

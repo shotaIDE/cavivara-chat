@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/chat_mode.dart';
+import 'package:house_worker/data/model/chat_mode_selection.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
+import 'package:house_worker/data/repository/chat_mode_selection_repository.dart';
 import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/has_ever_sent_message_repository.dart';
 import 'package:house_worker/data/repository/login_bonus_granted_dates_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
+import 'package:house_worker/data/service/cavivara_knowledge_service.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/heads_up_notification_presenter.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
@@ -61,6 +65,8 @@ class ChatMessages extends _$ChatMessages {
     // 現在のチャット履歴を取得（AIサービスに会話履歴として渡すため）
     final conversationHistory = state.where((msg) => !msg.isStreaming).toList();
 
+    final chatMode = await _resolveChatMode(content);
+
     final aiMessageId = '${DateTime.now().millisecondsSinceEpoch}_ai';
     final thinkingMessage = ChatMessage(
       id: aiMessageId,
@@ -93,6 +99,7 @@ class ChatMessages extends _$ChatMessages {
       final responseStream = aiChatService.sendMessageStream(
         content,
         systemPrompt: systemPrompt,
+        mode: chatMode,
         conversationHistory: conversationHistory,
       );
 
@@ -173,9 +180,66 @@ class ChatMessages extends _$ChatMessages {
     // サジェストもクリア
     ref.read(suggestedRepliesProvider.notifier).clear();
 
+    // 自動選択モードで解決済みの回答モードもクリアし、次回会話の初回メッセージで
+    // 改めて判定できるようにする
+    ref.read(resolvedChatModeProvider.notifier).reset();
+
     // AIサービスのセッションキャッシュもクリア
     final cavivaraProfile = ref.read(cavivaraProfileProvider);
     ref.read(aiChatServiceProvider).clearChatSession(cavivaraProfile.aiPrompt);
+  }
+
+  /// 今回のメッセージ送信で使用する回答モードを解決する
+  ///
+  /// ユーザーが特定のモードを選択している場合はそれを使用し、自動選択モードの
+  /// 場合は会話中の最初のメッセージでのみ文言から判定し、以降はその判定結果を
+  /// 使い続ける（Gemini APIの都合上、Function Callingとレスポンススキーマは
+  /// 同一会話中で切り替えられないため）。
+  Future<ChatMode> _resolveChatMode(String content) async {
+    final selection = await ref.read(
+      chatModeSelectionRepositoryProvider.future,
+    );
+
+    return switch (selection) {
+      ChatModeSelectionFixed(:final mode) => mode,
+      ChatModeSelectionAuto() => _resolveAutoChatMode(content),
+    };
+  }
+
+  ChatMode _resolveAutoChatMode(String content) {
+    final alreadyResolvedMode = ref.read(resolvedChatModeProvider);
+    if (alreadyResolvedMode != null) {
+      return alreadyResolvedMode;
+    }
+
+    final knowledgeBase = ref.read(cavivaraKnowledgeBaseProvider);
+    final mode = knowledgeBase.hasRelevantKnowledge(content)
+        ? ChatMode.plectrumSocietyMaster
+        : ChatMode.chitChatMaster;
+
+    ref.read(resolvedChatModeProvider.notifier).resolve(mode);
+
+    return mode;
+  }
+}
+
+/// 自動選択モードにおいて、現在の会話で解決済みの回答モードを保持するプロバイダー
+///
+/// 会話をクリアするまでの間、自動選択の判定結果を保持し続けるために使用する
+@riverpod
+class ResolvedChatMode extends _$ResolvedChatMode {
+  @override
+  ChatMode? build() => null;
+
+  /// 自動選択の判定結果を保持する
+  // ignore: use_setters_to_change_properties
+  void resolve(ChatMode mode) {
+    state = mode;
+  }
+
+  /// 判定結果をクリアする
+  void reset() {
+    state = null;
   }
 }
 

@@ -5,12 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/chat_bubble_design.dart';
 import 'package:house_worker/data/model/chat_message.dart';
+import 'package:house_worker/data/model/chat_mode.dart';
+import 'package:house_worker/data/model/chat_mode_selection.dart';
+import 'package:house_worker/data/repository/chat_mode_selection_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
 import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
 import 'package:house_worker/ui/component/chat_bubble_design_extension.dart';
+import 'package:house_worker/ui/component/chat_mode_extension.dart';
+import 'package:house_worker/ui/component/chat_mode_selection_dialog.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
@@ -181,6 +186,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final cavivaraProfile = ref.watch(cavivaraProfileProvider);
+    final chatModeSelection = ref.watch(chatModeSelectionRepositoryProvider);
+    final resolvedChatMode = ref.watch(resolvedChatModeProvider);
 
     final title = Row(
       children: [
@@ -207,10 +214,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            cavivaraProfile.displayName,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
+          child: Tooltip(
+            message: '回答モードを選択する',
+            child: InkWell(
+              onTap: _showChatModeSelectionDialog,
+              borderRadius: BorderRadius.circular(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    cavivaraProfile.displayName,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: _ChatModeIndicator(
+                      label: _chatModeLabel(
+                        selection: chatModeSelection,
+                        resolvedMode: resolvedChatMode,
+                      ),
+                      mode: _chatModeForBadge(
+                        selection: chatModeSelection,
+                        resolvedMode: resolvedChatMode,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -296,6 +329,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: scaffold,
       ),
     );
+  }
+
+  String _chatModeLabel({
+    required AsyncValue<ChatModeSelection> selection,
+    required ChatMode? resolvedMode,
+  }) {
+    return selection.whenOrNull(
+          data: (value) => switch (value) {
+            ChatModeSelectionFixed(:final mode) => mode.shortLabel,
+            ChatModeSelectionAuto() =>
+              resolvedMode != null ? resolvedMode.shortLabel : '人格の自動選択',
+          },
+        ) ??
+        '人格の自動選択';
+  }
+
+  /// バッジの色付けに使う、現在の回答モードを解決する。
+  ///
+  /// 自動選択でまだモードが確定していない場合は `null` を返し、
+  /// インジケーター側で中立色のバッジを表示する。
+  ChatMode? _chatModeForBadge({
+    required AsyncValue<ChatModeSelection> selection,
+    required ChatMode? resolvedMode,
+  }) {
+    return selection.whenOrNull(
+      data: (value) => switch (value) {
+        ChatModeSelectionFixed(:final mode) => mode,
+        ChatModeSelectionAuto() => resolvedMode,
+      },
+    );
+  }
+
+  Future<void> _showChatModeSelectionDialog() async {
+    HapticFeedbackHelper.onDialogShow();
+
+    final currentSelection = await ref.read(
+      chatModeSelectionRepositoryProvider.future,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    // 会話が始まっている（メッセージが存在する）間はモードを確定とし、変更できない。
+    // 記憶を消去してメッセージが空になると、再び選べるようになる。
+    final isLocked = ref.read(chatMessagesProvider).isNotEmpty;
+
+    final result = await showDialog<ChatModeSelection>(
+      context: context,
+      builder: (context) => ChatModeSelectionDialog(
+        initialSelection: currentSelection,
+        isLocked: isLocked,
+      ),
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    await ref.read(chatModeSelectionRepositoryProvider.notifier).save(result);
+
+    // 選択が変わった場合に備え、自動選択の判定結果をリセットし、次のメッセージで
+    // 改めて判定できるようにする
+    ref.read(resolvedChatModeProvider.notifier).reset();
   }
 
   Future<void> _clearChat() async {
@@ -436,6 +533,141 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+/// チャット画面のタイトル下に、現在の回答モードをさりげなく表示するインジケーター
+class _ChatModeIndicator extends StatelessWidget {
+  const _ChatModeIndicator({required this.label, required this.mode});
+
+  final String label;
+
+  /// 現在の回答モード。自動選択で未確定の場合は `null`。
+  final ChatMode? mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ChatModeGlowBadge(mode: mode),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: mutedColor),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 回答モードを象徴する、定期的に発光する丸いバッジ。
+///
+/// 結社マスターモードは赤、雑談マスターモードは青で表示し、モードが未確定の
+/// 場合は中立色で発光を控えめにする。発光は明滅を繰り返すアニメーションで表現する。
+class _ChatModeGlowBadge extends StatefulWidget {
+  const _ChatModeGlowBadge({required this.mode});
+
+  final ChatMode? mode;
+
+  @override
+  State<_ChatModeGlowBadge> createState() => _ChatModeGlowBadgeState();
+}
+
+class _ChatModeGlowBadgeState extends State<_ChatModeGlowBadge>
+    with SingleTickerProviderStateMixin {
+  /// バッジ本体の直径。
+  static const _badgeSize = 10.0;
+
+  /// 明滅アニメーション1周期にかける時間。
+  static const _pulseDuration = Duration(milliseconds: 1600);
+
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: _pulseDuration,
+    );
+    _pulse = CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    );
+    _syncPulseWithMode();
+  }
+
+  @override
+  void didUpdateWidget(_ChatModeGlowBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mode != widget.mode) {
+      _syncPulseWithMode();
+    }
+  }
+
+  /// モードの確定状況に応じて明滅アニメーションを開始・停止する。
+  ///
+  /// 自動選択でまだモードが確定していない（`mode` が `null`）場合は発光させず、
+  /// 静止したバッジのみを表示する。
+  void _syncPulseWithMode() {
+    if (widget.mode == null) {
+      // 発光を止め、最も弱い状態に戻す。
+      _pulseController
+        ..stop()
+        ..value = 0;
+      return;
+    }
+    // 発光が強まる→弱まるを永続的に繰り返す。
+    _pulseController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // モード未確定時は中立色（控えめなグレー）で表示する。
+    final badgeColor =
+        widget.mode?.badgeColor ??
+        Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, _) {
+        // 発光の強さを明滅させる。0.0〜1.0を行き来する値に応じて、
+        // 影のぼかし・広がり・不透明度を変化させる。
+        final t = _pulse.value;
+
+        return Container(
+          width: _badgeSize,
+          height: _badgeSize,
+          decoration: BoxDecoration(
+            color: badgeColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: badgeColor.withValues(alpha: 0.3 + 0.5 * t),
+                blurRadius: 2 + 6 * t,
+                spreadRadius: 0.5 + 1.5 * t,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
