@@ -214,32 +214,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: InkWell(
-            onTap: _showChatModeSelectionDialog,
-            borderRadius: BorderRadius.circular(8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  cavivaraProfile.displayName,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: _ChatModeIndicator(
-                    label: _chatModeLabel(
-                      selection: chatModeSelection,
-                      resolvedMode: resolvedChatMode,
-                    ),
-                    mode: _chatModeForBadge(
-                      selection: chatModeSelection,
-                      resolvedMode: resolvedChatMode,
+          child: Tooltip(
+            message: '回答モードを選択する',
+            child: InkWell(
+              onTap: _showChatModeSelectionDialog,
+              borderRadius: BorderRadius.circular(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    cavivaraProfile.displayName,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: _ChatModeIndicator(
+                      label: _chatModeLabel(
+                        selection: chatModeSelection,
+                        resolvedMode: resolvedChatMode,
+                      ),
+                      mode: _chatModeForBadge(
+                        selection: chatModeSelection,
+                        resolvedMode: resolvedChatMode,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
