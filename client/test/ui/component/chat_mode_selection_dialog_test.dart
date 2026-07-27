@@ -10,6 +10,7 @@ void main() {
     WidgetTester tester, {
     required ChatModeSelection initialSelection,
     required ValueChanged<ChatModeSelection?> onResult,
+    bool isLocked = false,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -22,6 +23,7 @@ void main() {
                     context: context,
                     builder: (context) => ChatModeSelectionDialog(
                       initialSelection: initialSelection,
+                      isLocked: isLocked,
                     ),
                   );
                   onResult(result);
@@ -92,6 +94,51 @@ void main() {
       );
 
       await tester.tap(find.text('キャンセル'));
+      await tester.pumpAndSettle();
+
+      expect(onResultCalled, isTrue);
+      expect(result, isNull);
+    });
+
+    testWidgets('ロック中は選択肢を操作できず、決定ボタンが表示されないこと', (tester) async {
+      await pumpAndOpenDialog(
+        tester,
+        initialSelection: const ChatModeSelection.fixed(
+          ChatMode.plectrumSocietyMaster,
+        ),
+        onResult: (_) {},
+        isLocked: true,
+      );
+
+      // 選択肢は無効化されており、onChanged が設定されていないこと。
+      final radio = tester.widget<RadioListTile<ChatModeSelection>>(
+        find.widgetWithText(
+          RadioListTile<ChatModeSelection>,
+          ChatMode.chitChatMaster.displayName,
+        ),
+      );
+      expect(radio.onChanged, isNull);
+
+      // 決定ボタンは表示されず、閉じるボタンのみが表示されること。
+      expect(find.text('決定'), findsNothing);
+      expect(find.text('閉じる'), findsOneWidget);
+    });
+
+    testWidgets('ロック中に閉じるとnullが返されること', (tester) async {
+      var onResultCalled = false;
+      ChatModeSelection? result;
+
+      await pumpAndOpenDialog(
+        tester,
+        initialSelection: const ChatModeSelection.auto(),
+        onResult: (value) {
+          onResultCalled = true;
+          result = value;
+        },
+        isLocked: true,
+      );
+
+      await tester.tap(find.text('閉じる'));
       await tester.pumpAndSettle();
 
       expect(onResultCalled, isTrue);
