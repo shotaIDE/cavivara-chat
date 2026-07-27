@@ -7,11 +7,11 @@ void main() {
     test('displayName はモードごとに一意な表示名を返すこと', () {
       expect(
         ChatMode.plectrumSocietyMaster.displayName,
-        equals('結社マスターモード'),
+        equals('結社マスター'),
       );
       expect(
         ChatMode.chitChatMaster.displayName,
-        equals('雑談マスターモード'),
+        equals('雑談マスター'),
       );
     });
 
