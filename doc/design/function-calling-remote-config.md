@@ -121,7 +121,7 @@ Remote Config に設定する内容の例。`getCurrentDateTime` は組み込み
 ```json
 {
   "schemaVersion": 1,
-  "toolInstruction": "\n\n## 情報の取得ルール（厳守）\n- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。\n- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。\n- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。",
+  "toolInstruction": "## 情報の取得ルール（厳守）\n- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。\n- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。\n- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。",
   "functions": [
     {
       "name": "getPlectrumSocietyKnowledge",
@@ -176,7 +176,7 @@ Remote Config に設定する内容の例。`getCurrentDateTime` は組み込み
 ```json
 {
   "schemaVersion": 1,
-  "toolInstruction": "\n\n## 情報の取得ルール（厳守）\n- プレクトラム結社の演奏会・イベントについて尋ねられた場合は、必ず getPlectrumSocietyEventKnowledge 関数を呼び出す。\n- 結社の制度（給与、規約など）について尋ねられた場合は、必ず getPlectrumSocietySystemKnowledge 関数を呼び出す。\n- 現在の日時が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。\n- いずれの関数でも該当情報が得られなかった場合は、分からない旨を正直に伝える。",
+  "toolInstruction": "## 情報の取得ルール（厳守）\n- プレクトラム結社の演奏会・イベントについて尋ねられた場合は、必ず getPlectrumSocietyEventKnowledge 関数を呼び出す。\n- 結社の制度（給与、規約など）について尋ねられた場合は、必ず getPlectrumSocietySystemKnowledge 関数を呼び出す。\n- 現在の日時が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。\n- いずれの関数でも該当情報が得られなかった場合は、分からない旨を正直に伝える。",
   "functions": [
     {
       "name": "getPlectrumSocietyEventKnowledge",
