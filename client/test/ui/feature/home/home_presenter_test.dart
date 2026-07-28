@@ -208,7 +208,10 @@ void main() {
       test(
         '結社の知識に関連する文言の場合、結社マスターモードで呼び出されること',
         () async {
-          const messageText = '次の定期演奏会はいつ開催されますか？';
+          // 組み込みデフォルト設定の知識に含まれるキーワードを使う。
+          // 演奏会などの更新頻度が高い情報は Remote Config で管理するため、
+          // アプリに埋め込まれた設定には含まれない。
+          const messageText = '結社の給料はいくらですか？';
 
           when(
             () => mockAiChatService.sendMessageStream(
@@ -244,7 +247,7 @@ void main() {
       test(
         '自動選択モードでは、会話中の2通目以降は初回の判定結果が使われ続けること',
         () async {
-          const firstMessage = '次の定期演奏会はいつ開催されますか？';
+          const firstMessage = '結社の給料はいくらですか？';
           const secondMessage = '今日はいい天気だね';
 
           when(
@@ -701,9 +704,11 @@ void main() {
           badge: AppBadge.firstLaunch,
           earnedAt: DateTime(2026, 6, 27, 12),
         );
-        await container.read(earnedBadgesRepositoryProvider.notifier).add(
-          badge,
-        );
+        await container
+            .read(earnedBadgesRepositoryProvider.notifier)
+            .add(
+              badge,
+            );
 
         // 別のコンテナで確認（同一コンテナではキャッシュされるため）
         final container2 = ProviderContainer();
@@ -722,9 +727,11 @@ void main() {
           badge: AppBadge.firstLaunch,
           earnedAt: DateTime(2026, 6, 27, 12),
         );
-        await container.read(earnedBadgesRepositoryProvider.notifier).add(
-          badge,
-        );
+        await container
+            .read(earnedBadgesRepositoryProvider.notifier)
+            .add(
+              badge,
+            );
 
         // 別のコンテナで awardFirstLaunchBadgeProvider を呼び出す
         final container2 = ProviderContainer();

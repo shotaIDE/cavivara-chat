@@ -1,136 +1,134 @@
-// cspell:ignore hitomi
-
 import 'package:firebase_ai/firebase_ai.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:house_worker/data/model/function_calling_config.dart';
+import 'package:house_worker/data/service/function_calling_config_service.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final cavivaraKnowledgeBaseProvider = Provider<CavivaraKnowledgeBase>((ref) {
-  return CavivaraKnowledgeBase();
-});
+part 'cavivara_knowledge_service.g.dart';
 
+@riverpod
+CavivaraKnowledgeBase cavivaraKnowledgeBase(Ref ref) {
+  return CavivaraKnowledgeBase(
+    config: ref.watch(functionCallingConfigProvider),
+  );
+}
+
+/// カヴィヴァラが Function Calling で参照する知識ベース
+///
+/// モデルに提供する関数の宣言と、関数が返す項目一覧は [config] で決まる。
+/// ただし、端末の状態を参照する組み込み関数は [config] に含まれず、
+/// 宣言も実装もこのクラスに固定されている。
 class CavivaraKnowledgeBase {
-  CavivaraKnowledgeBase();
+  CavivaraKnowledgeBase({required this.config})
+    : _functionsByName = {
+        for (final function in config.functions)
+          // 組み込み関数と同名の関数は、実行時に組み込みの実装が使われるため
+          // 提供対象から除く。宣言・実行・関連知識の判定がすべてこの対応表を
+          // 参照することで、提供しない関数の内容が判定に混ざらないようにする。
+          if (!builtInFunctionNames.contains(function.name))
+            function.name: function,
+      };
 
   static final Logger _logger = Logger('CavivaraKnowledgeBase');
 
-  static const String _knowledgeFunctionName = 'getPlectrumSocietyKnowledge';
-  static const String _currentDateTimeFunctionName = 'getCurrentDateTime';
+  final FunctionCallingToolConfig config;
 
-  static const Map<String, _KnowledgeEntry> _entries = {
-    'salary_policy': _KnowledgeEntry(
-      topic: 'salary_policy',
-      title: '給与制度',
-      summary: '結社の給料は0円。毎年5%のベースアップが行われているが、元々0円のため昇給額も0円。',
-      details: [
-        '結社の給料は0円です。',
-        '毎年5%のベースアップが実施されますが、もともとが0円のため昇給額も0円です。',
-      ],
-      keywords: [
-        '給料',
-        '給与',
-        '賃金',
-        '報酬',
-        'ベースアップ',
-        '昇給',
-        '0円',
-      ],
-    ),
-    'regular_concert_11': _KnowledgeEntry(
-      topic: 'regular_concert_11',
-      title: '第11回定期演奏会',
-      summary: 'プレクトラム結社の第11回定期演奏会は2026年9月12日(土)、メニコンANNEX HITOMIホールで開催予定。',
-      details: [
-        'イベント名: プレクトラム結社 第11回定期演奏会。',
-        '開催日: 2026年9月12日(土)。',
-        '会場: メニコンANNEX HITOMIホール。',
-      ],
-      keywords: [
-        '演奏会',
-        '定期演奏会',
-        '第11回',
-        '11回',
-        '2026年9月12日',
-        '2026/9/12',
-        'メニコン',
-        'annex',
-        'hitomi',
-        'ホール',
-      ],
-    ),
-  };
+  /// 関数名から、モデルに提供するデータ駆動関数の定義を引くための対応表
+  final Map<String, FunctionCallingFunction> _functionsByName;
 
-  static final List<Tool> _knowledgeTools = List.unmodifiable([
+  /// モデルに提供する関数の宣言
+  ///
+  /// 組み込み関数の宣言を必ず含むため、空になることはない。
+  late final List<Tool> tools = List.unmodifiable([
     Tool.functionDeclarations([
-      _buildKnowledgeFunctionDeclaration(),
       _buildCurrentDateTimeFunctionDeclaration(),
+      ..._functionsByName.values.map(_buildFunctionDeclaration),
     ]),
   ]);
 
-  List<Tool> get tools => _knowledgeTools;
+  /// Function Calling の利用を促すため、システムプロンプトに追記する指示文
+  String get toolInstruction => config.toolInstruction;
 
   /// 指定した文言が、結社の知識ベースに関連する内容かどうかを判定する。
   ///
   /// 自動選択モードでの初回メッセージに対し、結社マスターモードと
   /// 雑談マスターモードのどちらを使うか判断する材料として利用する。
+  /// 「結社の知識に関係する発話か」のみを判定するため、どの関数の項目かは区別せず、
+  /// モデルに提供する全関数の項目一覧を横断して判定する。
   bool hasRelevantKnowledge(String query) {
     final normalizedQuery = _normalizeQuery(query);
     if (normalizedQuery == null) {
       return false;
     }
 
-    return _entries.values.any((entry) => entry.matches(normalizedQuery));
+    return _functionsByName.values.any(
+      (function) =>
+          function.entries.any((entry) => entry.matches(normalizedQuery)),
+    );
   }
 
   Future<Map<String, dynamic>> execute({
     required String functionName,
     Map<String, dynamic> arguments = const <String, dynamic>{},
   }) async {
-    switch (functionName) {
-      case _knowledgeFunctionName:
-        return _getKnowledge(arguments);
-      case _currentDateTimeFunctionName:
-        return _getCurrentDateTime();
-      default:
-        _logger.warning('Unknown function call requested: $functionName');
-        return {
-          'found': false,
-          'message': '未対応の関数が指定されました。',
-          'requestedFunction': functionName,
-          'availableFunctions': const [
-            _knowledgeFunctionName,
-            _currentDateTimeFunctionName,
-          ],
-        };
+    // Remote Config が組み込み関数と同名の関数を定義していても組み込みの実装を使うため、
+    // 組み込み関数の判定を先に行う
+    if (functionName == currentDateTimeFunctionName) {
+      return _getCurrentDateTime();
+    }
+
+    final function = _functionsByName[functionName];
+    if (function == null) {
+      _logger.warning('Unknown function call requested: $functionName');
+      return {
+        'found': false,
+        'message': '未対応の関数が指定されました。',
+        'requestedFunction': functionName,
+        'availableFunctions': [
+          ...builtInFunctionNames,
+          ..._functionsByName.keys,
+        ],
+      };
+    }
+
+    switch (function.handler) {
+      case FunctionCallingHandler.knowledgeLookup:
+        return _getKnowledge(function: function, arguments: arguments);
     }
   }
 
-  static Map<String, dynamic> _getKnowledge(Map<String, dynamic> arguments) {
-    final resolvedTopic = _resolveTopic(
+  static Map<String, dynamic> _getKnowledge({
+    required FunctionCallingFunction function,
+    required Map<String, dynamic> arguments,
+  }) {
+    final entry = _resolveEntry(
+      entries: function.entries,
       topic: arguments['topic'],
       query: arguments['query'],
     );
 
-    if (resolvedTopic == null) {
+    if (entry == null) {
       _logger.info(
         'Knowledge topic could not be resolved from arguments: $arguments',
       );
       return {
         'found': false,
         'message': '該当するトピックが見つかりませんでした。',
-        'availableTopics': _entries.keys.toList(),
+        // 呼び出された関数が扱うトピックのみを提示する
+        'availableTopics': function.entries
+            .map((entry) => entry.topic)
+            .toList(),
         if (arguments['topic'] != null) 'requestedTopic': arguments['topic'],
         if (arguments['query'] != null) 'query': arguments['query'],
       };
     }
-
-    final entry = _entries[resolvedTopic]!;
 
     return {
       'found': true,
       'topic': entry.topic,
       'title': entry.title,
       'summary': entry.summary,
-      'facts': List<String>.from(entry.details),
+      'facts': List<String>.from(entry.facts),
       'keywords': List<String>.from(entry.keywords),
     };
   }
@@ -143,34 +141,61 @@ class CavivaraKnowledgeBase {
     };
   }
 
-  static FunctionDeclaration _buildKnowledgeFunctionDeclaration() {
+  static FunctionDeclaration _buildFunctionDeclaration(
+    FunctionCallingFunction function,
+  ) {
     return FunctionDeclaration(
-      _knowledgeFunctionName,
-      'プレクトラム結社に関する社内公式知識を取得します。',
+      function.name,
+      function.description,
       parameters: {
-        'topic': Schema.string(
-          description: '取得したいトピックID。',
-        ),
-        'query': Schema.string(
-          description: '自然言語で記述された検索クエリ。例: "給料は？"',
-        ),
+        for (final parameter in function.parameters)
+          parameter.name: _buildParameterSchema(parameter),
       },
+      optionalParameters: function.parameters
+          .where((parameter) => !parameter.isRequired)
+          .map((parameter) => parameter.name)
+          .toList(),
     );
+  }
+
+  static Schema _buildParameterSchema(FunctionCallingParameter parameter) {
+    switch (parameter.type) {
+      case FunctionCallingParameterType.string:
+        if (parameter.enumValues.isNotEmpty) {
+          return Schema.enumString(
+            enumValues: parameter.enumValues,
+            description: parameter.description,
+          );
+        }
+        return Schema.string(description: parameter.description);
+      case FunctionCallingParameterType.integer:
+        return Schema.integer(description: parameter.description);
+      case FunctionCallingParameterType.number:
+        return Schema.number(description: parameter.description);
+      case FunctionCallingParameterType.boolean:
+        return Schema.boolean(description: parameter.description);
+      case FunctionCallingParameterType.stringArray:
+        return Schema.array(
+          items: Schema.string(),
+          description: parameter.description,
+        );
+    }
   }
 
   static FunctionDeclaration _buildCurrentDateTimeFunctionDeclaration() {
     return FunctionDeclaration(
-      _currentDateTimeFunctionName,
+      currentDateTimeFunctionName,
       '現在の日時情報を取得します。',
       parameters: {},
     );
   }
 
-  static String? _resolveTopic({
+  static KnowledgeEntry? _resolveEntry({
+    required List<KnowledgeEntry> entries,
     Object? topic,
     Object? query,
   }) {
-    final normalizedTopic = _normalizeTopic(topic);
+    final normalizedTopic = _normalizeTopic(entries: entries, rawTopic: topic);
     if (normalizedTopic != null) {
       return normalizedTopic;
     }
@@ -180,22 +205,30 @@ class CavivaraKnowledgeBase {
       return null;
     }
 
-    for (final entry in _entries.entries) {
-      if (entry.value.matches(normalizedQuery)) {
-        return entry.key;
+    for (final entry in entries) {
+      if (entry.matches(normalizedQuery)) {
+        return entry;
       }
     }
 
     return null;
   }
 
-  static String? _normalizeTopic(Object? rawTopic) {
-    if (rawTopic is String) {
-      final normalized = rawTopic.trim().toLowerCase();
-      if (_entries.containsKey(normalized)) {
-        return normalized;
+  static KnowledgeEntry? _normalizeTopic({
+    required List<KnowledgeEntry> entries,
+    Object? rawTopic,
+  }) {
+    if (rawTopic is! String) {
+      return null;
+    }
+
+    final normalized = rawTopic.trim().toLowerCase();
+    for (final entry in entries) {
+      if (entry.topic.toLowerCase() == normalized) {
+        return entry;
       }
     }
+
     return null;
   }
 
@@ -205,29 +238,5 @@ class CavivaraKnowledgeBase {
       return normalized.isEmpty ? null : normalized;
     }
     return null;
-  }
-}
-
-class _KnowledgeEntry {
-  const _KnowledgeEntry({
-    required this.topic,
-    required this.title,
-    required this.summary,
-    required this.details,
-    required this.keywords,
-  });
-
-  final String topic;
-  final String title;
-  final String summary;
-  final List<String> details;
-  final List<String> keywords;
-
-  List<String> get _normalizedKeywords =>
-      keywords.map((keyword) => keyword.toLowerCase()).toList();
-
-  bool matches(String query) {
-    final normalizedQuery = query.toLowerCase();
-    return _normalizedKeywords.any(normalizedQuery.contains);
   }
 }
