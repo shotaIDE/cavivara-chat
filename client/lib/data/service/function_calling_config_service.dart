@@ -1,3 +1,4 @@
+// cspell:ignore HITOMI
 import 'dart:async';
 import 'dart:convert';
 
