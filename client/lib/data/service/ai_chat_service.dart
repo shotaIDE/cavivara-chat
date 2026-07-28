@@ -53,19 +53,6 @@ class AiChatService {
     optionalProperties: ['suggestedReplies'],
   );
 
-  /// 結社マスターモードで、モデルに Function Calling の利用を促すための追加指示。
-  ///
-  /// カヴィヴァラのプロンプトは自身を「百科事典級の知識を持つ専門家」と規定しており、
-  /// この指示がないとモデルは結社の公式情報も自前の知識で答えてしまい、
-  /// 提供済みの関数を呼び出さない（Function Calling が働かない）。
-  /// そのため、結社の公式情報・日時は必ず関数経由で取得するよう明示する。
-  static const String _plectrumSocietyToolInstruction = '''
-
-## 情報の取得ルール（厳守）
-- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。
-- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。
-- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。''';
-
   /// Gemini 2.5 Flashモデルを取得（systemPromptとChatModeを指定可能）
   ///
   /// FunctionCallingとレスポンススキーマは同時に指定できないため、
@@ -94,8 +81,9 @@ class AiChatService {
       ),
       // 結社マスターモードでは、Function Calling の利用を促す追加指示を付与する
       systemInstruction: Content.system(switch (mode) {
-        ChatMode.plectrumSocietyMaster =>
-          '$systemPrompt$_plectrumSocietyToolInstruction',
+        ChatMode.plectrumSocietyMaster => _buildPlectrumSocietySystemPrompt(
+          systemPrompt,
+        ),
         ChatMode.chitChatMaster => systemPrompt,
       }),
       // 結社マスターモードのみ、FunctionCallingを使用する
@@ -104,6 +92,21 @@ class AiChatService {
         ChatMode.chitChatMaster => null,
       },
     );
+  }
+
+  /// 結社マスターモードのシステムプロンプトを組み立てる
+  ///
+  /// カヴィヴァラのプロンプトは自身を「百科事典級の知識を持つ専門家」と規定しており、
+  /// Function Calling の利用を促す指示がないとモデルは結社の公式情報も自前の知識で
+  /// 答えてしまい、提供済みの関数を呼び出さない（Function Calling が働かない）。
+  /// そのため、知識ベースが持つ追加指示をシステムプロンプトに追記する。
+  String _buildPlectrumSocietySystemPrompt(String systemPrompt) {
+    final toolInstruction = knowledgeBase.toolInstruction;
+    if (toolInstruction.isEmpty) {
+      return systemPrompt;
+    }
+
+    return '$systemPrompt\n\n$toolInstruction';
   }
 
   /// チャットメッセージをストリーミングで送信する
@@ -225,24 +228,23 @@ class AiChatService {
       // 返されるため、ストリーミング中のJSONテキストを蓄積する
       final jsonBuffer = StringBuffer();
 
+      // モデルは 1 回の応答で複数の関数呼び出しを要求することがある（並行 Function
+      // Calling）。1 件ずつ結果を返すと、1 件目の結果だけでモデルが回答を生成して
+      // しまい、同じ問いへの回答が複数回送出されるため、応答をすべて受け取ってから
+      // まとめて実行する。
+      final functionCalls = <FunctionCall>[];
+
       await for (final chunk in responseStream) {
-        final functionCalls = chunk.functionCalls;
-        if (functionCalls.isNotEmpty) {
-          for (final functionCall in functionCalls) {
-            await _handleFunctionCall(
-              chatSession: chatSession,
-              functionCall: functionCall,
-              controller: controller,
-              mode: mode,
-              functionCallDepth: functionCallDepth,
-            );
-          }
-          continue;
-        }
+        final chunkFunctionCalls = chunk.functionCalls;
+        functionCalls.addAll(chunkFunctionCalls);
 
         final text = chunk.text;
         if (text == null) {
-          _logger.warning('AIからの応答チャンクがnullです');
+          // 関数呼び出しのみを含むチャンクにはテキストが含まれないため、
+          // 想定外の応答としては扱わない
+          if (chunkFunctionCalls.isEmpty) {
+            _logger.warning('AIからの応答チャンクがnullです');
+          }
           continue;
         }
 
@@ -260,6 +262,17 @@ class AiChatService {
           case ChatMode.chitChatMaster:
             jsonBuffer.write(text);
         }
+      }
+
+      if (functionCalls.isNotEmpty) {
+        await _handleFunctionCalls(
+          chatSession: chatSession,
+          functionCalls: functionCalls,
+          controller: controller,
+          mode: mode,
+          functionCallDepth: functionCallDepth,
+        );
+        return;
       }
 
       if (mode == ChatMode.plectrumSocietyMaster) {
@@ -312,52 +325,67 @@ class AiChatService {
     }
   }
 
-  Future<void> _handleFunctionCall({
+  /// 要求されたすべての関数を実行し、結果をまとめてモデルに返す
+  ///
+  /// 関数の結果は 1 通のメッセージにまとめて送信する。1 件ずつ送信すると、
+  /// モデルが未回答の関数呼び出しに対する応答を待たずに回答を生成してしまう。
+  Future<void> _handleFunctionCalls({
     required ChatSession chatSession,
-    required FunctionCall functionCall,
+    required List<FunctionCall> functionCalls,
     required StreamController<AiResponse> controller,
     required ChatMode mode,
     required int functionCallDepth,
   }) async {
-    _logger.info(
-      'Function call requested: ${functionCall.name} with args: '
-      '${functionCall.args}',
+    final functionResponses = <FunctionResponse>[];
+    for (final functionCall in functionCalls) {
+      _logger.info(
+        'Function call requested: ${functionCall.name} with args: '
+        '${functionCall.args}',
+      );
+
+      functionResponses.add(
+        FunctionResponse(
+          functionCall.name,
+          await _executeFunctionCall(functionCall),
+        ),
+      );
+    }
+
+    await _processResponseStream(
+      chatSession: chatSession,
+      responseStream: chatSession.sendMessageStream(
+        Content.functionResponses(functionResponses),
+      ),
+      controller: controller,
+      mode: mode,
+      functionCallDepth: functionCallDepth + 1,
     );
+  }
 
+  /// 関数を 1 つ実行し、モデルに返す応答内容を取得する
+  ///
+  /// 1 件の失敗でターン全体を打ち切ると、成功した関数の結果もモデルに渡らず、
+  /// 会話が進まなくなる。そのため、失敗した場合もその旨を応答内容として返し、
+  /// 分からない旨を回答させる。
+  Future<Map<String, dynamic>> _executeFunctionCall(
+    FunctionCall functionCall,
+  ) async {
     try {
-      final arguments = _resolveFunctionArguments(functionCall);
-      final responsePayload = await knowledgeBase.execute(
+      return await knowledgeBase.execute(
         functionName: functionCall.name,
-        arguments: arguments,
-      );
-
-      final functionResponseContent = Content.functionResponse(
-        functionCall.name,
-        responsePayload,
-      );
-
-      await _processResponseStream(
-        chatSession: chatSession,
-        responseStream: chatSession.sendMessageStream(functionResponseContent),
-        controller: controller,
-        mode: mode,
-        functionCallDepth: functionCallDepth + 1,
+        arguments: functionCall.args,
       );
     } on Exception catch (e, stackTrace) {
       _logger.severe('関数呼び出しの処理に失敗: ${functionCall.name}: $e');
 
       unawaited(errorReportService.recordError(e, stackTrace));
 
-      controller.addError(
-        SendMessageException.uncategorized(
-          message: '関数呼び出しの処理に失敗しました: $e',
-        ),
-      );
+      return {
+        'found': false,
+        'message': '関数の実行に失敗しました。',
+        'requestedFunction': functionCall.name,
+      };
     }
-  }
-
-  Map<String, dynamic> _resolveFunctionArguments(FunctionCall functionCall) {
-    return functionCall.args;
   }
 
   /// 不完全なJSONテキストからcontentフィールドの値を抽出する

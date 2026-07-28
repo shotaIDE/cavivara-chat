@@ -29,6 +29,15 @@ int? minimumBuildNumber(Ref ref) {
   return minimumBuildNumber;
 }
 
+/// Function Calling の設定 JSON
+///
+/// `getString` は未設定時に空文字を返すため、空文字の場合はアプリに埋め込んだ
+/// 組み込みデフォルト設定を使用する。
+@riverpod
+String functionCallingConfigJson(Ref ref) {
+  return FirebaseRemoteConfig.instance.getString('functionCallingConfig');
+}
+
 /// Production-Release Suite でデバッグ機能を表示するか否か
 ///
 /// デフォルト値は false。`getBool` は未設定時に false を返すため、

@@ -1,4 +1,4 @@
-<!-- cspell:ignore hitomi -->
+<!-- cspell:ignore hitomi mocktail -->
 
 # Function Calling の Remote Config 制御 概要設計書
 
@@ -66,7 +66,7 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `schemaVersion` | int | ○ | この JSON の構造バージョン。現行は `1` |
-| `toolInstruction` | string | - | 結社マスターモードのシステムプロンプトに追記する、Function Calling の利用を促す指示文。未指定時は追記なし |
+| `toolInstruction` | string | - | 結社マスターモードのシステムプロンプトに追記する、Function Calling の利用を促す指示文。空行を挟んで追記されるため、先頭の改行は不要。未指定時は追記なし |
 | `functions` | array\<Function\> | ○ | モデルに提供するデータ駆動関数の定義リスト。組み込み関数（`getCurrentDateTime`）は含めない |
 
 #### Function
@@ -105,14 +105,16 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
 | `topic` | string | ○ | トピック ID。関数の `topic` 引数と突き合わせる。同一関数内で一意であればよい |
 | `title` | string | ○ | トピックの表示名 |
 | `summary` | string | ○ | 要約。関数応答の `summary` に入る |
-| `facts` | array\<string\> | ○ | 事実のリスト。関数応答の `facts` に入る |
-| `keywords` | array\<string\> | ○ | 自然言語クエリとの一致判定、および自動選択モードの判定に使うキーワード |
+| `facts` | array\<string\> | ○ | 事実のリスト。関数応答の `facts` に入る。空リストは不可 |
+| `keywords` | array\<string\> | - | 自然言語クエリとの一致判定、および自動選択モードの判定に使うキーワード。未指定の場合はトピックIDの指定でのみ参照される |
 
 `keywords` は Function Calling の引数解決だけでなく、自動選択モードで結社マスターモードを選ぶ判定（`CavivaraKnowledgeBase.hasRelevantKnowledge`）にも使われる。この判定は**全関数の項目一覧を横断して**行う（「結社の知識に関係する発話か」という判定であり、どの関数で答えるかは判定時点では決める必要がないため）。Remote Config でキーワードを増やすと自動選択の挙動も変わる点を運用時に留意する。
 
 ### 設定例
 
 現行のハードコード内容のうち、Remote Config の対象範囲を表現した例。これをそのまま組み込みデフォルト設定の内容とする。`getCurrentDateTime` は組み込み関数のため `functions` には現れないが、`toolInstruction` からは（アプリが固定の名前で常に提供するため）参照してよい。
+
+`topic` と `query` を両方 `required` としているのは、現行のハードコードされた関数宣言が両方を必須として宣言しているためである（`Schema.object` は `optionalProperties` に挙げない引数を必須として扱う）。どちらか一方しか渡されなくてもアプリ側は解決できるため、任意に変更しても動作するが、既存の挙動を保つためデフォルト設定では必須のままとしている。
 
 ```json
 {
@@ -127,12 +129,14 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
         {
           "name": "topic",
           "type": "string",
-          "description": "取得したいトピックID。"
+          "description": "取得したいトピックID。",
+          "required": true
         },
         {
           "name": "query",
           "type": "string",
-          "description": "自然言語で記述された検索クエリ。例: \"給料は？\""
+          "description": "自然言語で記述された検索クエリ。例: \"給料は？\"",
+          "required": true
         }
       ],
       "entries": [
@@ -255,19 +259,25 @@ Remote Config の値は既存実装と同様に Service 層で扱う（既存の
 
 ### 主要コンポーネント
 
-#### 1. FunctionCallingConfig（ドメインモデル）
+#### 1. FunctionCallingToolConfig（ドメインモデル）
 
 **配置**: `client/lib/data/model/function_calling_config.dart`
 
-`freezed` + `json_serializable` で定義する。`AiResponse` と同じく `fromJson` を生成し、JSON のパースはコード生成に任せる。
+`freezed` で定義する。`json_serializable` による `fromJson` は生成しない。生成されるパース処理は必須キーが欠けていると `TypeError`（`Exception` ではない）を投げるため、要素単位で不正を検出して除外する本設計の検証方針とは相性が悪い。JSON の解釈は [FunctionCallingConfigService](#3-functioncallingconfigserviceパース検証フォールバック) の明示的な検証処理で行う。
 
-- `FunctionCallingConfig`: `schemaVersion` / `toolInstruction` / `functions`
-- `FunctionCallingFunction`: `name` / `handler` / `description` / `enabled` / `parameters` / `entries`
-- `FunctionCallingParameter`: `name` / `type` / `description` / `required` / `enumValues`
+- `FunctionCallingToolConfig`: `schemaVersion` / `toolInstruction` / `functions`
+  - `firebase_ai` にも `FunctionCallingConfig`（関数呼び出しモードの設定）があり衝突するため、クラス名を `FunctionCallingToolConfig` とする
+- `FunctionCallingFunction`: `name` / `handler` / `description` / `parameters` / `entries`
+  - `enabled` はモデルには持たせず、解釈時に無効な関数を除外する
+- `FunctionCallingParameter`: `name` / `type` / `description` / `isRequired` / `enumValues`
+  - `required` は Dart の予約語のため、フィールド名は `isRequired` とする
 - `KnowledgeEntry`: `topic` / `title` / `summary` / `facts` / `keywords`（現行の `_KnowledgeEntry` を公開モデルへ移動し、`matches` によるキーワード一致判定も引き継ぐ）
-- `FunctionCallingHandler` / `FunctionCallingParameterType`: enum。`@JsonEnum(unknownEnumValue: ...)` で未知の値を `unknown` に落とし、除外対象として扱う。`FunctionCallingHandler` は現行 `knowledgeLookup` のみを持つ（組み込み関数はこの enum に含めない）
+- `FunctionCallingHandler` / `FunctionCallingParameterType`: enum。未知の値は enum に落とさず、当該関数を除外する。`FunctionCallingHandler` は現行 `knowledgeLookup` のみを持つ（組み込み関数はこの enum に含めない）
+- `currentDateTimeFunctionName` / `builtInFunctionNames`: 組み込み関数の名前。予約名の判定と、実行時の振り分けの両方で参照する
 
 UI に表示する文字列は含めない（コーディングルールに従う）。
+
+設定を解釈できなかったことを表す例外は、`client/lib/data/model/function_calling_config_exception.dart` に `freezed` の sealed クラスとして定義する。構造バージョン超過（`unsupportedSchemaVersion`）とそれ以外（`malformed`）を型で区別し、Crashlytics へ報告するかどうかの判断に使う。
 
 #### 2. functionCallingConfigJson（Remote Config アクセサー）
 
@@ -290,18 +300,19 @@ String functionCallingConfigJson(Ref ref) {
 
 **配置**: `client/lib/data/service/function_calling_config_service.dart`
 
-- `@riverpod FunctionCallingConfig functionCallingConfig(Ref ref)`
+- `@riverpod FunctionCallingToolConfig functionCallingConfig(Ref ref)`
   - `functionCallingConfigJsonProvider` を `watch` し、パース・検証を行った結果を返す
-  - 失敗時は組み込みデフォルト設定を返し、必要に応じて `ErrorReportService` へ報告する
+  - 失敗時は組み込みデフォルト設定を返し、`malformed` の場合のみ `ErrorReportService` へ報告する
 - 組み込みデフォルト設定は同ファイルに `const` で定義する（[設定例](#設定例)と同じ内容）
-- 検証ロジックは純粋関数として切り出し、単体テストしやすくする
+- 検証ロジックは `parseFunctionCallingConfig`（`@visibleForTesting`）として切り出し、単体テストしやすくする
 
 #### 4. CavivaraKnowledgeBase の設定駆動化
 
 **配置**: `client/lib/data/service/cavivara_knowledge_service.dart`（既存を変更）
 
-- `CavivaraKnowledgeBase({required FunctionCallingConfig config})` とし、プロバイダーで `functionCallingConfigProvider` を `watch` して生成する
-- `tools`: **組み込み関数の宣言＋ `config.functions` のうち `enabled` なもの** から `FunctionDeclaration` を組み立て、1 つの `Tool.functionDeclarations` にまとめる。組み込み関数を必ず含むため空にはならない
+- `CavivaraKnowledgeBase({required FunctionCallingToolConfig config})` とし、プロバイダーで `functionCallingConfigProvider` を `watch` して生成する
+- `tools`: **組み込み関数の宣言＋ `config.functions`** から `FunctionDeclaration` を組み立て、1 つの `Tool.functionDeclarations` にまとめる。組み込み関数を必ず含むため空にはならない
+  - 組み込み関数と同名の関数は宣言からも除き、同じ関数名が二重に宣言されないようにする（Remote Config 経由では解釈時に除外済みだが、設定を直接組み立てた場合にも一貫した宣言になるようにする）
   - 組み込み関数の宣言（`getCurrentDateTime` の名前・説明・引数なし）は現行の `_buildCurrentDateTimeFunctionDeclaration` をそのまま維持する
 - `execute`: 関数名がまず組み込み関数のものかを判定し、該当すれば組み込み実装を実行する。該当しなければ **関数名で `config.functions` を引き、見つかった関数定義の `handler` と `entries` を使って** 実行処理へ振り分ける。組み込み関数の判定を先に行うことで、Remote Config 側が同名の関数を定義していても組み込み実装が使われる
   - 組み込み（`getCurrentDateTime`）: 現行と同じく `DateTime.now()` を返す
@@ -403,14 +414,14 @@ await _processResponseStream(
   - **関数が 2 つ以上ある場合、各関数が自身の `entries` のみを参照する**（一方の関数のトピック ID を他方に渡しても `found: false` になり、`availableTopics` に他方のトピックが含まれない）
   - `hasRelevantKnowledge` が全関数の `entries` を横断して判定される
   - 未知の関数名に対して `found: false` の応答を返す
-- `AiChatService`
-  - `toolInstruction` がシステムプロンプトに付与される
-  - `toolInstruction` が空のときシステムプロンプトに追記されない
-  - **1 チャンクに複数の `functionCall` が含まれる場合、全関数を実行して 1 通の `Content.functionResponses` で返し、応答テキストが重複して流れない**
-  - 複数関数のうち 1 つが失敗しても、残りの関数の結果とエラー内容が一緒に返る
-  - `functionCallDepth` が 1 ターンあたり 1 だけ増える
+Remote Config の生値は `functionCallingConfigJsonProvider` のオーバーライドで差し替え、`FirebaseRemoteConfig` の初期化を必要としないようにする。設定を解釈できなかった場合は Crashlytics へ報告するため、`errorReportServiceProvider` もモックに差し替える。モックは `mocktail` を使用する。
 
-Remote Config の生値は `functionCallingConfigJsonProvider` のオーバーライドで差し替え、`FirebaseRemoteConfig` の初期化を必要としないようにする。モックは `mocktail` を使用する。
+`AiChatService` の以下の挙動は、`GenerativeModel` および `ChatSession` の生成に `FirebaseAI` の初期化が必要で、単体テストからは検証できない。実機での動作確認、およびコードレビューで担保する。
+
+- `toolInstruction` がシステムプロンプトに付与される（空の場合は追記されない）
+- 複数の `functionCall` が返った場合に、全関数を実行して 1 通の `Content.functionResponses` で返し、応答テキストが重複して流れない
+- 複数関数のうち 1 つが失敗しても、残りの関数の結果とエラー内容が一緒に返る
+- `functionCallDepth` が 1 ターンあたり 1 だけ増える
 
 ## 運用手順
 
