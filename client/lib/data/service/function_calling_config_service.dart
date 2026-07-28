@@ -1,4 +1,3 @@
-// cspell:ignore HITOMI
 import 'dart:async';
 import 'dart:convert';
 
@@ -73,30 +72,6 @@ const FunctionCallingToolConfig defaultFunctionCallingConfig =
                 'ベースアップ',
                 '昇給',
                 '0円',
-              ],
-            ),
-            KnowledgeEntry(
-              topic: 'regular_concert_11',
-              title: '第11回定期演奏会',
-              summary:
-                  'プレクトラム結社の第11回定期演奏会は2026年9月12日(土)、'
-                  'メニコンANNEX HITOMIホールで開催予定。',
-              facts: [
-                'イベント名: プレクトラム結社 第11回定期演奏会。',
-                '開催日: 2026年9月12日(土)。',
-                '会場: メニコンANNEX HITOMIホール。',
-              ],
-              keywords: [
-                '演奏会',
-                '定期演奏会',
-                '第11回',
-                '11回',
-                '2026年9月12日',
-                '2026/9/12',
-                'メニコン',
-                'annex',
-                'hitomi',
-                'ホール',
               ],
             ),
           ],
