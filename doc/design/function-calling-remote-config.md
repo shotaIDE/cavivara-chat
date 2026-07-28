@@ -40,7 +40,7 @@ Function Calling は、モデルが呼び出しを要求した関数をアプリ
 Remote Config は運用でのミス（JSON の構文エラー、必須項目の欠落）が起こり得る。Function Calling が壊れると結社マスターモードの回答品質が直接落ちるため、次の優先順で値を解決する。
 
 1. Remote Config から取得・有効化済みの値
-2. （1 が未設定・パース不能・スキーマ非対応の場合）アプリに埋め込んだ組み込みデフォルト設定
+2. （1 が未設定・パース不能・スキーマ非対応の場合、および Firebase が初期化されておらず値を取得できない場合）アプリに埋め込んだ組み込みデフォルト設定
 
 組み込みデフォルト設定には、現在ハードコードされている内容をそのまま移植する。これにより、Remote Config 未設定の環境（ローカル開発、Firebase 初期化失敗時、エミュレーター Suite）でも従来と同じ挙動になる。
 
@@ -284,17 +284,23 @@ UI に表示する文字列は含めない（コーディングルールに従�
 **配置**: `client/lib/data/service/remote_config_service.dart`（既存ファイルに追加）
 
 ```dart
-/// Function Calling の設定 JSON
-///
-/// `getString` は未設定時に空文字を返すため、空文字の場合は
-/// アプリに埋め込んだ組み込みデフォルト設定を使用する。
 @riverpod
 String functionCallingConfigJson(Ref ref) {
-  return FirebaseRemoteConfig.instance.getString('functionCallingConfig');
+  try {
+    return FirebaseRemoteConfig.instance.getString('functionCallingConfig');
+  } on Exception catch (e) {
+    _logger.warning('Remote Config から Function Calling の設定を取得できませんでした', e);
+
+    return '';
+  }
 }
 ```
 
+`getString` は未設定時に空文字を返すため、空文字の場合は組み込みデフォルト設定を使用する。
+
 `FirebaseRemoteConfig` への直接アクセスをこのファイルに閉じ、後続のパース処理をテスト時にプロバイダーのオーバーライドで差し替えられるようにする。
+
+Firebase が初期化されていない場合（初期化に失敗した場合や、単体テストの実行時）は `FirebaseRemoteConfig.instance` が `FirebaseException` を投げるため、捕捉して空文字を返す。既存の `minimumBuildNumber` などのアクセサーには例外処理がないが、この設定は**チャットの応答経路（自動選択モードの判定を含む）から参照される**ため、例外がそのまま伝播するとチャット自体が利用できなくなる。Firebase の初期化に失敗してもアプリを続行する [main.dart](../../client/lib/main.dart) の方針に合わせ、組み込みデフォルト設定へフォールバックする。
 
 #### 3. FunctionCallingConfigService（パース・検証・フォールバック）
 
