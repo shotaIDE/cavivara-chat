@@ -235,16 +235,19 @@ class AiChatService {
       final functionCalls = <FunctionCall>[];
 
       await for (final chunk in responseStream) {
-        final chunkFunctionCalls = chunk.functionCalls;
-        functionCalls.addAll(chunkFunctionCalls);
+        functionCalls.addAll(chunk.functionCalls);
+
+        // 関数呼び出しを要求する応答では、最終的な回答は関数の結果を返した後に
+        // 生成される。この段階のテキストは「調べますね」のような前置きであり、
+        // 送出すると最終的な回答とは別のテキストとして UI に残ってしまうため、
+        // 関数呼び出しを検出した以降のテキストは無視して関数の実行に進む。
+        if (functionCalls.isNotEmpty) {
+          continue;
+        }
 
         final text = chunk.text;
         if (text == null) {
-          // 関数呼び出しのみを含むチャンクにはテキストが含まれないため、
-          // 想定外の応答としては扱わない
-          if (chunkFunctionCalls.isEmpty) {
-            _logger.warning('AIからの応答チャンクがnullです');
-          }
+          _logger.warning('AIからの応答チャンクがnullです');
           continue;
         }
 
