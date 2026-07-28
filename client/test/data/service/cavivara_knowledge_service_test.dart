@@ -52,16 +52,16 @@ void main() {
         expect(facts, contains('結社の給料は0円です。'));
       });
 
-      test('検索クエリから定期演奏会の知識が推定されること', () async {
+      test('検索クエリから知識が推定されること', () async {
         final result = await knowledgeBase.execute(
           functionName: 'getPlectrumSocietyKnowledge',
-          arguments: const {'query': '定期演奏会はいつ開催されるの？'},
+          arguments: const {'query': '結社の給料はいくらですか？'},
         );
 
         expect(result['found'], isTrue);
-        expect(result['topic'], 'regular_concert_11');
+        expect(result['topic'], 'salary_policy');
         final facts = result['facts'] as List<dynamic>;
-        expect(facts, contains('開催日: 2026年9月12日(土)。'));
+        expect(facts, contains('結社の給料は0円です。'));
       });
 
       test('該当する知識がない場合は利用可能なトピックが返されること', () async {
@@ -94,7 +94,7 @@ void main() {
       });
 
       test('キーワードに一致する文言では関連知識ありと判定されること', () {
-        expect(knowledgeBase.hasRelevantKnowledge('定期演奏会はいつ開催されるの？'), isTrue);
+        expect(knowledgeBase.hasRelevantKnowledge('結社の給料はいくらですか？'), isTrue);
       });
 
       test('キーワードに一致しない文言では関連知識なしと判定されること', () {
@@ -250,8 +250,10 @@ void main() {
     });
 
     group('組み込み関数と同名の関数が定義された設定', () {
-      test('組み込みの実装が優先されること', () async {
-        final knowledgeBase = CavivaraKnowledgeBase(
+      late CavivaraKnowledgeBase knowledgeBase;
+
+      setUp(() {
+        knowledgeBase = CavivaraKnowledgeBase(
           config: const FunctionCallingToolConfig(
             schemaVersion: 1,
             functions: [
@@ -265,24 +267,44 @@ void main() {
                     title: '偽の日時',
                     summary: '偽の日時。',
                     facts: ['偽の日時です。'],
+                    keywords: ['偽の日時'],
                   ),
                 ],
               ),
             ],
           ),
         );
+      });
 
+      test('組み込みの実装が優先されること', () async {
         final result = await knowledgeBase.execute(
           functionName: 'getCurrentDateTime',
         );
 
         expect(result['dateTime'], isA<String>());
         expect(result['found'], isNull);
-        // 宣言が重複しないよう、設定側の同名の関数は宣言からも除かれる
+      });
+
+      test('宣言が重複しないこと', () {
         expect(
           functionNamesOf(knowledgeBase.tools),
           equals(<String>['getCurrentDateTime']),
         );
+      });
+
+      test('利用可能な関数名が重複して提示されないこと', () async {
+        final result = await knowledgeBase.execute(
+          functionName: 'unknownFunction',
+        );
+
+        expect(
+          result['availableFunctions'],
+          equals(<String>['getCurrentDateTime']),
+        );
+      });
+
+      test('提供されない関数の項目一覧は関連知識の判定に使われないこと', () {
+        expect(knowledgeBase.hasRelevantKnowledge('偽の日時を教えて'), isFalse);
       });
     });
   });

@@ -21,26 +21,28 @@ CavivaraKnowledgeBase cavivaraKnowledgeBase(Ref ref) {
 class CavivaraKnowledgeBase {
   CavivaraKnowledgeBase({required this.config})
     : _functionsByName = {
-        for (final function in config.functions) function.name: function,
+        for (final function in config.functions)
+          // 組み込み関数と同名の関数は、実行時に組み込みの実装が使われるため
+          // 提供対象から除く。宣言・実行・関連知識の判定がすべてこの対応表を
+          // 参照することで、提供しない関数の内容が判定に混ざらないようにする。
+          if (!builtInFunctionNames.contains(function.name))
+            function.name: function,
       };
 
   static final Logger _logger = Logger('CavivaraKnowledgeBase');
 
   final FunctionCallingToolConfig config;
 
-  /// 関数名から関数定義を引くための対応表
+  /// 関数名から、モデルに提供するデータ駆動関数の定義を引くための対応表
   final Map<String, FunctionCallingFunction> _functionsByName;
 
   /// モデルに提供する関数の宣言
   ///
   /// 組み込み関数の宣言を必ず含むため、空になることはない。
-  /// 組み込み関数と同名の関数は、実行時に組み込みの実装が使われるため宣言からも除く。
   late final List<Tool> tools = List.unmodifiable([
     Tool.functionDeclarations([
       _buildCurrentDateTimeFunctionDeclaration(),
-      ...config.functions
-          .where((function) => !builtInFunctionNames.contains(function.name))
-          .map(_buildFunctionDeclaration),
+      ..._functionsByName.values.map(_buildFunctionDeclaration),
     ]),
   ]);
 
@@ -52,14 +54,14 @@ class CavivaraKnowledgeBase {
   /// 自動選択モードでの初回メッセージに対し、結社マスターモードと
   /// 雑談マスターモードのどちらを使うか判断する材料として利用する。
   /// 「結社の知識に関係する発話か」のみを判定するため、どの関数の項目かは区別せず、
-  /// 全関数の項目一覧を横断して判定する。
+  /// モデルに提供する全関数の項目一覧を横断して判定する。
   bool hasRelevantKnowledge(String query) {
     final normalizedQuery = _normalizeQuery(query);
     if (normalizedQuery == null) {
       return false;
     }
 
-    return config.functions.any(
+    return _functionsByName.values.any(
       (function) =>
           function.entries.any((entry) => entry.matches(normalizedQuery)),
     );
