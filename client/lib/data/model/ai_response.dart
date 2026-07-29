@@ -11,6 +11,8 @@ abstract class AiResponse with _$AiResponse {
     required String content,
 
     /// 返答サジェストのリスト
+    ///
+    /// ユーザーが次に送るメッセージの候補であり、ユーザー視点の文が入る
     @Default([]) List<String> suggestedReplies,
   }) = _AiResponse;
 
