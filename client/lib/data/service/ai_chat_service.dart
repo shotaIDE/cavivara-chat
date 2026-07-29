@@ -46,7 +46,9 @@ class AiChatService {
         description: 'AIの返答テキスト',
       ),
       'suggestedReplies': Schema.array(
-        description: '次の返答候補のリスト（3個以下）',
+        description:
+            'AIの返答に対して、ユーザーが次に送るメッセージの候補のリスト（3個以下）。'
+            'ユーザーがそのまま送信できる、ユーザー視点の文にする',
         items: Schema.string(),
       ),
     },
@@ -79,12 +81,13 @@ class AiChatService {
           ChatMode.chitChatMaster => _aiResponseSchema,
         },
       ),
-      // 結社マスターモードでは、Function Calling の利用を促す追加指示を付与する
+      // 結社マスターモードでは Function Calling の利用を促す追加指示を、
+      // 雑談マスターモードでは返答サジェストの生成方針の追加指示を付与する
       systemInstruction: Content.system(switch (mode) {
         ChatMode.plectrumSocietyMaster => _buildPlectrumSocietySystemPrompt(
           systemPrompt,
         ),
-        ChatMode.chitChatMaster => systemPrompt,
+        ChatMode.chitChatMaster => _buildChitChatSystemPrompt(systemPrompt),
       }),
       // 結社マスターモードのみ、FunctionCallingを使用する
       tools: switch (mode) {
@@ -108,6 +111,26 @@ class AiChatService {
 
     return '$systemPrompt\n\n$toolInstruction';
   }
+
+  /// 雑談マスターモードのシステムプロンプトを組み立てる
+  ///
+  /// カヴィヴァラのプロンプトは語尾や口調をカヴィヴァラ自身のものに統一するよう
+  /// 規定しているため、返答サジェストの視点を明示しないと、モデルはサジェストも
+  /// カヴィヴァラのセリフとして生成してしまう。返答サジェストはユーザーが次に
+  /// 送るメッセージとしてそのまま送信されるため、ユーザー視点で生成させる指示を
+  /// システムプロンプトに追記する。
+  String _buildChitChatSystemPrompt(String systemPrompt) {
+    return '$systemPrompt\n\n$_suggestedRepliesInstruction';
+  }
+
+  /// 返答サジェストをユーザー視点で生成させるための指示文
+  static const _suggestedRepliesInstruction = '''
+## 返答サジェスト（suggestedReplies）の作り方
+- suggestedReplies は、あなたの返答を読んだユーザーが次にあなたへ送るメッセージの候補である
+- ユーザーがあなたに話しかける言葉として、ユーザーの一人称・ユーザーの口調で書く
+- あなた自身のセリフにしない。語尾の「ヴィヴァ。」「ヴィヴァ？」は使わない
+- ユーザーがそのままタップして送信できる、30字以内の短い文にする
+- 内容が重複しない候補を3個以下にする''';
 
   /// チャットメッセージをストリーミングで送信する
   ///
