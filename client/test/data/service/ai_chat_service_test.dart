@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:house_worker/data/model/chat_mode.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
 import 'package:house_worker/data/service/cavivara_knowledge_service.dart';
 import 'package:house_worker/data/service/error_report_service.dart';
@@ -37,6 +38,49 @@ void main() {
       test('チャットセッションがクリアできること', () {
         // チャットセッションのクリア機能をテスト
         expect(() => service.clearChatSession('test prompt'), returnsNormally);
+      });
+    });
+
+    group('buildSystemPrompt', () {
+      const systemPrompt = 'あなたはカヴィヴァラです。';
+      const toolInstruction = '結社の情報は必ず関数を呼び出して調べること。';
+
+      test('雑談マスターモードでは返答サジェストの指示が追記されること', () {
+        expect(
+          service.buildSystemPrompt(systemPrompt, ChatMode.chitChatMaster),
+          equals(
+            '$systemPrompt\n\n${AiChatService.suggestedRepliesInstruction}',
+          ),
+        );
+      });
+
+      test('結社マスターモードでは返答サジェストの指示が追記されないこと', () {
+        when(
+          () => mockKnowledgeBase.toolInstruction,
+        ).thenReturn(toolInstruction);
+
+        final result = service.buildSystemPrompt(
+          systemPrompt,
+          ChatMode.plectrumSocietyMaster,
+        );
+
+        expect(
+          result,
+          isNot(contains(AiChatService.suggestedRepliesInstruction)),
+        );
+        expect(result, equals('$systemPrompt\n\n$toolInstruction'));
+      });
+
+      test('結社マスターモードで追加指示が空の場合はシステムプロンプトがそのまま使われること', () {
+        when(() => mockKnowledgeBase.toolInstruction).thenReturn('');
+
+        expect(
+          service.buildSystemPrompt(
+            systemPrompt,
+            ChatMode.plectrumSocietyMaster,
+          ),
+          equals(systemPrompt),
+        );
       });
     });
 

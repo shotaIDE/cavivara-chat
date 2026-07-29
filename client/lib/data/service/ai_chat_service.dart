@@ -81,20 +81,27 @@ class AiChatService {
           ChatMode.chitChatMaster => _aiResponseSchema,
         },
       ),
-      // 結社マスターモードでは Function Calling の利用を促す追加指示を、
-      // 雑談マスターモードでは返答サジェストの生成方針の追加指示を付与する
-      systemInstruction: Content.system(switch (mode) {
-        ChatMode.plectrumSocietyMaster => _buildPlectrumSocietySystemPrompt(
-          systemPrompt,
-        ),
-        ChatMode.chitChatMaster => _buildChitChatSystemPrompt(systemPrompt),
-      }),
+      systemInstruction: Content.system(buildSystemPrompt(systemPrompt, mode)),
       // 結社マスターモードのみ、FunctionCallingを使用する
       tools: switch (mode) {
         ChatMode.plectrumSocietyMaster => knowledgeBase.tools,
         ChatMode.chitChatMaster => null,
       },
     );
+  }
+
+  /// モデルに渡すシステムプロンプトを組み立てる
+  ///
+  /// 結社マスターモードでは Function Calling の利用を促す追加指示を、
+  /// 雑談マスターモードでは返答サジェストの生成方針の追加指示を付与する。
+  @visibleForTesting
+  String buildSystemPrompt(String systemPrompt, ChatMode mode) {
+    return switch (mode) {
+      ChatMode.plectrumSocietyMaster => _buildPlectrumSocietySystemPrompt(
+        systemPrompt,
+      ),
+      ChatMode.chitChatMaster => _buildChitChatSystemPrompt(systemPrompt),
+    };
   }
 
   /// 結社マスターモードのシステムプロンプトを組み立てる
@@ -120,11 +127,12 @@ class AiChatService {
   /// 送るメッセージとしてそのまま送信されるため、ユーザー視点で生成させる指示を
   /// システムプロンプトに追記する。
   String _buildChitChatSystemPrompt(String systemPrompt) {
-    return '$systemPrompt\n\n$_suggestedRepliesInstruction';
+    return '$systemPrompt\n\n$suggestedRepliesInstruction';
   }
 
   /// 返答サジェストをユーザー視点で生成させるための指示文
-  static const _suggestedRepliesInstruction = '''
+  @visibleForTesting
+  static const suggestedRepliesInstruction = '''
 ## 返答サジェスト（suggestedReplies）の作り方
 - suggestedReplies は、あなたの返答を読んだユーザーが次にあなたへ送るメッセージの候補である
 - ユーザーがあなたに話しかける言葉として、ユーザーの一人称・ユーザーの口調で書く
