@@ -20,9 +20,6 @@ final _logger = Logger('InitialChatSuggestionsConfigService');
 /// 表示することになるため、設定全体を破棄して組み込みデフォルト設定を使用する。
 const int supportedInitialChatSuggestionsSchemaVersion = 1;
 
-/// 一度に表示するサジェストの件数の既定値
-const int defaultInitialChatSuggestionDisplayCount = 3;
-
 /// アプリに埋め込んだ組み込みデフォルト設定
 ///
 /// Remote Config に値が設定されていない場合や、設定を解釈できなかった場合に使用する。
@@ -31,7 +28,6 @@ const int defaultInitialChatSuggestionDisplayCount = 3;
 const InitialChatSuggestionsConfig defaultInitialChatSuggestionsConfig =
     InitialChatSuggestionsConfig(
       schemaVersion: supportedInitialChatSuggestionsSchemaVersion,
-      displayCount: defaultInitialChatSuggestionDisplayCount,
       suggestions: [
         // カヴィヴァラ・マンドリン関連
         InitialChatSuggestion(
@@ -192,25 +188,8 @@ InitialChatSuggestionsConfig parseInitialChatSuggestionsConfig(String rawJson) {
 
   return InitialChatSuggestionsConfig(
     schemaVersion: schemaVersion,
-    displayCount: _parseDisplayCount(decoded['displayCount']),
     suggestions: _parseSuggestions(rawSuggestions),
   );
-}
-
-/// 表示件数を解釈する
-///
-/// 表示件数だけの誤りで設定全体を破棄する必要はないため、不正な値は既定値に読み替える。
-int _parseDisplayCount(Object? rawDisplayCount) {
-  if (rawDisplayCount == null) {
-    return defaultInitialChatSuggestionDisplayCount;
-  }
-
-  if (rawDisplayCount is! int || rawDisplayCount < 1) {
-    _logger.warning('表示件数が不正なため既定値を使用します: $rawDisplayCount');
-    return defaultInitialChatSuggestionDisplayCount;
-  }
-
-  return rawDisplayCount;
 }
 
 /// サジェストのリストを解釈する
@@ -240,15 +219,10 @@ List<InitialChatSuggestion> _parseSuggestions(List<dynamic> rawSuggestions) {
 
 /// サジェストを 1 件解釈する
 ///
-/// 解釈できない場合や、無効化されている場合は `null` を返す。
+/// 解釈できない場合は `null` を返す。
 InitialChatSuggestion? _parseSuggestion(Object? rawSuggestion) {
   if (rawSuggestion is! Map<String, dynamic>) {
     _logger.warning('サジェストがオブジェクトではないため除外します: $rawSuggestion');
-    return null;
-  }
-
-  final enabled = rawSuggestion['enabled'];
-  if (enabled is bool && !enabled) {
     return null;
   }
 

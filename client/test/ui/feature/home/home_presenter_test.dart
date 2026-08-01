@@ -690,7 +690,6 @@ void main() {
       final container = createContainer(
         InitialChatSuggestionsConfig(
           schemaVersion: 1,
-          displayCount: 3,
           suggestions: buildSuggestions(10),
         ),
       );
@@ -709,7 +708,6 @@ void main() {
       final container = createContainer(
         InitialChatSuggestionsConfig(
           schemaVersion: 1,
-          displayCount: 5,
           suggestions: buildSuggestions(2),
         ),
       );
@@ -719,7 +717,7 @@ void main() {
 
     test('候補が空の場合は空のリストが返されること', () {
       final container = createContainer(
-        const InitialChatSuggestionsConfig(schemaVersion: 1, displayCount: 3),
+        const InitialChatSuggestionsConfig(schemaVersion: 1),
       );
 
       expect(container.read(initialChatSuggestionsProvider), isEmpty);
@@ -729,7 +727,6 @@ void main() {
       final container = createContainer(
         InitialChatSuggestionsConfig(
           schemaVersion: 1,
-          displayCount: 3,
           suggestions: buildSuggestions(20),
         ),
       );

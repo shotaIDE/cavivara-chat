@@ -17,12 +17,10 @@ void main() {
   /// テストケースごとに変えたい部分のみを [suggestions] などで上書きする。
   String buildRawJson({
     Object? schemaVersion = 1,
-    Object? displayCount,
     Object? suggestions,
   }) {
     return jsonEncode({
       'schemaVersion': ?schemaVersion,
-      'displayCount': ?displayCount,
       'suggestions': ?suggestions,
     });
   }
@@ -35,11 +33,10 @@ void main() {
   group('parseInitialChatSuggestionsConfig', () {
     test('正常な JSON を解釈できること', () {
       final config = parseInitialChatSuggestionsConfig(
-        buildRawJson(displayCount: 5, suggestions: [validSuggestion]),
+        buildRawJson(suggestions: [validSuggestion]),
       );
 
       expect(config.schemaVersion, equals(1));
-      expect(config.displayCount, equals(5));
       expect(config.suggestions.length, equals(1));
 
       final suggestion = config.suggestions.first;
@@ -47,32 +44,21 @@ void main() {
       expect(suggestion.icon, equals(InitialChatSuggestionIcon.queueMusic));
     });
 
-    test('displayCount が未指定の場合は既定値となること', () {
+    test('未知のフィールドが無視されること', () {
       final config = parseInitialChatSuggestionsConfig(
-        buildRawJson(suggestions: [validSuggestion]),
+        jsonEncode({
+          'schemaVersion': 1,
+          'displayCount': 5,
+          'suggestions': [
+            {...validSuggestion, 'enabled': false},
+          ],
+        }),
       );
 
       expect(
-        config.displayCount,
-        equals(defaultInitialChatSuggestionDisplayCount),
+        config.suggestions.map((suggestion) => suggestion.label),
+        equals(['マンドリンの練習方法を教えてヴィヴァ']),
       );
-    });
-
-    test('displayCount が不正な場合は既定値となること', () {
-      for (final invalidDisplayCount in <Object>[0, -1, '3', 1.5]) {
-        final config = parseInitialChatSuggestionsConfig(
-          buildRawJson(
-            displayCount: invalidDisplayCount,
-            suggestions: [validSuggestion],
-          ),
-        );
-
-        expect(
-          config.displayCount,
-          equals(defaultInitialChatSuggestionDisplayCount),
-          reason: 'displayCount: $invalidDisplayCount',
-        );
-      }
     });
 
     test('サジェストが空のリストの場合は空のまま解釈されること', () {
@@ -164,15 +150,6 @@ void main() {
         expect(
           parsedLabels(['マンドリンの練習方法を教えてヴィヴァ', validSuggestion]),
           equals(['マンドリンの練習方法を教えてヴィヴァ']),
-        );
-      });
-
-      test('無効化されたサジェストが除外されること', () {
-        expect(
-          parsedLabels([
-            {...validSuggestion, 'enabled': false},
-          ]),
-          isEmpty,
         );
       });
 
@@ -298,11 +275,10 @@ void main() {
 
     test('Remote Config の値が正常な場合はその値が使われること', () {
       final container = createContainer(
-        buildRawJson(displayCount: 2, suggestions: [validSuggestion]),
+        buildRawJson(suggestions: [validSuggestion]),
       );
 
       final config = container.read(initialChatSuggestionsConfigProvider);
-      expect(config.displayCount, equals(2));
       expect(
         config.suggestions.map((suggestion) => suggestion.label),
         equals(['マンドリンの練習方法を教えてヴィヴァ']),

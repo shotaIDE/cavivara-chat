@@ -253,10 +253,15 @@ bool isReceivingMessages(Ref ref) {
   return messages.any((message) => message.isStreaming);
 }
 
+/// 会話開始時に一度に表示するサジェストの件数
+///
+/// カードを横に並べるレイアウトに依存する値のため、Remote Config では変更しない。
+const _initialChatSuggestionDisplayCount = 3;
+
 /// 会話開始時に表示するサジェストを返すプロバイダー
 ///
-/// 設定された候補から、表示件数分をランダムに選ぶ。候補が表示件数に満たない場合は
-/// 候補すべてを返す。
+/// 設定された候補から [_initialChatSuggestionDisplayCount] 件をランダムに選ぶ。
+/// 候補がそれに満たない場合は候補すべてを返す。
 ///
 /// 選んだ結果はプロバイダーが破棄されるまで保持されるため、画面の再構築では
 /// 並びが変わらない。会話をクリアしてサジェストが表示し直される際は、監視元が
@@ -267,7 +272,7 @@ List<InitialChatSuggestion> initialChatSuggestions(Ref ref) {
 
   final shuffled = List.of(config.suggestions)..shuffle(Random());
 
-  return List.unmodifiable(shuffled.take(config.displayCount));
+  return List.unmodifiable(shuffled.take(_initialChatSuggestionDisplayCount));
 }
 
 /// サジェストリストを管理するプロバイダー

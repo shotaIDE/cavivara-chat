@@ -12,12 +12,9 @@ abstract class InitialChatSuggestionsConfig
     /// 設定の構造バージョン
     required int schemaVersion,
 
-    /// 一度に表示するサジェストの件数
-    required int displayCount,
-
     /// 表示候補のサジェスト
     ///
-    /// このうち [displayCount] 件をランダムに選んで表示する。
+    /// このうち何件を実際に表示するかはアプリ側が決める。
     @Default([]) List<InitialChatSuggestion> suggestions,
   }) = _InitialChatSuggestionsConfig;
 }
