@@ -53,6 +53,28 @@ String functionCallingConfigJson(Ref ref) {
   }
 }
 
+/// 会話開始時に表示するサジェストの設定 JSON
+///
+/// `getString` は未設定時に空文字を返すため、空文字の場合はアプリに埋め込んだ
+/// 組み込みデフォルト設定を使用する。
+///
+/// Firebase が初期化されていない場合（初期化に失敗した場合や、ウィジェットテストの
+/// 実行時）は `FirebaseRemoteConfig.instance` が例外を投げる。サジェストが表示できない
+/// だけでチャット画面自体が開けなくなることを避けるため、例外を捕捉して空文字を返し、
+/// 組み込みデフォルト設定にフォールバックする。
+@riverpod
+String initialChatSuggestionsConfigJson(Ref ref) {
+  try {
+    return FirebaseRemoteConfig.instance.getString(
+      'initialChatSuggestionsConfig',
+    );
+  } on Exception catch (e) {
+    _logger.warning('Remote Config から会話開始時のサジェストの設定を取得できませんでした', e);
+
+    return '';
+  }
+}
+
 /// Production-Release Suite でデバッグ機能を表示するか否か
 ///
 /// デフォルト値は false。`getBool` は未設定時に false を返すため、
