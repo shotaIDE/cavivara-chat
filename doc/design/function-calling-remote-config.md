@@ -66,7 +66,7 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
 | フィールド | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `schemaVersion` | int | ○ | この JSON の構造バージョン。現行は `1` |
-| `toolInstruction` | string | - | 結社マスターモードのシステムプロンプトに追記する、Function Calling の利用を促す指示文。関数から得た情報を元から知っていたものとして話させる（参照したことを明かさない）指示もここに含める。空行を挟んで追記されるため、先頭の改行は不要。未指定時は追記なし |
+| `toolInstruction` | string | - | 結社マスターモードのシステムプロンプトに追記する、Function Calling の利用を促す指示文。関数から得た情報を元から知っていたものとして話させる（参照したことを明かさない）指示もここに含める。空行を挟んで追記されるため、先頭の改行は不要。未指定時は追記なし。**英語で記述する**（[AIプロンプトの言語](ai-prompt-language.md)参照） |
 | `functions` | array\<Function\> | ○ | モデルに提供するデータ駆動関数の定義リスト。組み込み関数（`getCurrentDateTime`）は含めない |
 
 #### Function
@@ -75,7 +75,7 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
 | --- | --- | --- | --- |
 | `name` | string | ○ | モデルに提示する関数名。`^[a-zA-Z_][a-zA-Z0-9_]{0,63}$`。組み込み関数の名前（`getCurrentDateTime`）は予約済みで使用できない |
 | `handler` | string | ○ | アプリ側の実行処理の識別子。現行は `knowledgeLookup` のみ |
-| `description` | string | ○ | モデルが呼び出し判断に使う関数の説明 |
+| `description` | string | ○ | モデルが呼び出し判断に使う関数の説明。**英語で記述する**（[AIプロンプトの言語](ai-prompt-language.md)参照） |
 | `enabled` | bool | - | `false` の場合はモデルに提供しない。既定値 `true` |
 | `parameters` | array\<Parameter\> | - | 関数の引数定義。未指定時は引数なし |
 | `entries` | array\<KnowledgeEntry\> | △ | この関数が返す項目一覧。`handler` が `knowledgeLookup` の場合は必須 |
@@ -92,7 +92,7 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
 | --- | --- | --- | --- |
 | `name` | string | ○ | 引数名 |
 | `type` | string | ○ | `string` \| `integer` \| `number` \| `boolean` \| `stringArray` |
-| `description` | string | ○ | 引数の説明 |
+| `description` | string | ○ | 引数の説明。**英語で記述する**（入力例のようにユーザーの日本語入力を示す部分は日本語のままとする） |
 | `required` | bool | - | `false` の場合は任意引数として宣言する。既定値 `false` |
 | `enumValues` | array\<string\> | - | `type` が `string` の場合のみ有効。列挙値を制限する |
 
@@ -108,6 +108,8 @@ Remote Config は運用でのミス（JSON の構文エラー、必須項目の�
 | `facts` | array\<string\> | ○ | 事実のリスト。関数応答の `facts` に入る。空リストは不可 |
 | `keywords` | array\<string\> | - | 自然言語クエリとの一致判定、および自動選択モードの判定に使うキーワード。未指定の場合はトピックIDの指定でのみ参照される |
 
+`KnowledgeEntry` はモデルが日本語で話す回答内容そのものであり、`keywords` は日本語のユーザー入力と突き合わせるため、**すべて日本語で記述する**（[AIプロンプトの言語](ai-prompt-language.md)参照）。
+
 `keywords` は Function Calling の引数解決だけでなく、自動選択モードで結社マスターモードを選ぶ判定（`CavivaraKnowledgeBase.hasRelevantKnowledge`）にも使われる。この判定は**全関数の項目一覧を横断して**行う（「結社の知識に関係する発話か」という判定であり、どの関数で答えるかは判定時点では決める必要がないため）。Remote Config でキーワードを増やすと自動選択の挙動も変わる点を運用時に留意する。
 
 ### 設定例
@@ -121,23 +123,23 @@ Remote Config に設定する内容の例。`getCurrentDateTime` は組み込み
 ```json
 {
   "schemaVersion": 1,
-  "toolInstruction": "## 情報の取得ルール（厳守）\n- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。\n- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。\n- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。\n\n## 回答の書き方（厳守）\n- 関数から得た情報は、あなたが元から知っていることとして、そのまま自然に話す。\n- 関数を呼び出したことや情報を参照したことは明かさない。「調べました」「確認しました」「取得した情報によると」「資料では」「データによると」のような、参照をうかがわせる表現は使わない。\n- 関数名・トピックID・データの形式など、内部の仕組みに触れない。",
+  "toolInstruction": "## Rules for getting information (strict)\n- When you are asked about official information of プレクトラム結社 (salary, regular concerts, dates and times, venues, events, and so on), always call the getPlectrumSocietyKnowledge function and answer based only on what it returns. Never answer from guesses or from memory.\n- When you need the current date and time, or information that depends on the present moment such as \"今日\" or \"今\", always call the getCurrentDateTime function.\n- When the function does not give you the relevant information, honestly tell the user that you do not know.\n\n## How to write the answer (strict)\n- Speak the information from the function naturally, as something you have known all along.\n- Never reveal that you called a function or referred to information. Do not use expressions that hint at a lookup, such as \"調べました\", \"確認しました\", \"取得した情報によると\", \"資料では\", or \"データによると\".\n- Never touch on internal mechanisms such as function names, topic IDs, or data formats.",
   "functions": [
     {
       "name": "getPlectrumSocietyKnowledge",
       "handler": "knowledgeLookup",
-      "description": "プレクトラム結社に関する社内公式知識を取得します。",
+      "description": "Gets official internal knowledge about プレクトラム結社.",
       "parameters": [
         {
           "name": "topic",
           "type": "string",
-          "description": "取得したいトピックID。",
+          "description": "The ID of the topic to get.",
           "required": true
         },
         {
           "name": "query",
           "type": "string",
-          "description": "自然言語で記述された検索クエリ。例: \"給料は？\"",
+          "description": "A search query written in natural language. Example: \"給料は？\"",
           "required": true
         }
       ],
@@ -176,15 +178,15 @@ Remote Config に設定する内容の例。`getCurrentDateTime` は組み込み
 ```json
 {
   "schemaVersion": 1,
-  "toolInstruction": "## 情報の取得ルール（厳守）\n- プレクトラム結社の演奏会・イベントについて尋ねられた場合は、必ず getPlectrumSocietyEventKnowledge 関数を呼び出す。\n- 結社の制度（給与、規約など）について尋ねられた場合は、必ず getPlectrumSocietySystemKnowledge 関数を呼び出す。\n- 現在の日時が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。\n- いずれの関数でも該当情報が得られなかった場合は、分からない旨を正直に伝える。\n\n## 回答の書き方（厳守）\n- 関数から得た情報は、あなたが元から知っていることとして、そのまま自然に話す。\n- 関数を呼び出したことや情報を参照したことは明かさない。「調べました」「取得した情報によると」のような、参照をうかがわせる表現は使わない。",
+  "toolInstruction": "## Rules for getting information (strict)\n- When you are asked about concerts or events of プレクトラム結社, always call the getPlectrumSocietyEventKnowledge function.\n- When you are asked about the systems of the society (salary, rules, and so on), always call the getPlectrumSocietySystemKnowledge function.\n- When you need the current date and time, always call the getCurrentDateTime function.\n- When none of the functions gives you the relevant information, honestly tell the user that you do not know.\n\n## How to write the answer (strict)\n- Speak the information from the function naturally, as something you have known all along.\n- Never reveal that you called a function or referred to information. Do not use expressions that hint at a lookup, such as \"調べました\" or \"取得した情報によると\".",
   "functions": [
     {
       "name": "getPlectrumSocietyEventKnowledge",
       "handler": "knowledgeLookup",
-      "description": "プレクトラム結社の演奏会・イベントに関する公式情報（開催日、会場など）を取得します。給与などの制度については扱いません。",
+      "description": "Gets official information about concerts and events of プレクトラム結社 (dates, venues, and so on). Does not cover systems such as salary.",
       "parameters": [
-        { "name": "topic", "type": "string", "description": "取得したいトピックID。" },
-        { "name": "query", "type": "string", "description": "自然言語で記述された検索クエリ。" }
+        { "name": "topic", "type": "string", "description": "The ID of the topic to get." },
+        { "name": "query", "type": "string", "description": "A search query written in natural language." }
       ],
       "entries": [
         {
@@ -199,10 +201,10 @@ Remote Config に設定する内容の例。`getCurrentDateTime` は組み込み
     {
       "name": "getPlectrumSocietySystemKnowledge",
       "handler": "knowledgeLookup",
-      "description": "プレクトラム結社の制度（給与、規約など）に関する公式情報を取得します。演奏会の開催情報については扱いません。",
+      "description": "Gets official information about the systems of プレクトラム結社 (salary, rules, and so on). Does not cover when concerts are held.",
       "parameters": [
-        { "name": "topic", "type": "string", "description": "取得したいトピックID。" },
-        { "name": "query", "type": "string", "description": "自然言語で記述された検索クエリ。" }
+        { "name": "topic", "type": "string", "description": "The ID of the topic to get." },
+        { "name": "query", "type": "string", "description": "A search query written in natural language." }
       ],
       "entries": [
         {
@@ -460,6 +462,7 @@ dev / prod は別の Firebase プロジェクトであるため、環境の出�
 ## 関連ドキュメント
 
 - [回答モード切り替え機能（結社マスターモード／雑談マスターモード）概要設計書](chat-mode-selection.md) - Function Calling を使用する結社マスターモードの設計
+- [AIプロンプトの言語（英語プロンプト＋日本語出力）概要設計書](ai-prompt-language.md) - `toolInstruction` や `description` の記述言語と、日本語訳
 - [SharedPreferences を利用する際の設計ガイド](../how-to-design-when-using-shared-preferences.md) - Provider / Notifier の設計パターン
 - [Firebase Remote Config のパラメーターと条件](https://firebase.google.com/docs/remote-config/parameters)
 - [Remote Config の値の読み込み戦略](https://firebase.google.com/docs/remote-config/loading#strategy_3_load_new_values_for_next_startup)

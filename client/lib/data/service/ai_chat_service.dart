@@ -40,15 +40,20 @@ class AiChatService {
   ///
   /// FunctionCallingとレスポンススキーマの併用は不可なため、
   /// [ChatMode.chitChatMaster] でのみ使用する。
+  ///
+  /// 説明文はモデルへの入力となるため、英語で記述する。
+  /// 詳細は [AIプロンプトの言語 概要設計書](../../../../doc/design/ai-prompt-language.md)
+  /// を参照する。
   static final _aiResponseSchema = Schema.object(
     properties: {
       'content': Schema.string(
-        description: 'AIの返答テキスト',
+        description: 'Your answer text, in Japanese.',
       ),
       'suggestedReplies': Schema.array(
         description:
-            'AIの返答に対して、ユーザーが次に送るメッセージの候補のリスト（3個以下）。'
-            'ユーザーがそのまま送信できる、ユーザー視点の文にする',
+            'Up to 3 candidate messages, in Japanese, that the user may send '
+            'next in reply to your answer. Write them from the user point of '
+            'view so that the user can send them as they are.',
         items: Schema.string(),
       ),
     },
@@ -131,14 +136,19 @@ class AiChatService {
   }
 
   /// 返答サジェストをユーザー視点で生成させるための指示文
+  ///
+  /// 指示文は英語で記述し、モデルが出力する文言（返答サジェスト本体や、使わせない
+  /// 語尾）は日本語のまま記述する。詳細と日本語訳は
+  /// [AIプロンプトの言語 概要設計書](../../../../doc/design/ai-prompt-language.md)
+  /// を参照する。
   @visibleForTesting
   static const suggestedRepliesInstruction = '''
-## 返答サジェスト（suggestedReplies）の作り方
-- suggestedReplies は、あなたの返答を読んだユーザーが次にあなたへ送るメッセージの候補である
-- ユーザーがあなたに話しかける言葉として、ユーザーの一人称・ユーザーの口調で書く
-- あなた自身のセリフにしない。語尾の「ヴィヴァ。」「ヴィヴァ？」は使わない
-- ユーザーがそのままタップして送信できる、30字以内の短い文にする
-- 内容が重複しない候補を3個以下にする''';
+## How to make the suggested replies (suggestedReplies)
+- suggestedReplies are candidate messages that the user, having read your answer, sends to you next
+- Write them in Japanese, as words the user speaks to you, in the user's first person and the user's tone
+- Do not make them your own lines. Do not use the sentence endings "ヴィヴァ。" or "ヴィヴァ？"
+- Make each one a short sentence of 30 Japanese characters or fewer, so that the user can tap and send it as it is
+- Give 3 or fewer candidates whose contents do not overlap''';
 
   /// チャットメッセージをストリーミングで送信する
   ///
@@ -416,7 +426,8 @@ class AiChatService {
 
       return {
         'found': false,
-        'message': '関数の実行に失敗しました。',
+        // モデルへの入力となる文言は、トークン数を抑えるため英語で記述する
+        'message': 'The function failed to run.',
         'requestedFunction': functionCall.name,
       };
     }

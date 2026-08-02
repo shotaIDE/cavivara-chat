@@ -123,4 +123,5 @@ Gemini API 側の制約上、同一会話中でレスポンススキーマと Fu
 
 - [チャット吹き出しデザイン切り替え機能 概要設計書](switch-design.md) - モード選択ダイアログの実装パターンの参考
 - [AIからの返答後に次の質問候補をボタン表示する機能](../epic/ai-suggested-replies.md) - 雑談マスターモードで使用する返信サジェストの実装
+- [AIプロンプトの言語（英語プロンプト＋日本語出力）概要設計書](ai-prompt-language.md) - モードごとに追記するプロンプトの記述言語と、日本語訳
 - [SharedPreferences 使用時の設計方法](../how-to-design-when-using-shared-preferences.md)
