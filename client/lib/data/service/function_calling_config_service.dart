@@ -28,35 +28,45 @@ final _functionNamePattern = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]{0,63}$');
 /// アプリに埋め込んだ組み込みデフォルト設定
 ///
 /// Remote Config に値が設定されていない場合や、設定を解釈できなかった場合に使用する。
+///
+/// モデルへの指示となる [FunctionCallingToolConfig.toolInstruction] と各
+/// `description` は英語で記述する。モデルがそのまま出力し得る文言（使わせない
+/// 表現や検索クエリの例）は日本語のまま記述する。知識データ（[KnowledgeEntry]）は
+/// 回答内容そのものであり、キーワードは日本語入力との一致に使うため日本語で記述する。
+/// 詳細と日本語訳は
+/// [AIプロンプトの言語 概要設計書](../../../../doc/design/ai-prompt-language.md)
+/// を参照する。
 const FunctionCallingToolConfig defaultFunctionCallingConfig =
     FunctionCallingToolConfig(
       schemaVersion: supportedFunctionCallingSchemaVersion,
       toolInstruction: '''
-## 情報の取得ルール（厳守）
-- プレクトラム結社の公式情報（給与、定期演奏会、開催日時、会場、イベントなど）を尋ねられた場合は、必ず getPlectrumSocietyKnowledge 関数を呼び出して取得した内容のみを根拠に回答する。推測や記憶で答えてはならない。
-- 現在の日時や「今日」「今」など時点に依存する情報が必要な場合は、必ず getCurrentDateTime 関数を呼び出す。
-- 関数で該当情報が得られなかった場合は、分からない旨を正直に伝える。
+## Rules for getting information (strict)
+- When you are asked about official information of プレクトラム結社 (salary, regular concerts, dates and times, venues, events, and so on), always call the getPlectrumSocietyKnowledge function and answer based only on what it returns. Never answer from guesses or from memory.
+- When you need the current date and time, or information that depends on the present moment such as "今日" or "今", always call the getCurrentDateTime function.
+- When the function does not give you the relevant information, honestly tell the user that you do not know.
 
-## 回答の書き方（厳守）
-- 関数から得た情報は、あなたが元から知っていることとして、そのまま自然に話す。
-- 関数を呼び出したことや情報を参照したことは明かさない。「調べました」「確認しました」「取得した情報によると」「資料では」「データによると」のような、参照をうかがわせる表現は使わない。
-- 関数名・トピックID・データの形式など、内部の仕組みに触れない。''',
+## How to write the answer (strict)
+- Speak the information from the function naturally, as something you have known all along.
+- Never reveal that you called a function or referred to information. Do not use expressions that hint at a lookup, such as "調べました", "確認しました", "取得した情報によると", "資料では", or "データによると".
+- Never touch on internal mechanisms such as function names, topic IDs, or data formats.''',
       functions: [
         FunctionCallingFunction(
           name: 'getPlectrumSocietyKnowledge',
           handler: FunctionCallingHandler.knowledgeLookup,
-          description: 'プレクトラム結社に関する社内公式知識を取得します。',
+          description: 'Gets official internal knowledge about プレクトラム結社.',
           parameters: [
             FunctionCallingParameter(
               name: 'topic',
               type: FunctionCallingParameterType.string,
-              description: '取得したいトピックID。',
+              description: 'The ID of the topic to get.',
               isRequired: true,
             ),
             FunctionCallingParameter(
               name: 'query',
               type: FunctionCallingParameterType.string,
-              description: '自然言語で記述された検索クエリ。例: "給料は？"',
+              description:
+                  'A search query written in natural language. '
+                  'Example: "給料は？"',
               isRequired: true,
             ),
           ],

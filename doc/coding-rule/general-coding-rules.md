@@ -58,6 +58,19 @@ Use meaningful names even for temporary variables.
 
 Use consistent naming patterns for variables that handle the same type of data.
 
+### Write prompts for the AI model in English
+
+Write text that is sent to the AI model as input in English, because English conveys the same instruction with fewer tokens than Japanese. This applies to system prompts, instructions for Function Calling, descriptions of function declarations and response schemas, and messages returned to the model as a function result.
+
+Keep the following in Japanese, because they lose their meaning when translated:
+
+- Text the model outputs as is, such as sentence endings, expressions it must not use, and proper nouns
+- Knowledge data the model speaks back to the user, and keywords matched against Japanese user input
+
+Because the output to the user must be Japanese, state in the system prompt that the model always answers in Japanese.
+
+When you change a prompt, also update its Japanese translation in [doc/design/ai-prompt-language.md](/doc/design/ai-prompt-language.md).
+
 ## Rules for Flutter
 
 ### Defining a Class

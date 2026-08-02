@@ -82,7 +82,8 @@ class CavivaraKnowledgeBase {
       _logger.warning('Unknown function call requested: $functionName');
       return {
         'found': false,
-        'message': '未対応の関数が指定されました。',
+        // モデルへの入力となる文言は、トークン数を抑えるため英語で記述する
+        'message': 'The requested function is not supported.',
         'requestedFunction': functionName,
         'availableFunctions': [
           ...builtInFunctionNames,
@@ -113,7 +114,7 @@ class CavivaraKnowledgeBase {
       );
       return {
         'found': false,
-        'message': '該当するトピックが見つかりませんでした。',
+        'message': 'No matching topic was found.',
         // 呼び出された関数が扱うトピックのみを提示する
         'availableTopics': function.entries
             .map((entry) => entry.topic)
@@ -185,7 +186,8 @@ class CavivaraKnowledgeBase {
   static FunctionDeclaration _buildCurrentDateTimeFunctionDeclaration() {
     return FunctionDeclaration(
       currentDateTimeFunctionName,
-      '現在の日時情報を取得します。',
+      // 関数の説明はモデルへの入力となるため、英語で記述する
+      'Gets the current date and time.',
       parameters: {},
     );
   }
