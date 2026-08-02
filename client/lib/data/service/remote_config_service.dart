@@ -117,15 +117,14 @@ RemoteConfigSnapshot? remoteConfigSnapshot(Ref ref) {
     lastFetchTime: lastFetchState == RemoteConfigFetchState.notFetchedYet
         ? null
         : remoteConfig.lastFetchTime,
-    parameters: RemoteConfigParameterKey.values.map((key) {
-      final value = remoteConfig.getValue(key.name);
-
-      return RemoteConfigParameter(
-        key: key,
-        value: value.asString(),
-        source: _toValueSource(value.source),
-      );
-    }).toList(),
+    parameters: RemoteConfigParameterKey.values
+        .map(
+          (key) => RemoteConfigParameter(
+            key: key,
+            value: remoteConfig.getValue(key.name).asString(),
+          ),
+        )
+        .toList(),
   );
 }
 
@@ -135,13 +134,5 @@ RemoteConfigFetchState _toFetchState(RemoteConfigFetchStatus status) {
     RemoteConfigFetchStatus.success => RemoteConfigFetchState.success,
     RemoteConfigFetchStatus.failure => RemoteConfigFetchState.failure,
     RemoteConfigFetchStatus.throttle => RemoteConfigFetchState.throttled,
-  };
-}
-
-RemoteConfigValueSource _toValueSource(ValueSource source) {
-  return switch (source) {
-    ValueSource.valueRemote => RemoteConfigValueSource.remote,
-    ValueSource.valueDefault => RemoteConfigValueSource.appDefault,
-    ValueSource.valueStatic => RemoteConfigValueSource.notSet,
   };
 }

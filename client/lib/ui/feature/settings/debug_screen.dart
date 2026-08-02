@@ -526,7 +526,6 @@ class _RemoteConfigParameterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sourceLabel = _sourceLabel(parameter.source);
     final valueLabel = parameter.value.isEmpty
         ? '(空)'
         : _toSingleLine(parameter.value);
@@ -534,7 +533,7 @@ class _RemoteConfigParameterTile extends StatelessWidget {
     return ListTile(
       title: Text(parameter.key.name),
       subtitle: Text(
-        '$sourceLabel / $valueLabel',
+        valueLabel,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
@@ -582,14 +581,6 @@ class _RemoteConfigParameterTile extends StatelessWidget {
       ),
     );
   }
-}
-
-String _sourceLabel(RemoteConfigValueSource source) {
-  return switch (source) {
-    RemoteConfigValueSource.remote => 'Remote Config',
-    RemoteConfigValueSource.appDefault => 'アプリ既定値',
-    RemoteConfigValueSource.notSet => '未設定',
-  };
 }
 
 final _consecutiveWhitespacePattern = RegExp(r'\s+');

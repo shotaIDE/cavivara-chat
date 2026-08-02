@@ -280,7 +280,7 @@ Remote Config の生値は `initialChatSuggestionsConfigJsonProvider` のオー�
 1. Firebase コンソール → Remote Config → `initialChatSuggestionsConfig` を JSON エディターで編集する
 2. 公開前に、JSON が[スキーマ](#json-スキーマ)を満たしているか確認する（`schemaVersion` の値、`label` が空でないか、`icon` が[識別子の一覧](#アイコンの識別子)にあるか）
 3. dev 環境の Firebase プロジェクトで公開し、実機でチャット画面を開いてサジェストが期待どおり表示されることを確認する
-   - 端末に届いている値そのものは、設定画面 → デバッグ画面の「Remote Config」から確認できる（値と取得元が表示される）
+   - 端末に届いている値そのものは、設定画面 → デバッグ画面の「Remote Config」から確認できる
 4. prod 環境の Firebase プロジェクトで公開する
 
 dev / prod は別の Firebase プロジェクトであるため、環境の出し分けに Remote Config の条件は使わない。

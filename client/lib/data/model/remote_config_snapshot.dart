@@ -44,23 +44,7 @@ abstract class RemoteConfigParameter with _$RemoteConfigParameter {
     ///
     /// 型を問わず文字列として取得したもの。未設定の場合は空文字。
     required String value,
-
-    /// 現在値がどこから来たか
-    required RemoteConfigValueSource source,
   }) = _RemoteConfigParameter;
-}
-
-/// パラメーターの現在値の取得元
-enum RemoteConfigValueSource {
-  /// Remote Config から取得され、有効化された値
-  remote,
-
-  /// アプリが `setDefaults` で設定した既定値
-  appDefault,
-
-  /// 値がどこにも設定されておらず、型ごとの静的な既定値（空文字・0・false）が
-  /// 返っている状態
-  notSet,
 }
 
 /// 最後にフェッチを試みた結果
