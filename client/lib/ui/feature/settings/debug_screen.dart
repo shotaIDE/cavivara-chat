@@ -553,17 +553,7 @@ class _RemoteConfigParameterTile extends StatelessWidget {
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 8,
-              children: [
-                Text(
-                  '取得元: ${_sourceLabel(parameter.source)}',
-                  style: Theme.of(dialogContext).textTheme.bodySmall,
-                ),
-                SelectableText(value.isEmpty ? '(空)' : value),
-              ],
-            ),
+            child: SelectableText(value.isEmpty ? '(空)' : value),
           ),
         ),
         actions: [
