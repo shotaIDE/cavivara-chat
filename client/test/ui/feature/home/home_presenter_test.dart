@@ -6,11 +6,13 @@ import 'package:house_worker/data/model/cavivara_profile.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/chat_mode.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
+import 'package:house_worker/data/model/initial_chat_suggestions_config.dart';
 import 'package:house_worker/data/model/preference_key.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
+import 'package:house_worker/data/service/initial_chat_suggestions_config_service.dart';
 import 'package:house_worker/data/service/preference_service.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
 import 'package:mocktail/mocktail.dart';
@@ -661,6 +663,78 @@ void main() {
         final suggestions = container.read(suggestedRepliesProvider);
         expect(suggestions, isEmpty);
       });
+    });
+  });
+
+  group('Home Presenter - Initial Chat Suggestions', () {
+    /// サジェストの設定を差し替えたコンテナーを生成する
+    ProviderContainer createContainer(InitialChatSuggestionsConfig config) {
+      final container = ProviderContainer(
+        overrides: [
+          initialChatSuggestionsConfigProvider.overrideWithValue(config),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    /// 指定された件数のサジェストを組み立てる
+    List<InitialChatSuggestion> buildSuggestions(int count) {
+      return List.generate(
+        count,
+        (index) => InitialChatSuggestion(label: 'サジェスト$index'),
+      );
+    }
+
+    test('表示件数の分だけ候補から選ばれること', () {
+      final container = createContainer(
+        InitialChatSuggestionsConfig(
+          schemaVersion: 1,
+          suggestions: buildSuggestions(10),
+        ),
+      );
+
+      final suggestions = container.read(initialChatSuggestionsProvider);
+
+      expect(suggestions.length, equals(3));
+      // 同じサジェストが重複して選ばれないこと
+      expect(
+        suggestions.map((suggestion) => suggestion.label).toSet().length,
+        equals(3),
+      );
+    });
+
+    test('候補が表示件数に満たない場合は候補すべてが返されること', () {
+      final container = createContainer(
+        InitialChatSuggestionsConfig(
+          schemaVersion: 1,
+          suggestions: buildSuggestions(2),
+        ),
+      );
+
+      expect(container.read(initialChatSuggestionsProvider).length, equals(2));
+    });
+
+    test('候補が空の場合は空のリストが返されること', () {
+      final container = createContainer(
+        const InitialChatSuggestionsConfig(schemaVersion: 1),
+      );
+
+      expect(container.read(initialChatSuggestionsProvider), isEmpty);
+    });
+
+    test('繰り返し読み出しても同じ並びが返されること', () {
+      final container = createContainer(
+        InitialChatSuggestionsConfig(
+          schemaVersion: 1,
+          suggestions: buildSuggestions(20),
+        ),
+      );
+
+      expect(
+        container.read(initialChatSuggestionsProvider),
+        equals(container.read(initialChatSuggestionsProvider)),
+      );
     });
   });
 

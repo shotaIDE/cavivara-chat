@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +17,7 @@ import 'package:house_worker/ui/component/chat_mode_extension.dart';
 import 'package:house_worker/ui/component/chat_mode_selection_dialog.dart';
 import 'package:house_worker/ui/component/clear_chat_confirmation_dialog.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
+import 'package:house_worker/ui/component/initial_chat_suggestion_icon_extension.dart';
 import 'package:house_worker/ui/component/suggested_reply_list.dart';
 import 'package:house_worker/ui/feature/code_scanner/code_scanner_screen.dart';
 import 'package:house_worker/ui/feature/home/home_presenter.dart';
@@ -871,7 +871,7 @@ class _ChatBubble extends ConsumerWidget {
   }
 }
 
-class _ChatSuggestions extends StatefulWidget {
+class _ChatSuggestions extends ConsumerStatefulWidget {
   const _ChatSuggestions({
     required this.onSuggestionSelected,
   });
@@ -879,111 +879,17 @@ class _ChatSuggestions extends StatefulWidget {
   final ValueChanged<String> onSuggestionSelected;
 
   @override
-  State<_ChatSuggestions> createState() => _ChatSuggestionsState();
+  ConsumerState<_ChatSuggestions> createState() => _ChatSuggestionsState();
 }
 
-class _ChatSuggestionsState extends State<_ChatSuggestions>
+class _ChatSuggestionsState extends ConsumerState<_ChatSuggestions>
     with SingleTickerProviderStateMixin {
-  static const List<({IconData icon, String label})> _allSuggestions = [
-    // カヴィヴァラ・マンドリン関連
-    (
-      icon: Icons.queue_music,
-      label: 'マンドリンの演奏会の選曲会議で何を出すか迷っているヴィヴァ',
-    ),
-    (
-      icon: Icons.group,
-      label: 'プレクトラム結社の最新の演奏会について教えて',
-    ),
-    (
-      icon: Icons.music_note,
-      label: 'マンドリンの練習方法を教えてヴィヴァ',
-    ),
-    (
-      icon: Icons.library_music,
-      label: 'マンドリンオーケストラのおすすめ曲は？',
-    ),
-    (
-      icon: Icons.piano,
-      label: 'トレモロを綺麗に弾くコツを教えて',
-    ),
-    (
-      icon: Icons.event,
-      label: '演奏会のプログラム構成のアドバイスをくださいヴィヴァ',
-    ),
-    (
-      icon: Icons.headphones,
-      label: 'マンドリンの歴史について教えて',
-    ),
-    (
-      icon: Icons.build,
-      label: 'マンドリンの弦の張り替え方を教えて',
-    ),
-    (
-      icon: Icons.album,
-      label: 'イタリアのマンドリン曲でおすすめは？',
-    ),
-    (
-      icon: Icons.people,
-      label: 'アンサンブルで合わせるコツを教えてヴィヴァ',
-    ),
-    // 一般的な質問
-    (
-      icon: Icons.restaurant_menu,
-      label: '今晩の夜ご飯のレシピを考えて',
-    ),
-    (
-      icon: Icons.flight_takeoff,
-      label: '週末のお出かけスポットを教えてヴィヴァ',
-    ),
-    (
-      icon: Icons.fitness_center,
-      label: '家でできる簡単なストレッチを教えて',
-    ),
-    (
-      icon: Icons.book,
-      label: 'おすすめの本を紹介して',
-    ),
-    (
-      icon: Icons.lightbulb,
-      label: '集中力を高める方法を教えて',
-    ),
-    (
-      icon: Icons.wb_sunny,
-      label: '朝のルーティンのおすすめを教えてヴィヴァ',
-    ),
-    (
-      icon: Icons.movie,
-      label: '最近観た映画のおすすめを教えて',
-    ),
-    (
-      icon: Icons.language,
-      label: '効果的な語学学習の方法を教えて',
-    ),
-    (
-      icon: Icons.coffee,
-      label: 'リラックスできる休日の過ごし方は？',
-    ),
-    (
-      icon: Icons.work,
-      label: '仕事の効率を上げるコツを教えてヴィヴァ',
-    ),
-  ];
-
-  /// 表示するサジェストの数
-  static const _displayCount = 3;
-
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
-  late final List<({IconData icon, String label})> _selectedSuggestions;
 
   @override
   void initState() {
     super.initState();
-
-    // ランダムに3つのサジェストをピックアップ
-    final random = Random();
-    final shuffled = List.of(_allSuggestions)..shuffle(random);
-    _selectedSuggestions = shuffled.take(_displayCount).toList();
 
     _animationController = AnimationController(
       vsync: this,
@@ -1006,6 +912,15 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
 
   @override
   Widget build(BuildContext context) {
+    // 表示するサジェストの選出はプロバイダーが行う。ここで監視することで、
+    // このウィジェットが表示されている間は同じ並びが保たれる。
+    final suggestions = ref.watch(initialChatSuggestionsProvider);
+
+    // Remote Config でサジェストをすべて無効化した場合は、見出しごと表示しない
+    if (suggestions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final title = Text(
       '質問してみましょう',
       style: Theme.of(context).textTheme.titleMedium,
@@ -1036,15 +951,15 @@ class _ChatSuggestionsState extends State<_ChatSuggestions>
                   right: 16 + MediaQuery.of(context).viewPadding.right,
                 ),
                 itemBuilder: (context, index) {
-                  final suggestion = _selectedSuggestions[index];
+                  final suggestion = suggestions[index];
                   return _SuggestionCard(
-                    icon: suggestion.icon,
+                    icon: suggestion.icon.iconData,
                     label: suggestion.label,
                     onTap: () => widget.onSuggestionSelected(suggestion.label),
                   );
                 },
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemCount: _selectedSuggestions.length,
+                itemCount: suggestions.length,
               ),
             ),
           ],

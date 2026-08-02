@@ -442,6 +442,7 @@ Remote Config の生値は `functionCallingConfigJsonProvider` のオーバー�
 1. Firebase コンソール → Remote Config → `functionCallingConfig` を JSON エディターで編集する
 2. 公開前に、JSON が[スキーマ](#json-スキーマ)を満たしているか確認する（`schemaVersion` の値、関数名の形式、`handler` がアプリの対応済み識別子か、組み込み関数の名前と衝突していないか）
 3. dev 環境の Firebase プロジェクトで公開し、実機で会話を行って Function Calling が期待どおり働くことを確認する
+   - 端末に届いている値そのものは、設定画面 → デバッグ画面の「Remote Config」から確認できる
 4. prod 環境の Firebase プロジェクトで公開する
 
 dev / prod は別の Firebase プロジェクトであるため、環境の出し分けに Remote Config の条件は使わない。

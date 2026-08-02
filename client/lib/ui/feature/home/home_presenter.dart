@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:house_worker/data/definition/app_feature.dart';
 import 'package:house_worker/data/model/app_badge.dart';
@@ -6,6 +7,7 @@ import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/chat_mode.dart';
 import 'package:house_worker/data/model/chat_mode_selection.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
+import 'package:house_worker/data/model/initial_chat_suggestions_config.dart';
 import 'package:house_worker/data/model/send_message_exception.dart';
 import 'package:house_worker/data/model/supporter_title.dart';
 import 'package:house_worker/data/repository/chat_mode_selection_repository.dart';
@@ -16,6 +18,7 @@ import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/ai_chat_service.dart';
 import 'package:house_worker/data/service/cavivara_knowledge_service.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
+import 'package:house_worker/data/service/initial_chat_suggestions_config_service.dart';
 import 'package:house_worker/ui/component/heads_up_notification_presenter.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -248,6 +251,28 @@ class ResolvedChatMode extends _$ResolvedChatMode {
 bool isReceivingMessages(Ref ref) {
   final messages = ref.watch(chatMessagesProvider);
   return messages.any((message) => message.isStreaming);
+}
+
+/// 会話開始時に一度に表示するサジェストの件数
+///
+/// カードを横に並べるレイアウトに依存する値のため、Remote Config では変更しない。
+const _initialChatSuggestionDisplayCount = 3;
+
+/// 会話開始時に表示するサジェストを返すプロバイダー
+///
+/// 設定された候補から [_initialChatSuggestionDisplayCount] 件をランダムに選ぶ。
+/// 候補がそれに満たない場合は候補すべてを返す。
+///
+/// 選んだ結果はプロバイダーが破棄されるまで保持されるため、画面の再構築では
+/// 並びが変わらない。会話をクリアしてサジェストが表示し直される際は、監視元が
+/// いなくなってプロバイダーが破棄されるため、改めて選び直される。
+@riverpod
+List<InitialChatSuggestion> initialChatSuggestions(Ref ref) {
+  final config = ref.watch(initialChatSuggestionsConfigProvider);
+
+  final shuffled = List.of(config.suggestions)..shuffle(Random());
+
+  return List.unmodifiable(shuffled.take(_initialChatSuggestionDisplayCount));
 }
 
 /// サジェストリストを管理するプロバイダー
