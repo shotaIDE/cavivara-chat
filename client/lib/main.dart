@@ -111,15 +111,27 @@ FirebaseOptions? _getFirebaseOptions() {
 
 /// App Check をセットアップする
 ///
-/// App Check のプロバイダーは iOS 向けのみ用意しているため、iOS でのみ有効にする。
-/// iOS シミュレーターでは App Attest が利用できないため、デバッグプロバイダーを使用する。
-/// シミュレーターか否かは `isPhysicalDevice` で判定する。
+/// App Check のプロバイダーは iOS と Android 向けのみ用意しているため、
+/// それ以外のプラットフォームでは有効にしない。
 Future<void> _setupFirebaseAppCheck() async {
-  if (!Platform.isIOS) {
-    _logger.info('Firebase App Check: false');
+  if (Platform.isIOS) {
+    await _activateFirebaseAppCheckOnIOS();
     return;
   }
 
+  if (Platform.isAndroid) {
+    await _activateFirebaseAppCheckOnAndroid();
+    return;
+  }
+
+  _logger.info('Firebase App Check: false');
+}
+
+/// iOS 向けに App Check を有効にする
+///
+/// iOS シミュレーターでは App Attest が利用できないため、デバッグプロバイダーを使用する。
+/// シミュレーターか否かは `isPhysicalDevice` で判定する。
+Future<void> _activateFirebaseAppCheckOnIOS() async {
   final iosDeviceInfo = await DeviceInfoPlugin().iosInfo;
   final useDebugProvider = !iosDeviceInfo.isPhysicalDevice;
 
@@ -127,6 +139,27 @@ Future<void> _setupFirebaseAppCheck() async {
     providerApple: useDebugProvider
         ? const AppleDebugProvider()
         : const AppleAppAttestProvider(),
+  );
+
+  _logger.info(
+    'Firebase App Check: true (debug provider: $useDebugProvider)',
+  );
+}
+
+/// Android 向けに App Check を有効にする
+///
+/// Play Integrity は Google Play から配信されたアプリでのみ検証が通る。
+/// Google Play に配信するのはリリースビルドのみのため、
+/// それ以外のビルドではデバッグプロバイダーを使用する。
+/// デバッグプロバイダーの使用時は、起動時のログに出力されるデバッグトークンを
+/// Firebase コンソールに登録する必要がある。
+Future<void> _activateFirebaseAppCheckOnAndroid() async {
+  const useDebugProvider = !kReleaseMode;
+
+  await FirebaseAppCheck.instance.activate(
+    providerAndroid: useDebugProvider
+        ? const AndroidDebugProvider()
+        : const AndroidPlayIntegrityProvider(),
   );
 
   _logger.info(
