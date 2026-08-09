@@ -1,18 +1,14 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:house_worker/data/definition/app_definition.dart';
 import 'package:house_worker/data/definition/app_feature.dart';
-import 'package:house_worker/data/model/sign_in_result.dart';
 import 'package:house_worker/data/model/user_profile.dart';
 import 'package:house_worker/data/service/app_info_service.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/data/service/firebase_installations_service.dart';
 import 'package:house_worker/data/service/remote_config_service.dart';
-import 'package:house_worker/ui/component/color.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/component/supporter_title_extension.dart';
 import 'package:house_worker/ui/component/supporter_title_image.dart';
@@ -127,7 +123,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         leading = const Icon(Icons.person);
         titleText = 'ゲストユーザー';
         subtitle = null;
-        onTap = () => _showAnonymousUserInfoDialog(context);
+        onTap = () {
+          HapticFeedbackHelper.lightImpact();
+          _showAnonymousUserInfoDialog(context);
+        };
     }
 
     return ListTile(
@@ -224,130 +223,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// ゲストユーザーの説明ダイアログを表示する。
+  ///
+  /// アカウントでログインする機能は未提供のため、今後実装予定であることと、
+  /// アンインストールすると履歴が消える点を説明する。
   void _showAnonymousUserInfoDialog(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (context) {
-        final linkWithGoogleButton = TextButton.icon(
-          onPressed: _linkWithGoogle,
-          icon: const FaIcon(FontAwesomeIcons.google),
-          label: const Text('Googleと連携'),
-        );
-
-        final linkWithAppleButton = TextButton.icon(
-          onPressed: _linkWithApple,
-          icon: const FaIcon(FontAwesomeIcons.apple),
-          style: TextButton.styleFrom(
-            backgroundColor: signInWithAppleBackgroundColor(context),
-            foregroundColor: signInWithAppleForegroundColor(context),
-          ),
-          label: const Text('Appleと連携'),
-        );
-
-        final actions = <Widget>[linkWithGoogleButton];
-
-        if (Platform.isIOS) {
-          actions.add(linkWithAppleButton);
-        }
-
-        actions.add(
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル'),
-          ),
-        );
-
         return AlertDialog(
-          title: const Text('アカウント連携'),
+          title: const Text('ゲストユーザーについて'),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('現在、ゲストとしてアプリを利用しています。'),
               SizedBox(height: 8),
-              Text('アカウント連携をすると、以下の機能が利用できるようになります：'),
+              Text('アカウントでログインする機能は、今後実装する予定です。'),
               SizedBox(height: 8),
-              Text('• データのバックアップと復元'),
-              Text('• 複数のデバイスでの同期'),
-              Text('• 家族や友人との家事の共有'),
+              Text('アプリをアンインストールすると、これまでのヴィヴァポイントなどの履歴が消えてしまいますので、ご注意ください。'),
             ],
           ),
-          actions: actions,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('閉じる'),
+            ),
+          ],
         );
       },
     );
-  }
-
-  Future<void> _linkWithGoogle() async {
-    Navigator.pop(context);
-
-    try {
-      await ref.read(authServiceProvider).linkWithGoogle();
-    } on LinkWithGoogleException catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      switch (error) {
-        case LinkWithGoogleExceptionCancelled():
-          return;
-        case LinkWithGoogleExceptionAlreadyInUse():
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('このGoogleアカウントは、既に利用されています。別のアカウントでお試しください。'),
-            ),
-          );
-          return;
-        case LinkWithGoogleExceptionUncategorized():
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('アカウント連携に失敗しました。しばらくしてから再度お試しください。')),
-          );
-      }
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('アカウントを連携しました')));
-  }
-
-  Future<void> _linkWithApple() async {
-    Navigator.pop(context);
-
-    try {
-      await ref.read(authServiceProvider).linkWithApple();
-    } on LinkWithAppleException catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      switch (error) {
-        case LinkWithAppleExceptionCancelled():
-          return;
-        case LinkWithAppleExceptionAlreadyInUse():
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('このApple IDは、既に利用されています。別のアカウントでお試しください。'),
-            ),
-          );
-          return;
-        case LinkWithAppleExceptionUncategorized():
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('アカウント連携に失敗しました。しばらくしてから再度お試しください。')),
-          );
-      }
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('アカウントを連携しました')));
   }
 }
 
