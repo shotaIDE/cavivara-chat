@@ -333,4 +333,111 @@ void main() {
       },
     );
   });
+
+  group('SettingsScreen - ゲストユーザーの説明機能', () {
+    late ProviderContainer container;
+
+    setUp(() {
+      PackageInfo.setMockInitialValues(
+        appName: 'カヴィヴァラチャット',
+        packageName: 'com.example.app',
+        version: '1.0.0',
+        buildNumber: '1',
+        buildSignature: '',
+      );
+      SharedPreferences.setMockInitialValues({});
+      SharedPreferencesAsyncPlatform.instance =
+          InMemorySharedPreferencesAsync.empty();
+      container = ProviderContainer(
+        overrides: [
+          currentUserProfileProvider.overrideWith((ref) {
+            return Stream.value(const UserProfileAnonymous(id: 'test-id'));
+          }),
+          currentPackagesProvider.overrideWith(
+            (ref) => Future.value(<ProductPackage>[]),
+          ),
+          firebaseInstallationIdProvider.overrideWith(
+            (ref) => Future.value('test-installation-id'),
+          ),
+        ],
+      );
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    testWidgets(
+      'ゲストユーザーのタイルをタップすると、'
+      '今後ログイン機能を実装する旨とアンインストール時の注意が表示されること',
+      (tester) async {
+        // Arrange
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: SettingsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Act - ゲストユーザーのタイルをタップ
+        await tester.tap(find.text('ゲストユーザー'));
+        await tester.pumpAndSettle();
+
+        // Assert
+        expect(find.text('ゲストユーザーについて'), findsOneWidget);
+        expect(find.textContaining('今後追加される予定'), findsOneWidget);
+        expect(find.textContaining('アンインストール'), findsOneWidget);
+        expect(find.textContaining('ヴィヴァポイント'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'ゲストユーザーのタイルをタップしても、ログイン機能が表示されないこと',
+      (tester) async {
+        // Arrange
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: SettingsScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Act - ゲストユーザーのタイルをタップ
+        await tester.tap(find.text('ゲストユーザー'));
+        await tester.pumpAndSettle();
+
+        // Assert
+        expect(find.text('Googleと連携'), findsNothing);
+        expect(find.text('Appleと連携'), findsNothing);
+      },
+    );
+
+    testWidgets('説明ダイアログは閉じるボタンで閉じられること', (tester) async {
+      // Arrange
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: SettingsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ゲストユーザー'));
+      await tester.pumpAndSettle();
+
+      // Act
+      await tester.tap(find.text('閉じる'));
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.text('ゲストユーザーについて'), findsNothing);
+    });
+  });
 }
