@@ -239,9 +239,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               Text('現在、ゲストとしてアプリを利用しています。'),
               SizedBox(height: 8),
-              Text('アカウントでログインする機能は、今後実装する予定です。'),
+              Text(
+                'アプリをアンインストールすると、これまでのVP(ヴィヴァポイント)の履歴などが消えてしまいますので、ご注意ください。',
+              ),
               SizedBox(height: 8),
-              Text('アプリをアンインストールすると、これまでのヴィヴァポイントなどの履歴が消えてしまいますので、ご注意ください。'),
+              Text('アカウントを登録・ログインする機能は、今後追加される予定です。'),
             ],
           ),
           actions: [
