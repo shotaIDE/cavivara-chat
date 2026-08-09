@@ -388,7 +388,7 @@ void main() {
 
         // Assert
         expect(find.text('ゲストユーザーについて'), findsOneWidget);
-        expect(find.textContaining('今後実装する予定'), findsOneWidget);
+        expect(find.textContaining('今後追加される予定'), findsOneWidget);
         expect(find.textContaining('アンインストール'), findsOneWidget);
         expect(find.textContaining('ヴィヴァポイント'), findsOneWidget);
       },
