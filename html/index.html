@@ -25,6 +25,13 @@
     max-width: 480px;
     text-align: center;
   }
+  .hero {
+    display: block;
+    width: 168px;
+    max-width: 55%;
+    height: auto;
+    margin: 0 auto 20px;
+  }
   .tagline {
     font-size: 15px;
     letter-spacing: 0.15em;
@@ -54,27 +61,25 @@
   }
   .badges {
     display: none;
-    flex-direction: column;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
     align-items: center;
+    justify-content: center;
   }
   .badges.show { display: flex; }
   .badge {
     display: inline-block;
-    padding: 14px 28px;
-    border: 1.5px solid var(--fg);
-    border-radius: 12px;
-    color: var(--fg);
-    text-decoration: none;
-    font-size: 16px;
-    letter-spacing: 0.05em;
-    min-width: 260px;
-    transition: background 0.2s, color 0.2s;
+    transition: opacity 0.2s;
   }
-  .badge:hover {
-    background: var(--fg);
-    color: var(--bg);
+  .badge:hover { opacity: 0.75; }
+  .badge img {
+    display: block;
+    width: auto;
   }
+  /* App Store バッジは余白なし、Google Play バッジは画像内に約10%の余白があるため、
+     見た目の高さを揃えるように個別に指定する */
+  .badge-ios img { height: 44px; }
+  .badge-android img { height: 64px; }
   .note {
     margin-top: 32px;
     font-size: 12px;
@@ -85,6 +90,7 @@
 </head>
 <body>
 <div class="container">
+  <img class="hero" src="cavivara.png" alt="カヴィヴァラさん" width="333" height="320">
   <p class="tagline">結社の内部事情を聞こう</p>
   <h1>カヴィヴァラチャット</h1>
 
@@ -92,8 +98,16 @@
   <p class="status" id="status">ストアへ移動しています…</p>
 
   <div class="badges" id="badges">
-    <a class="badge" href="https://apps.apple.com/app/apple-store/id6754788785?pt=122480021&amp;ct=regular-concert-11_booklet&amp;mt=8">App Store で開く（iPhone）</a>
-    <a class="badge" href="https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk&amp;utm_source=plectrum-association&amp;utm_medium=display&amp;utm_campaign=regular-concert-11_booklet">Google Play で開く（Android）</a>
+    <a class="badge badge-ios" href="https://apps.apple.com/app/apple-store/id6754788785?pt=122480021&amp;ct=regular-concert-11_booklet&amp;mt=8">
+      <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/ja-jp"
+           alt="App Store からダウンロード" width="132" height="44"
+           loading="lazy" decoding="async" fetchpriority="low">
+    </a>
+    <a class="badge badge-android" href="https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk&amp;utm_source=plectrum-association&amp;utm_medium=display&amp;utm_campaign=regular-concert-11_booklet">
+      <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png"
+           alt="Google Play で手に入れよう" width="165" height="64"
+           loading="lazy" decoding="async" fetchpriority="low">
+    </a>
   </div>
 
   <p class="note">
