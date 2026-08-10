@@ -97,13 +97,15 @@
   <div class="spinner" id="spinner"></div>
   <p class="status" id="status">ストアへ移動しています…</p>
 
+  <!-- href はパラメータ無しでアクセスされた場合のURL。
+       スクリプトがクエリパラメータを反映したURLで上書きする -->
   <div class="badges" id="badges">
-    <a class="badge badge-ios" href="https://apps.apple.com/app/apple-store/id6754788785?pt=122480021&amp;ct=regular-concert-11_booklet&amp;mt=8">
+    <a class="badge badge-ios" href="https://apps.apple.com/app/apple-store/id6754788785">
       <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/ja-jp"
            alt="App Store からダウンロード" width="132" height="44"
            loading="lazy" decoding="async" fetchpriority="low">
     </a>
-    <a class="badge badge-android" href="https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk&amp;utm_source=plectrum-association&amp;utm_medium=display&amp;utm_campaign=regular-concert-11_booklet">
+    <a class="badge badge-android" href="https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk">
       <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png"
            alt="Google Play で手に入れよう" width="165" height="64"
            loading="lazy" decoding="async" fetchpriority="low">
@@ -117,9 +119,78 @@
 </div>
 
 <script>
+/*
+ * 計測パラメータの受け渡し設計
+ *
+ * 配布するURLは1つだけ（例: https://<このページ>/?utm_source=plectrum-association
+ * &utm_medium=display&utm_campaign=regular-concert-11_booklet ）とし、
+ * このページがOSを判定して各ストアのURLへ変換してから遷移させる。
+ * Google PlayはUTMパラメータをそのまま解釈できるが、App Storeは独自のトークンしか
+ * 解釈しないため、同じクエリ文字列をそのまま渡すと iOS 側だけ計測できなくなる。
+ *
+ * 1. ページ側の入力形式はUTMパラメータに統一する
+ *    CAMPAIGN_PARAM_KEYS のUTMパラメータを受け付ける。
+ *    既定値による補完はしない。ページにパラメータが無ければストアのURLにも付与せず、
+ *    ストアが解釈しないパラメータも引き継がない。
+ *
+ * 2. Android（Google Play）はUTMパラメータをトップレベルに並べる
+ *    値があるUTMパラメータのみを、変換せずにPlayのURLへ引き継ぐ。
+ *    id（パッケージ名）は固定で、ページ側から上書きさせない。
+ *
+ * 3. iOS（App Store）は pt / ct / mt へ詰め替える
+ *    Appleが解釈するのはこの3つだけで、utm_* を付けても無視される。
+ *    - pt: Apple Services Performance Partnersのプロバイダートークン。ページの pt をそのまま使う。
+ *    - ct: キャンペーントークン。ページの ct を優先し、無ければ utm_campaign を使う。
+ *    - mt: メディアタイプ。ページの mt をそのまま使う。
+ */
 (function () {
-  var IOS_URL = "https://apps.apple.com/app/apple-store/id6754788785?pt=122480021&ct=regular-concert-11_booklet&mt=8";
-  var ANDROID_URL = "https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk&utm_source=plectrum-association&utm_medium=display&utm_campaign=regular-concert-11_booklet";
+  var APP_STORE_ID = "6754788785";
+  var ANDROID_PACKAGE_NAME = "ide.shota.colomney.CavivaraTalk";
+
+  // Google Playが解釈するUTMパラメータ。URLに並べる順序も兼ねる
+  var CAMPAIGN_PARAM_KEYS = [
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_content",
+    "utm_term"
+  ];
+
+  function buildAndroidUrl(params) {
+    var url = new URL("https://play.google.com/store/apps/details");
+    url.searchParams.set("id", ANDROID_PACKAGE_NAME);
+    CAMPAIGN_PARAM_KEYS.forEach(function (key) {
+      var value = params.get(key);
+      if (value) {
+        url.searchParams.set(key, value);
+      }
+    });
+    return url.toString();
+  }
+
+  function buildIosUrl(params) {
+    var url = new URL("https://apps.apple.com/app/apple-store/id" + APP_STORE_ID);
+    var providerToken = params.get("pt");
+    if (providerToken) {
+      url.searchParams.set("pt", providerToken);
+    }
+    var campaignToken = params.get("ct") || params.get("utm_campaign");
+    if (campaignToken) {
+      url.searchParams.set("ct", campaignToken);
+    }
+    var mediaType = params.get("mt");
+    if (mediaType) {
+      url.searchParams.set("mt", mediaType);
+    }
+    return url.toString();
+  }
+
+  var params = new URLSearchParams(location.search);
+  var androidUrl = buildAndroidUrl(params);
+  var iosUrl = buildIosUrl(params);
+
+  document.querySelector(".badge-ios").href = iosUrl;
+  document.querySelector(".badge-android").href = androidUrl;
 
   var ua = navigator.userAgent || "";
   // iPadOS 13以降はMacintoshを名乗るためタッチ判定を併用
@@ -134,9 +205,9 @@
   }
 
   if (isIOS) {
-    location.replace(IOS_URL);
+    location.replace(iosUrl);
   } else if (isAndroid) {
-    location.replace(ANDROID_URL);
+    location.replace(androidUrl);
   } else {
     // PCなど: 両ストアのボタンを表示
     showFallback();
