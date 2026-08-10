@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カヴィヴァラチャット</title>
+<meta name="description" content="結社の内部事情を聞こう。カヴィヴァラチャット公式ダウンロードページ">
+<style>
+  :root {
+    --bg: #3a3a3a;
+    --fg: #f2ede3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .container {
+    max-width: 480px;
+    text-align: center;
+  }
+  .tagline {
+    font-size: 15px;
+    letter-spacing: 0.15em;
+    opacity: 0.85;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    margin-bottom: 28px;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(242, 237, 227, 0.25);
+    border-top-color: var(--fg);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status {
+    font-size: 14px;
+    opacity: 0.75;
+    margin-bottom: 36px;
+  }
+  .badges {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .badges.show { display: flex; }
+  .badge {
+    display: inline-block;
+    padding: 14px 28px;
+    border: 1.5px solid var(--fg);
+    border-radius: 12px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    min-width: 260px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .badge:hover {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .note {
+    margin-top: 32px;
+    font-size: 12px;
+    opacity: 0.5;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <p class="tagline">結社の内部事情を聞こう</p>
+  <h1>カヴィヴァラチャット</h1>
+
+  <div class="spinner" id="spinner"></div>
+  <p class="status" id="status">ストアへ移動しています…</p>
+
+  <div class="badges" id="badges">
+    <a class="badge" href="https://apps.apple.com/app/apple-store/id6754788785?pt=122480021&amp;ct=regular-concert-11_booklet&amp;mt=8">App Store で開く（iPhone）</a>
+    <a class="badge" href="https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk&amp;utm_source=plectrum-association&amp;utm_medium=display&amp;utm_campaign=regular-concert-11_booklet">Google Play で開く（Android）</a>
+  </div>
+
+  <p class="note">
+    自動で移動しない場合は上のボタンからお進みください。<br>
+    ※当結社は合法です
+  </p>
+</div>
+
+<script>
+(function () {
+  var IOS_URL = "https://apps.apple.com/app/apple-store/id6754788785?pt=122480021&ct=regular-concert-11_booklet&mt=8";
+  var ANDROID_URL = "https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk&utm_source=plectrum-association&utm_medium=display&utm_campaign=regular-concert-11_booklet";
+
+  var ua = navigator.userAgent || "";
+  // iPadOS 13以降はMacintoshを名乗るためタッチ判定を併用
+  var isIOS = /iPhone|iPad|iPod/.test(ua) ||
+              (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+
+  function showFallback() {
+    document.getElementById("spinner").style.display = "none";
+    document.getElementById("status").style.display = "none";
+    document.getElementById("badges").classList.add("show");
+  }
+
+  if (isIOS) {
+    location.replace(IOS_URL);
+  } else if (isAndroid) {
+    location.replace(ANDROID_URL);
+  } else {
+    // PCなど: 両ストアのボタンを表示
+    showFallback();
+    return;
+  }
+
+  // リダイレクトがブロックされた場合の保険（1.5秒後にボタン表示）
+  setTimeout(showFallback, 1500);
+})();
+</script>
+</body>
+</html>
