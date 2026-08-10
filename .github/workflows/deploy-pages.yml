@@ -14,7 +14,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # 進行中のデプロイを中断すると Pages が不整合な状態になりうるため、キャンセルしない
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -25,9 +26,15 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      # ワークフローを再実行すると前の試行のアーティファクトが残り、
+      # デプロイ時に同名アーティファクトが複数見つかってエラーになるため、
+      # 試行回数を名前に含めて一意にする
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: html/
 
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
