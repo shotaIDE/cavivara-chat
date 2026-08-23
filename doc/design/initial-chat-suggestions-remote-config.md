@@ -275,15 +275,34 @@ Remote Config の生値は `initialChatSuggestionsConfigJsonProvider` のオー�
 
 ## 運用手順
 
+### 配信中の値の管理
+
+Firebase コンソールに入力した値そのものには履歴の差分が残らず、レビューもできない。そのため、**配信する値は [initialChatSuggestionsConfig.json](../remote-config/initialChatSuggestionsConfig.json) をリポジトリー上の正本とし、コンソールへはそこから貼り付ける**（[Function Calling の設定](function-calling-remote-config.md#配信中の値の管理)と同じ運用）。
+
 ### 設定を更新する
 
-1. Firebase コンソール → Remote Config → `initialChatSuggestionsConfig` を JSON エディターで編集する
-2. 公開前に、JSON が[スキーマ](#json-スキーマ)を満たしているか確認する（`schemaVersion` の値、`label` が空でないか、`icon` が[識別子の一覧](#アイコンの識別子)にあるか）
-3. dev 環境の Firebase プロジェクトで公開し、実機でチャット画面を開いてサジェストが期待どおり表示されることを確認する
+1. [initialChatSuggestionsConfig.json](../remote-config/initialChatSuggestionsConfig.json) を編集する
+2. JSON が[スキーマ](#json-スキーマ)を満たしているか確認する（`schemaVersion` の値、`label` が空でないか、`icon` が[識別子の一覧](#アイコンの識別子)にあるか）
+3. 追加・変更した `label` について、[自動選択モードでの行き先](#自動選択モードでの行き先を確かめる)が意図どおりかを確認する
+4. Firebase コンソール → Remote Config → `initialChatSuggestionsConfig` の JSON エディターへ、ファイルの内容をそのまま貼り付ける
+5. dev 環境の Firebase プロジェクトで公開し、実機でチャット画面を開いてサジェストが期待どおり表示されることを確認する
    - 端末に届いている値そのものは、設定画面 → デバッグ画面の「Remote Config」から確認できる
-4. prod 環境の Firebase プロジェクトで公開する
+6. prod 環境の Firebase プロジェクトで公開する
 
 dev / prod は別の Firebase プロジェクトであるため、環境の出し分けに Remote Config の条件は使わない。
+
+### 自動選択モードでの行き先を確かめる
+
+`label` は会話の 1 通目としてそのまま送信されるため、回答モードが自動選択の場合は **`label` の文言だけで結社マスターモードか雑談マスターモードかが決まる**（`CavivaraKnowledgeBase.hasRelevantKnowledge` による判定）。サジェストは次の 2 種類に分かれ、それぞれ確認する内容が異なる。
+
+| 種類 | 期待する行き先 | 確認すること |
+| --- | --- | --- |
+| 結社の知識を引き出すサジェスト | 結社マスターモード | `label` が、狙った知識エントリーの `keywords` に一致すること。一致しないと雑談マスターモードになり、モデルが記憶で答えてしまう |
+| 雑談のきっかけになるサジェスト | 雑談マスターモード | `label` が、どの知識エントリーの `keywords` にも一致しないこと。一致すると結社マスターモードに入り、`toolInstruction` の指示によって「分からない」と返る |
+
+とくに後者は見落としやすい。たとえば「マンドリンの歴史について教えて」は、団体概要のエントリーが `マンドリン` をキーワードに持っていると結社マスターモードに吸われ、一般的なマンドリンの話ができなくなる。汎用的な語は[知識エントリーのキーワード側](function-calling-remote-config.md#注意点)に持たせない。
+
+一致判定は「`keywords` のいずれかが `label` に部分文字列として含まれるか」であり、複数の候補に一致した場合は `entries` の**先頭から順に**走査して最初に一致したものが選ばれる。
 
 ### 注意点
 
