@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "suggestions": [
+    {
+      "icon": "event",
+      "label": "次の演奏会っていつどこであるヴィヴァ？"
+    },
+    {
+      "icon": "album",
+      "label": "次の公演ではどんな曲を演奏するの？"
+    },
+    {
+      "icon": "savings",
+      "label": "演奏会のチケットっていくらヴィヴァ？"
+    },
+    {
+      "icon": "flightTakeoff",
+      "label": "メニコンANNEX HITOMIホールってどう行けばいい？"
+    },
+    {
+      "icon": "libraryMusic",
+      "label": "前回の演奏会はどんな内容だったの？"
+    },
+    {
+      "icon": "group",
+      "label": "プレクトラム結社ってどんな団体なのヴィヴァ？"
+    },
+    {
+      "icon": "help",
+      "label": "さざなみ工業っていう名前の由来を教えて"
+    },
+    {
+      "icon": "work",
+      "label": "結社の給料っていくらもらえるヴィヴァ？"
+    },
+    {
+      "icon": "queueMusic",
+      "label": "選曲会議で何を出すか迷っているヴィヴァ"
+    },
+    {
+      "icon": "musicNote",
+      "label": "個人練習が続かないヴィヴァ…"
+    },
+    {
+      "icon": "lightbulb",
+      "label": "楽器の練習中って換気したほうがいいの？"
+    },
+    {
+      "icon": "favorite",
+      "label": "アメデオ・アマビエって何ヴィヴァ？"
+    },
+    {
+      "icon": "build",
+      "label": "マンドリンのペーパークラフトがあるって本当？"
+    },
+    {
+      "icon": "celebration",
+      "label": "演奏会の差し入れって何がいいかな"
+    },
+    {
+      "icon": "restaurantMenu",
+      "label": "インドめしって実際どうなの？"
+    },
+    {
+      "icon": "people",
+      "label": "コミティアに出たことあるヴィヴァ？"
+    },
+    {
+      "icon": "book",
+      "label": "noteのマガジンってどんなのがあるの？"
+    },
+    {
+      "icon": "piano",
+      "label": "トレモロを綺麗に弾くコツを教えて"
+    },
+    {
+      "icon": "musicNote",
+      "label": "マンドリンの練習方法を教えてヴィヴァ"
+    },
+    {
+      "icon": "libraryMusic",
+      "label": "マンドリンオーケストラのおすすめ曲は？"
+    },
+    {
+      "icon": "headphones",
+      "label": "マンドリンの歴史について教えて"
+    },
+    {
+      "icon": "build",
+      "label": "マンドリンの弦の張り替え方を教えて"
+    },
+    {
+      "icon": "album",
+      "label": "イタリアのマンドリン曲でおすすめは？"
+    },
+    {
+      "icon": "school",
+      "label": "アンサンブルで合わせるコツを教えてヴィヴァ"
+    },
+    {
+      "icon": "restaurantMenu",
+      "label": "今晩の夜ご飯のレシピを考えて"
+    },
+    {
+      "icon": "flightTakeoff",
+      "label": "週末のお出かけスポットを教えてヴィヴァ"
+    },
+    {
+      "icon": "fitnessCenter",
+      "label": "家でできる簡単なストレッチを教えて"
+    },
+    {
+      "icon": "book",
+      "label": "おすすめの本を紹介して"
+    },
+    {
+      "icon": "lightbulb",
+      "label": "集中力を高める方法を教えて"
+    },
+    {
+      "icon": "wbSunny",
+      "label": "朝のルーティンのおすすめを教えてヴィヴァ"
+    },
+    {
+      "icon": "movie",
+      "label": "最近観た映画のおすすめを教えて"
+    },
+    {
+      "icon": "language",
+      "label": "効果的な語学学習の方法を教えて"
+    },
+    {
+      "icon": "coffee",
+      "label": "リラックスできる休日の過ごし方は？"
+    },
+    {
+      "icon": "work",
+      "label": "仕事の効率を上げるコツを教えてヴィヴァ"
+    }
+  ]
+}
