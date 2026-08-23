@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "toolInstruction": "## Rules for getting information (strict)\n- When you are asked about プレクトラム結社 (the group itself and the origin of its name, its systems such as salary, its concerts and events including dates, venues, tickets and programmes, and the articles and episodes the group has published), always call the getPlectrumSocietyKnowledge function and answer based only on what it returns. Never answer from guesses or from memory.\n- When the first call finds nothing, call the function once more with one of the IDs listed in \"availableTopics\" before you give up.\n- When you need the current date and time, or information that depends on the present moment such as \"今日\" or \"今\", always call the getCurrentDateTime function.\n- When the function does not give you the relevant information, honestly tell the user that you do not know.\n\n## How to write the answer (strict)\n- Speak the information from the function naturally, as something you have known all along.\n- Never reveal that you called a function or referred to information. Do not use expressions that hint at a lookup, such as \"調べました\", \"確認しました\", \"取得した情報によると\", \"資料では\", or \"データによると\".\n- Never touch on internal mechanisms such as function names, topic IDs, or data formats.\n- Some of the facts are jokes the society itself publishes. Tell them with a straight face and in the same playful spirit, but never present them as practical advice the user should actually act on.",
+  "toolInstruction": "## Rules for getting information (strict)\n- When you are asked about プレクトラム結社 (the group itself, the origin of its name and its company-style internal culture, its systems such as salary, its concerts and events including dates, venues, tickets, programmes, rehearsal camps and promotion, its YouTube channel, its DTM label Studio \"Overdue\" and their releases, its editorial department and pamphlet, and the articles and episodes the group has published), always call the getPlectrumSocietyKnowledge function and answer based only on what it returns. Never answer from guesses or from memory.\n- When the first call finds nothing, call the function once more with one of the IDs listed in \"availableTopics\" before you give up.\n- When you need the current date and time, or information that depends on the present moment such as \"今日\" or \"今\", always call the getCurrentDateTime function.\n- When the function does not give you the relevant information, honestly tell the user that you do not know.\n\n## How to write the answer (strict)\n- Speak the information from the function naturally, as something you have known all along.\n- Never reveal that you called a function or referred to information. Do not use expressions that hint at a lookup, such as \"調べました\", \"確認しました\", \"取得した情報によると\", \"資料では\", or \"データによると\".\n- Never touch on internal mechanisms such as function names, topic IDs, or data formats.\n- Some of the facts are jokes the society itself publishes. Tell them with a straight face and in the same playful spirit, but never present them as practical advice the user should actually act on.",
   "functions": [
     {
       "name": "getPlectrumSocietyKnowledge",
       "handler": "knowledgeLookup",
-      "description": "Gets official internal knowledge about プレクトラム結社: the group profile and the origin of its name, its systems such as salary, its concerts and events (dates, venues, tickets, programmes, past performances), and the articles and episodes the group has published.",
+      "description": "Gets official internal knowledge about プレクトラム結社: the group profile and the origin of its name, its company-style internal culture and terminology, its systems such as salary, its concerts and events (dates, venues, tickets, programmes, past performances, rehearsal camps, promotion), its YouTube channel and its DTM label Studio \"Overdue\" with their releases, its editorial department and pamphlet, and the articles and episodes the group has published.",
       "parameters": [
         {
           "name": "topic",
@@ -37,6 +37,42 @@
             "さしいれ",
             "贈り物",
             "花束"
+          ]
+        },
+        {
+          "topic": "cavivara_line_stamp",
+          "title": "カヴィヴァラさんのLINEスタンプ",
+          "summary": "カヴィヴァラさんのLINEスタンプが2025年11月10日にリリースされている。編集部を中心に制作された。",
+          "facts": [
+            "カヴィヴァラさんのLINEスタンプは2025年11月10日にリリースされました。",
+            "制作は結社の編集部が中心になって行いました。",
+            "LINEのスタンプショップで販売しています。"
+          ],
+          "keywords": [
+            "lineスタンプ",
+            "スタンプ",
+            "グッズ",
+            "販売してる"
+          ]
+        },
+        {
+          "topic": "concert_promotion",
+          "title": "公演の宣伝と集客",
+          "summary": "チケットの売れ行きは例年きびしく、従業員が総出で知り合いや所属団体に宣伝する。切実。",
+          "facts": [
+            "公演のチケットの売れ行きは例年きびしく、「例年通り、チケットの売れ行きが超やばい」と共有されるのが恒例です。",
+            "そのため従業員各位が、知り合いや所属している団体を中心に宣伝活動を行います。切実です。",
+            "宣伝は結社の X（旧 Twitter）アカウントや、チラシ、YouTube の再生リストへの QR コードなどを使って行っています。",
+            "広報の担当は公演関連・DTM 関連・その他で分かれています。"
+          ],
+          "keywords": [
+            "売れ",
+            "集客",
+            "宣伝",
+            "広報",
+            "チラシ",
+            "動員",
+            "満席"
           ]
         },
         {
@@ -95,6 +131,26 @@
           ]
         },
         {
+          "topic": "original_composition",
+          "title": "結社の書き下ろし作品",
+          "summary": "合奏曲には結社の中の作曲者による書き下ろしがある。パート譜を配る前に、奏者が「物理的に弾けない箇所」を洗い出して直す。",
+          "facts": [
+            "公演の合奏曲には、結社の中の作曲者が書き下ろした作品が並びます。公演Vol.11の「竜雲」と、アンサンブルの「寿山」はいずれも澤田俊介の作品です。",
+            "スコアができるとまず全員で譜面を確認し、パート譜を作る前に「物理的に演奏できない箇所」を奏者が洗い出して直します。パート譜を作ってから直すと手間が甚大になるためです。",
+            "ギターなら「指が足りない」「この2音は同時に鳴らせない」といった指摘が上がり、作曲者が「そこは人差し指を部分セーハすればいけます」と返す、というやり取りが行われます。",
+            "「和音のうち好きな音を、各自が気分に合わせて自分のタイミングで弾く」という書き方が使われることもあります。"
+          ],
+          "keywords": [
+            "書き下ろし",
+            "新曲",
+            "委嘱",
+            "パート譜",
+            "譜面",
+            "作曲",
+            "スコア"
+          ]
+        },
+        {
           "topic": "concert_vol11",
           "title": "公演Vol.11「PLECTRUM/SPECTRUM2 円環のENCOUNTER」",
           "summary": "次回公演は2026年9月12日(土)、メニコンANNEX HITOMIホール。17:00開場・17:30開演・19:30終了、入場料500円の全席自由。",
@@ -131,6 +187,25 @@
             "開演",
             "開場",
             "アーカイブ配信"
+          ]
+        },
+        {
+          "topic": "society_camp",
+          "title": "結社の合宿",
+          "summary": "公演に向けて年2回の合宿を行う。合宿係が宿と送迎、懇親会の買い出しまで仕切る。",
+          "facts": [
+            "公演に向けて、年に2回の合宿を行います。1回目は7月、2回目は8月末ごろです。",
+            "合宿には「合宿係」がいて、宿の手配、駅からの送迎、懇親会の買い出しまで仕切ります。",
+            "初日の挨拶は「無給での過酷な労働になるかと思いますが、乗り切っていきましょう」です。",
+            "夜は懇親会があり、飲みたい銘柄の希望を朝のうちに募って買い出しに行きます。",
+            "合宿では通し演奏を録って共有し、本番までの練習に使います。"
+          ],
+          "keywords": [
+            "合宿",
+            "懇親会",
+            "打ち上げ",
+            "宿泊",
+            "練習日程"
           ]
         },
         {
@@ -275,6 +350,77 @@
           ]
         },
         {
+          "topic": "studio_overdue_releases",
+          "title": "Studio \"Overdue\" の配信作品",
+          "summary": "Studio \"Overdue\" の作品はストリーミング配信もしている。EP『衝裂』『恍惚』『浮世回廊』『悠久』などがある。",
+          "facts": [
+            "Studio \"Overdue\" の作品は YouTube だけでなく、Spotify・Apple Music・LINE MUSIC・Amazon Music などのストリーミングサービスでも配信しています。",
+            "最初に配信した作品は『退屈のカケラ』です。",
+            "EP『衝裂』は2025年7月5日公開で、疾走感とパワーのある「消失」「Desordenado」「太陽チャージ」「AFunction」「黄谷霧中」「鳴動」の6曲を収録しています。",
+            "EP『恍惚』は初音ミクの作品を集めたもので、「アバター・パレット」「快楽迷妄」「Pyramid」を収録しています。",
+            "EP『浮世回廊』は2026年3月7日公開です。ほかに、ボーカロイドの「可不」をアーティストに据えた EP『悠久』もあります。",
+            "公演Vol.11でも演奏する「寿山」は、2026年7月31日からストリーミング配信を開始しました。"
+          ],
+          "keywords": [
+            "衝裂",
+            "恍惚",
+            "浮世回廊",
+            "悠久",
+            "退屈のカケラ",
+            "可不",
+            "ストリーミング",
+            "サブスク",
+            "spotify",
+            "apple music",
+            "配信"
+          ]
+        },
+        {
+          "topic": "studio_overdue",
+          "title": "Studio \"Overdue\"（結社DTM）",
+          "summary": "結社さざなみ工業の子会社にあたるDTM部門。音楽家や絵師が集まる「遊び場」で、名前は「締切遅れ」を意味するOverdueから。",
+          "facts": [
+            "Studio \"Overdue\" は、プレクトラム結社さざなみ工業の遺伝子を継承する子会社という位置づけの、DTM（打ち込み音楽）の部門です。",
+            "音楽家や絵師などのクリエイターがコラボレーションする「遊び場」として運営されています。曲を作る人、イラストを描く人、動画にする人が組んで1つの作品を仕上げます。",
+            "理念は【尊重】創作の苦痛と向き合い続ける者たちを讃える、【発散】束縛なく創作衝動を解放する、【鍛錬】精進の末の自己成長を大切にする、【実験】予期せぬ出会いから生まれる創造を楽しむ、の4つです。",
+            "名前の Overdue は「締切を過ぎている」という意味です。「最近overdueすることが多くなってきた」ことから名付けられ、「名は体を表してきた」と言われています。",
+            "共同作業に使う部屋の名前は「スタジオArrears（アリアーズ）」と「スタジオBehind（ビハインド）」で、どちらも Overdue（遅延）の類語です。頭文字がA・Bになるように選ばれています。"
+          ],
+          "keywords": [
+            "overdue",
+            "オーバーデュー",
+            "dtm",
+            "子会社",
+            "arrears",
+            "behind",
+            "アリアーズ",
+            "ビハインド",
+            "遊び場",
+            "打ち込み"
+          ]
+        },
+        {
+          "topic": "youtube_channel",
+          "title": "結社のYouTubeチャンネル",
+          "summary": "結社はYouTubeチャンネルを運営し、公演ごとの再生リストで演奏動画を、Studio \"Overdue\"の再生リストでDTM作品を公開している。",
+          "facts": [
+            "結社は YouTube チャンネル「プレクトラム結社」を運営しています。",
+            "公演ごとに再生リストがあり、公演Vol.9「一息の博物誌」や公演Vol.10「点Pの軌跡を求めよ」の演奏動画が曲ごとに公開されています。",
+            "DTM 部門の作品は「Studio \"Overdue\"」の再生リストにまとめられており、再生数の多くはこの再生リストから来ています。",
+            "演奏動画以外にも、マンドリンのカードゲーム「Maestro＆Plectrum」のプレイ動画や、寝かしつけ用の練習動画などがあります。",
+            "2023年には、DTM 作品の視聴回数と再生時間が前年比で2倍になりました。"
+          ],
+          "keywords": [
+            "youtube",
+            "ユーチューブ",
+            "動画",
+            "演奏動画",
+            "チャンネル",
+            "カードゲーム",
+            "maestro"
+          ]
+        },
+        {
           "topic": "note_publications",
           "title": "noteでの発信",
           "summary": "結社はnote（plectrum_c）で記事を発信しており、「プレクトラム見聞録」「プレクトラム結社アーカイブス」「さざなみ書評」の3つのマガジンがある。",
@@ -292,6 +438,53 @@
             "アーカイブス",
             "書評",
             "モラトリ"
+          ]
+        },
+        {
+          "topic": "society_editorial_department",
+          "title": "編集部とパンフレット「mordent」",
+          "summary": "結社には編集部があり、公演パンフレット「mordent」を毎年制作している。カヴィヴァラもコラムを寄稿している。",
+          "facts": [
+            "結社には編集部があり、公演のパンフレット「mordent（モルデント）」を毎年制作しています。",
+            "毎年恒例で、出演者に名前・所属・曲名・作曲者名・編曲者名の原稿チェックを依頼するのが編集部の仕事です。",
+            "第10回を記念した公演では、様々な方からの「お祝いメッセージ（という名のコラム）で紙面を埋め尽くす」という編集方針でした。文量は一言でも可、内容はめしの話でも旅行レポでも可とされていました。",
+            "カヴィヴァラさんも「不肖カヴィヴァラ」としてコラムを寄稿しています。お祝いのはずが、おいしい卵サンドの作り方を10手順で解説していたり、従業員が業務に励んでいる間のシンガポール観光記を書いていたりします。",
+            "カヴィヴァラさんの LINE スタンプも編集部中心に制作されました。"
+          ],
+          "keywords": [
+            "編集部",
+            "パンフレット",
+            "パンフ",
+            "mordent",
+            "モルデント",
+            "コラム",
+            "寄稿",
+            "卵サンド"
+          ]
+        },
+        {
+          "topic": "society_org_culture",
+          "title": "結社の社内用語と社風",
+          "summary": "結社は「会社」の言葉づかいで運営される。トップは総統、メンバーは従業員、入団は入社、パートは所属部署で異動も自由。",
+          "facts": [
+            "結社は「会社」の言葉づかいで運営されています。トップは「総統」、メンバーは「従業員」と呼ばれます。",
+            "新しく参加する人は「新入社員」、続けて参加する人は「再雇用」です。担当する楽器のパートは「所属」（部署）で、パンフレットに書く所属は自由に決められ、異動も自由です。",
+            "演奏会に向けた活動は「業務」、辞めることは「退職」、しばらく休むことは「休部（休職）」と表現されます。",
+            "海外に赴任した従業員が現地に「支部」の設立を構想することもあり、結社は世界中に拠点を持つという設定になっています。",
+            "無理のある日程が提案されたときの返しは「結社ならやりかねないと思っていました」です。"
+          ],
+          "keywords": [
+            "総統",
+            "従業員",
+            "新入社員",
+            "再雇用",
+            "部署",
+            "ブラック企業",
+            "社風",
+            "入社",
+            "退職",
+            "異動",
+            "支部"
           ]
         },
         {

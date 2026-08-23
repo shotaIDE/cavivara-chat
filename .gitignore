@@ -19,3 +19,6 @@
 /.github/ISSUE_TEMPLATE/feature-impl-mobile.md
 /.github/ISSUE_TEMPLATE/feature-impl.md
 /.github/pull_request_template.md
+
+# 内部連絡のエクスポート（個人情報・認証情報を含むため、コミットしない）
+/doc/reference/
