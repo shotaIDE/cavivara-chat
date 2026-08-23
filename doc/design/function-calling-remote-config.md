@@ -439,13 +439,18 @@ Remote Config の生値は `functionCallingConfigJsonProvider` のオーバー�
 
 ## 運用手順
 
+### 配信中の値の管理
+
+Firebase コンソールに入力した値そのものには履歴の差分が残らず、レビューもできない。そのため、**配信する値は [functionCallingConfig.json](../remote-config/functionCallingConfig.json) をリポジトリー上の正本とし、コンソールへはそこから貼り付ける**。知識エントリーの追加・修正は、まずこのファイルを更新する。
+
 ### 設定を更新する
 
-1. Firebase コンソール → Remote Config → `functionCallingConfig` を JSON エディターで編集する
-2. 公開前に、JSON が[スキーマ](#json-スキーマ)を満たしているか確認する（`schemaVersion` の値、関数名の形式、`handler` がアプリの対応済み識別子か、組み込み関数の名前と衝突していないか）
-3. dev 環境の Firebase プロジェクトで公開し、実機で会話を行って Function Calling が期待どおり働くことを確認する
+1. [functionCallingConfig.json](../remote-config/functionCallingConfig.json) を編集する
+2. JSON が[スキーマ](#json-スキーマ)を満たしているか確認する（`schemaVersion` の値、関数名の形式、`handler` がアプリの対応済み識別子か、組み込み関数の名前と衝突していないか）
+3. Firebase コンソール → Remote Config → `functionCallingConfig` の JSON エディターへ、ファイルの内容をそのまま貼り付ける
+4. dev 環境の Firebase プロジェクトで公開し、実機で会話を行って Function Calling が期待どおり働くことを確認する
    - 端末に届いている値そのものは、設定画面 → デバッグ画面の「Remote Config」から確認できる
-4. prod 環境の Firebase プロジェクトで公開する
+5. prod 環境の Firebase プロジェクトで公開する
 
 dev / prod は別の Firebase プロジェクトであるため、環境の出し分けに Remote Config の条件は使わない。
 
@@ -456,6 +461,7 @@ dev / prod は別の Firebase プロジェクトであるため、環境の出�
 - 項目一覧（`entries`）は関数ごとに独立しているため、関数を分割する際は既存の項目をどちらの関数に移すかを漏れなく決める。どの関数にも属さなくなった項目は参照されなくなる
 - `toolInstruction` には、関数から得た情報を**あたかも元から知っていたことのように話させる**指示も含める。指示がないとモデルは「調べたところ」「取得した情報によると」のように参照した過程を回答に書いてしまい、キャラクターとしての一貫性が崩れる。関数を分割する場合も、この指示は落とさない
 - 知識エントリーの `keywords` は自動選択モードの判定にも使われるため、汎用的すぎる語（「今日」「予定」など）を追加すると、雑談のつもりの発話でも結社マスターモードに切り替わるようになる
+- 該当トピックは `topic` の完全一致で解決できなかった場合、`entries` を**先頭から順に**走査して `keywords` が最初に一致した項目に決まる。そのため、汎用的なキーワードを持つ項目（団体の概要など）ほど後ろに置き、限定的なキーワードを持つ項目を前に置く。並び順を変えると、これまで拾えていた質問が別の項目に吸われることがある
 - 反映は次回起動時であるため、公開直後に実機で確認する場合はアプリを再起動する
 - 後方互換でないスキーマ変更を行う場合は、アプリバージョンの条件でパラメーター値を出し分ける（[バージョニング方針](#バージョニング方針)参照）
 
@@ -464,5 +470,7 @@ dev / prod は別の Firebase プロジェクトであるため、環境の出�
 - [回答モード切り替え機能（結社マスターモード／雑談マスターモード）概要設計書](chat-mode-selection.md) - Function Calling を使用する結社マスターモードの設計
 - [AIプロンプトの言語（英語プロンプト＋日本語出力）概要設計書](ai-prompt-language.md) - `toolInstruction` や `description` の記述言語と、日本語訳
 - [SharedPreferences を利用する際の設計ガイド](../how-to-design-when-using-shared-preferences.md) - Provider / Notifier の設計パターン
+- [プレクトラム結社さざなみ工業 公式サイト](http://sazanamiplectrum.web.fc2.com/index.html) - 知識エントリーの一次情報（団体概要・公演情報）
+- [プレクトラム結社 note](https://note.com/plectrum_c) - 知識エントリーの一次情報（記事・エピソード）
 - [Firebase Remote Config のパラメーターと条件](https://firebase.google.com/docs/remote-config/parameters)
 - [Remote Config の値の読み込み戦略](https://firebase.google.com/docs/remote-config/loading#strategy_3_load_new_values_for_next_startup)

@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "toolInstruction": "## Rules for getting information (strict)\n- When you are asked about プレクトラム結社 (the group itself and the origin of its name, its systems such as salary, its concerts and events including dates, venues, tickets and programmes, and the articles and episodes the group has published), always call the getPlectrumSocietyKnowledge function and answer based only on what it returns. Never answer from guesses or from memory.\n- When the first call finds nothing, call the function once more with one of the IDs listed in \"availableTopics\" before you give up.\n- When you need the current date and time, or information that depends on the present moment such as \"今日\" or \"今\", always call the getCurrentDateTime function.\n- When the function does not give you the relevant information, honestly tell the user that you do not know.\n\n## How to write the answer (strict)\n- Speak the information from the function naturally, as something you have known all along.\n- Never reveal that you called a function or referred to information. Do not use expressions that hint at a lookup, such as \"調べました\", \"確認しました\", \"取得した情報によると\", \"資料では\", or \"データによると\".\n- Never touch on internal mechanisms such as function names, topic IDs, or data formats.\n- Some of the facts are jokes the society itself publishes. Tell them with a straight face and in the same playful spirit, but never present them as practical advice the user should actually act on.",
+  "functions": [
+    {
+      "name": "getPlectrumSocietyKnowledge",
+      "handler": "knowledgeLookup",
+      "description": "Gets official internal knowledge about プレクトラム結社: the group profile and the origin of its name, its systems such as salary, its concerts and events (dates, venues, tickets, programmes, past performances), and the articles and episodes the group has published.",
+      "parameters": [
+        {
+          "name": "topic",
+          "type": "string",
+          "description": "The ID of the topic to get. Pass an empty string when you do not know a valid ID; the valid IDs are returned in \"availableTopics\" when nothing matches.",
+          "required": true
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "description": "A search query written in natural language. Example: \"次の演奏会はいつ？\"",
+          "required": true
+        }
+      ],
+      "entries": [
+        {
+          "topic": "episode_concert_present",
+          "title": "演奏会プレゼントのすすめ",
+          "summary": "結社が推す演奏会の差し入れはトイレットペーパーと2Lの水。安価・多用途・可搬性の三拍子が揃っているという理屈。",
+          "facts": [
+            "結社は記事「演奏会プレゼントのすすめ」（2021年7月4日）で、演奏会の差し入れとしてトイレットペーパーと2Lのペットボトル水を推奨しています。",
+            "挙げられている銘柄は、日本製紙クレシアのスコッティ12ロールと、サントリー天然水2L×9本です。",
+            "推す理由は「安価・汎用性が高い・携帯性に優れる」の三拍子が揃っているからで、飲み会での活躍も見込めるそうです。",
+            "記事は「プレゼントというものは、多ければ多いほど良いものです。大は小を兼ねる」と締めくくられています。"
+          ],
+          "keywords": [
+            "プレゼント",
+            "差し入れ",
+            "さしいれ",
+            "贈り物",
+            "花束"
+          ]
+        },
+        {
+          "topic": "past_concerts",
+          "title": "過去の公演",
+          "summary": "直近は2025年9月13日の公演Vol.10「Plectrum/ANSWER 点Pの軌跡を求めよ」、その前は2024年9月14日の公演Vol.9「Plectrum/BLESS 一息の博物誌」。",
+          "facts": [
+            "公演Vol.10「Plectrum/ANSWER 点Pの軌跡を求めよ」は、2025年9月13日(土)にメニコンANNEX HITOMIホールで開催しました。",
+            "Vol.10は、これまでのアンケートでリクエストをいただいた曲を演奏する回でした。",
+            "公演Vol.9「Plectrum/BLESS 一息の博物誌」は、2024年9月14日(土)に同じホールで開催し、生き物にまつわる曲を集めた構成でした。",
+            "公演は近年、毎年9月にメニコンANNEX HITOMIホールで開催しています。"
+          ],
+          "keywords": [
+            "過去の公演",
+            "過去の演奏会",
+            "前回の公演",
+            "前回の演奏会",
+            "去年の演奏会",
+            "昨年の演奏会",
+            "vol.10",
+            "vol10",
+            "vol.9",
+            "vol9",
+            "点p",
+            "一息の博物誌"
+          ]
+        },
+        {
+          "topic": "concert_vol11_program",
+          "title": "公演Vol.11の曲目",
+          "summary": "公演Vol.11はアンサンブル2ステージと合奏1ステージの3部構成で、澤田俊介や芥川也寸志の作品を演奏する。",
+          "facts": [
+            "第1ステージ（アンサンブル）は、マンドリン五重奏「寿山」（澤田俊介）、マンドリン四重奏「MelodyRoad」（久石譲）、弦楽四重奏曲より第1・第2・第4楽章（芥川也寸志）です。",
+            "第2ステージ（アンサンブル）は、ローネ弾き語り（「さそり座の女」ほか）、マンドリン二重奏「幾何学」（松浦圭介）、ギター二重奏「L'encouragement Op.34」（F.Sor）です。",
+            "第3ステージ（合奏）は、「竜雲」（澤田俊介）と「TRIPTYQUE」（芥川也寸志）です。"
+          ],
+          "keywords": [
+            "曲目",
+            "演奏曲",
+            "プログラム",
+            "どんな曲",
+            "何を演奏",
+            "演奏する曲",
+            "セットリスト",
+            "竜雲",
+            "triptyque",
+            "寿山",
+            "melodyroad",
+            "幾何学",
+            "encouragement",
+            "さそり座",
+            "芥川",
+            "澤田",
+            "松浦圭介",
+            "久石譲",
+            "ステージ"
+          ]
+        },
+        {
+          "topic": "concert_vol11",
+          "title": "公演Vol.11「PLECTRUM/SPECTRUM2 円環のENCOUNTER」",
+          "summary": "次回公演は2026年9月12日(土)、メニコンANNEX HITOMIホール。17:00開場・17:30開演・19:30終了、入場料500円の全席自由。",
+          "facts": [
+            "公演名は「プレクトラム結社 公演Vol.11「PLECTRUM/SPECTRUM2 円環のENCOUNTER」」です。",
+            "開催日は2026年9月12日(土)で、開場17:00、開演17:30、終了予定19:30です。",
+            "会場はメニコンANNEX HITOMIホール（愛知県名古屋市中区葵三丁目21番19号）で、JR中央線・名古屋市営地下鉄の千種駅から約5分です。",
+            "入場料は500円で、全席自由です。チケットは teket で販売しています。",
+            "公演後にアーカイブ配信が予定されています。",
+            "主催はプレクトラム結社さざなみ工業です。"
+          ],
+          "keywords": [
+            "vol.11",
+            "vol11",
+            "第11回",
+            "次の演奏会",
+            "次の公演",
+            "次回公演",
+            "spectrum",
+            "円環",
+            "encounter",
+            "2026年9月12日",
+            "2026/9/12",
+            "9月12日",
+            "メニコン",
+            "hitomi",
+            "千種",
+            "定期演奏会",
+            "演奏会",
+            "公演",
+            "チケット",
+            "入場料",
+            "会場",
+            "開演",
+            "開場",
+            "アーカイブ配信"
+          ]
+        },
+        {
+          "topic": "episode_kiboku_selection",
+          "title": "選曲における亀卜の活用",
+          "summary": "結社が提唱する選曲法は、亀の甲羅のひび割れで占う「亀卜」。納得感・責任分散・会議時間短縮など6つの利点があるとされる。",
+          "facts": [
+            "「プレクトラム結社アーカイブス『選曲における亀卜の活用』」（2021年4月25日）で提唱された選曲法です。",
+            "プレクトラム音楽はイタリアオリジナルからオーケストラ編曲、現代の作曲家の作品まで幅広く、通常の選曲では選ばれなかった人の不満が残るのが課題だと指摘されています。",
+            "そこで中国4000年強の歴史を参考に、亀の甲羅のひび割れで占う「亀卜」の導入を提案しています。",
+            "利点は、納得感と客観性、責任の分散、選曲の多様性、会議時間の短縮（「60過ぎて徹夜しなくても済む」）、競合団体への心理的優位、そして楽しさの6つとされています。",
+            "亀の甲羅が手に入らない場合は、トナカイの肩甲骨で代用することも可能だそうです。"
+          ],
+          "keywords": [
+            "亀卜",
+            "きぼく",
+            "選曲",
+            "曲の決め方",
+            "曲を決め",
+            "トナカイ",
+            "肩甲骨",
+            "占い"
+          ]
+        },
+        {
+          "topic": "episode_solo_practice_live",
+          "title": "新時代の個人練習",
+          "summary": "結社が推す個人練習法は「YouTube Liveで生配信しながら練習する」こと。全くサボらなくなる代わりに、どっと疲れる。",
+          "facts": [
+            "記事「新時代の個人練習」（2023年6月4日）で紹介された練習法です。",
+            "やり方は、視聴者数やチャンネル登録を狙わず、演奏している様子を映すだけの生配信を個人練習につけること。会話や派手な演出は不要です。",
+            "効果は「全くサボらなくなります」。見られている緊張感でスマートフォンの誘惑に負けず、指取りを決め、ミスの原因を明らかにし、表現を考えることに集中できるそうです。",
+            "ただし「どっと疲れます」とのことで、筆者の場合は1時間が限界だったと報告されています。",
+            "視聴者はほぼいないと見込みつつ、「むっちゃ上手い人やプロの方の個人練習は十分コンテンツになると思います」と結ばれています。"
+          ],
+          "keywords": [
+            "個人練習",
+            "練習方法",
+            "練習が続かない",
+            "サボ",
+            "生配信",
+            "ライブ配信",
+            "youtube live",
+            "配信しながら"
+          ]
+        },
+        {
+          "topic": "episode_ventilation",
+          "title": "こまめな換気",
+          "summary": "楽器から揮発する引火性物質と鉄弦の火花で練習部屋が爆発しかねないので、換気はこまめに、という結社の安全啓発。",
+          "facts": [
+            "「プレクトラム結社アーカイブス『こまめな換気』」（2021年8月15日）で語られた安全啓発です。",
+            "楽器の接着剤や塗料に使われるアセトンやエタノールなどの溶剤が、楽器から徐々に揮発していくと説明されています。",
+            "締め切った部屋で長時間練習するとそれらが空気中に充満し、ピッキングで鉄弦から生じた火花が発火源となって、瞬時に酸化反応が広がるという理屈です。",
+            "結論は「練習中は換気をこまめに行いましょう」。「安全意識の高い演奏にこそミューズは微笑む」と締めくくられています。"
+          ],
+          "keywords": [
+            "換気",
+            "爆発",
+            "引火",
+            "アセトン",
+            "溶剤",
+            "練習室",
+            "練習部屋"
+          ]
+        },
+        {
+          "topic": "episode_amedeo_amabie",
+          "title": "アメデオ・アマビエ",
+          "summary": "2021年に結社が発表した疫病退散モチーフの作品。画像をハードディスクに保存するとCPUが新型コロナに感染するのを防ぐとされる。",
+          "facts": [
+            "記事「新プロダクトのご紹介」（2021年8月28日）で発表された、「ネクストイノベーション」からリリースされた作品です。",
+            "古い資料から発掘したモチーフを現代的にアレンジしたもので、画像をハードディスクに保存すると「CPUが新型コロナウイルスに感染するのを防ぐ」効果が期待できるとされています。",
+            "印刷したものを楽器ケースに貼り付けると「彷徨える霊魂からの加護をうけられる」という説もあります。",
+            "コロナ禍で打撃を受けたプレクトラム業界の終息と、同志たちの活躍を祈念して公開されました。"
+          ],
+          "keywords": [
+            "アマビエ",
+            "アメデオ",
+            "疫病",
+            "お守り",
+            "加護",
+            "ネクストイノベーション"
+          ]
+        },
+        {
+          "topic": "episode_paper_craft",
+          "title": "マンドリンのペーパークラフト",
+          "summary": "結社が配布しているラウンドバックマンドリンのペーパークラフト。A4用紙2枚で約1/2サイズ、完成の目安はボッタキアリ「交響的前奏曲」約20回分。",
+          "facts": [
+            "記事「マンドリン　ペーパークラフト」（2022年3月21日）で公開された配布物です。",
+            "A4用紙2枚に印刷すると、実物の約1/2サイズのラウンドバックタイプのマンドリンが作れます。",
+            "完成までの目安は、ボッタキアリ作曲「交響的前奏曲」およそ20回分の演奏時間です。",
+            "拡大印刷すればマンドローネも作れ、段ボールで作れば新歓イベントの飾りやマスコットにも使えます。",
+            "意匠をあえて簡素にしてあるのは、ヘッドの形やピックガード、シール、ラインストーンなど、実物では難しい装飾を各自のクリエイティビティで足せるようにするためです。"
+          ],
+          "keywords": [
+            "ペーパークラフト",
+            "工作",
+            "紙のマンドリン",
+            "ボッタキアリ",
+            "交響的前奏曲",
+            "マンドローネ",
+            "新歓"
+          ]
+        },
+        {
+          "topic": "episode_india_meshi",
+          "title": "プレクトラム見聞録 インドめし",
+          "summary": "インド出張の食事は心配されがちだが「インドめしは美味い。これは断言できます」というのが結社の見解。",
+          "facts": [
+            "「プレクトラム見聞録-インドめし-」（2021年6月20日）で語られた話です。",
+            "インド出張の話をすると「ご飯大丈夫？腹壊したことない？」と必ず聞かれるが、実際は非常に美味い、というのが趣旨です。",
+            "紹介されているのは南インド料理が中心で、朝食のドーサ、昼食のミール、チキンマサラ、マトンカレー、タンドリーチキン、牛乳から作るチーズのパニールなどです。",
+            "菓子では「世界一甘いと言われる」Gulab Jamun が挙げられています。",
+            "露店のローカル料理にも挑戦を勧めつつ、謎の料理にあたって「飛行機内でマーライオンになった」というオチもついています。"
+          ],
+          "keywords": [
+            "インド",
+            "ドーサ",
+            "カレー",
+            "グラブジャムン",
+            "gulab",
+            "パニール",
+            "タンドリー"
+          ]
+        },
+        {
+          "topic": "episode_comitia",
+          "title": "COMITIA144への参加",
+          "summary": "2023年5月5日の創作同人イベントCOMITIA144に音楽サークルとして参加し、CDを頒布した。",
+          "facts": [
+            "結社は2023年5月5日に開催された創作同人イベント「COMITIA144」に参加し、CDを頒布しました。",
+            "収録曲は YouTube で試聴でき、クロスフェード版も公開されています。",
+            "音楽系サークルが少ないアウェイな環境でしたが、多くの来場者に立ち寄っていただき、チャンネル登録やCDの購入につながったと報告しています。",
+            "参加報告の記事では、リアルイベントならではの予期しない出会いの価値が強調されています。"
+          ],
+          "keywords": [
+            "コミティア",
+            "comitia",
+            "同人",
+            "即売会",
+            "頒布"
+          ]
+        },
+        {
+          "topic": "note_publications",
+          "title": "noteでの発信",
+          "summary": "結社はnote（plectrum_c）で記事を発信しており、「プレクトラム見聞録」「プレクトラム結社アーカイブス」「さざなみ書評」の3つのマガジンがある。",
+          "facts": [
+            "結社は note のアカウント「プレクトラム結社」（plectrum_c）で記事を発信しています。",
+            "「プレクトラム見聞録」は、結社が世界中に持つ拠点から現地の情報をお届けするシリーズです。",
+            "「プレクトラム結社アーカイブス」は、過去に Twitter でつぶやいた、マンドリンに役立つ知識をまとめたものです。",
+            "「さざなみ書評」はモラトリくんさんによる書評集で、『葬送のフリーレン』『推し、燃ゆ』『音楽の聴き方』『成功する音楽家の新習慣』などを取り上げています。",
+            "ほかに、アイドルマスターシャイニーカラーズや原神、西野カナといった音楽以外の話題の記事もあります。"
+          ],
+          "keywords": [
+            "note",
+            "マガジン",
+            "記事",
+            "ブログ",
+            "見聞録",
+            "アーカイブス",
+            "書評",
+            "モラトリ"
+          ]
+        },
+        {
+          "topic": "society_name_origin",
+          "title": "団体名の由来",
+          "summary": "「さざなみ」は打ち寄せる小波とそれを引き連れてくる風を、「工業」は職域親睦の歴史を踏まえた言葉。",
+          "facts": [
+            "「さざなみ」は、打ち寄せる小波と、それを引き連れてくる風を表しています。",
+            "「工業」は、職域親睦の歴史を踏まえて付けられています。",
+            "この2つを組み合わせて「プレクトラム結社さざなみ工業」という団体名になっています。"
+          ],
+          "keywords": [
+            "由来",
+            "さざなみ",
+            "工業",
+            "名前の意味",
+            "なぜさざなみ",
+            "団体名"
+          ]
+        },
+        {
+          "topic": "salary_policy",
+          "title": "給与制度",
+          "summary": "結社の給料は0円。毎年5%のベースアップが行われているが、元々0円のため昇給額も0円。",
+          "facts": [
+            "結社の給料は0円です。",
+            "毎年5%のベースアップが実施されますが、もともとが0円のため昇給額も0円です。"
+          ],
+          "keywords": [
+            "給料",
+            "給与",
+            "賃金",
+            "報酬",
+            "ベースアップ",
+            "昇給",
+            "0円"
+          ]
+        },
+        {
+          "topic": "society_profile",
+          "title": "プレクトラム結社の概要",
+          "summary": "正式名称はプレクトラム結社さざなみ工業。2013年結成、少人数アンサンブルを基本としながら合奏も行うプレクトラム音楽の団体。",
+          "facts": [
+            "正式名称は「プレクトラム結社さざなみ工業」です。",
+            "2013年に「プレクトラム音楽を愛し、プレクトラム音楽に従事し、プレクトラム音楽に殉じる者の集い」として結成されました。",
+            "少人数のアンサンブルを基本としつつ、それぞれのグループが集まって合奏するスタイルで活動しています。",
+            "目標は「さまざまな形態のプレクトラム音楽を楽しみながら、その魅力をお客様に伝えていく」ことです。",
+            "公演は名古屋市のメニコンANNEX HITOMIホールで開催しています。"
+          ],
+          "keywords": [
+            "結社",
+            "プレクトラム",
+            "さざなみ工業",
+            "どんな団体",
+            "何をして",
+            "活動",
+            "結成",
+            "マンドリン",
+            "ギター"
+          ]
+        }
+      ]
+    }
+  ]
+}
