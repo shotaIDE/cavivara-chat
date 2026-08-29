@@ -8,7 +8,7 @@ environment:
   # Flutter 3.44.0 or 3.44.1に上げると、CrashlyticsのdSYMアップロードに失敗するため、
   # Flutter 3.41.9を維持している。
   # https://github.com/invertase/flutterfire_cli/issues/428
-  sdk: 3.11.5
+  sdk: 3.13.2
 
 dependencies:
   # ライブラリが Flutter SDK によって固定されているため、バージョンを指定しない
@@ -33,7 +33,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  flutter_riverpod: 3.3.1
+  flutter_riverpod: 3.4.1
   font_awesome_flutter: 11.0.0
   freezed_annotation: 3.1.0
   google_sign_in: 7.2.0
@@ -42,8 +42,8 @@ dependencies:
   mobile_scanner: 7.4.0
   package_info_plus: 10.2.1
   purchases_flutter: 10.8.0
-  riverpod: 3.2.1
-  riverpod_annotation: 4.0.2
+  riverpod: 3.4.1
+  riverpod_annotation: 4.0.5
   share_plus: 13.3.0
   shared_preferences: 2.5.5
   skeletonizer: 2.1.3
@@ -55,12 +55,12 @@ dev_dependencies:
   flutter_launcher_icons: 0.14.4
   flutter_test:
     sdk: flutter
-  freezed: 3.2.5
-  json_serializable: 6.13.0
+  freezed: 4.0.0
+  json_serializable: 6.13.2
   mocktail: 1.0.5
   pedantic_mono: 1.33.0
-  riverpod_generator: 4.0.3
-  riverpod_lint: 3.1.3
+  riverpod_generator: 4.0.7
+  riverpod_lint: 3.1.7
   shared_preferences_platform_interface: 2.4.2
 
 flutter:
