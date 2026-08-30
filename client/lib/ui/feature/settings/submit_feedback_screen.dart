@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/feedback_request.dart';
 import 'package:house_worker/data/model/send_feedback_exception.dart';
+import 'package:house_worker/data/repository/feedback_email_repository.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/feature/settings/submit_feedback_presenter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -30,6 +33,31 @@ class _SubmitFeedbackScreenState extends ConsumerState<SubmitFeedbackScreen> {
   final _feedbackController = TextEditingController();
   final _emailController = TextEditingController();
   final _userIdController = TextEditingController();
+
+  /// 保存済みの返信用メールアドレスを復元済みかどうか
+  ///
+  /// 復元は画面表示時の一度きりとする。保存のたびに復元すると、
+  /// 入力中のカーソル位置が末尾に移動してしまうためである。
+  var _hasRestoredEmail = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listenManual(
+      feedbackEmailRepositoryProvider,
+      (previous, next) {
+        final email = next.value;
+        if (email == null || _hasRestoredEmail) {
+          return;
+        }
+
+        _hasRestoredEmail = true;
+        _emailController.text = email;
+      },
+      fireImmediately: true,
+    );
+  }
 
   @override
   void dispose() {
@@ -203,24 +231,55 @@ class _EmailField extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        TextFormField(
-          controller: controller,
-          enabled: isAvailable,
-          decoration: const InputDecoration(
-            hintText: 'your.name@example.com',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return null;
-            }
+        // クリアボタンの表示・非表示を入力内容に追従させるため、
+        // 入力内容の変化を購読して再構築する
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, editingValue, _) {
+            final clearButton = IconButton(
+              icon: const Icon(Icons.clear),
+              tooltip: '返信用メールアドレスを消去',
+              onPressed: isAvailable
+                  ? () {
+                      controller.clear();
 
-            if (EmailValidator.validate(value)) {
-              return null;
-            }
+                      unawaited(
+                        ref
+                            .read(feedbackEmailRepositoryProvider.notifier)
+                            .clear(),
+                      );
+                    }
+                  : null,
+            );
 
-            return '有効な形式のメールアドレスを入力してください';
+            return TextFormField(
+              controller: controller,
+              enabled: isAvailable,
+              decoration: InputDecoration(
+                hintText: 'your.name@example.com',
+                border: const OutlineInputBorder(),
+                suffixIcon: editingValue.text.isEmpty ? null : clearButton,
+              ),
+              keyboardType: TextInputType.emailAddress,
+              onChanged: (value) {
+                unawaited(
+                  ref
+                      .read(feedbackEmailRepositoryProvider.notifier)
+                      .save(value),
+                );
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return null;
+                }
+
+                if (EmailValidator.validate(value)) {
+                  return null;
+                }
+
+                return '有効な形式のメールアドレスを入力してください';
+              },
+            );
           },
         ),
       ],
