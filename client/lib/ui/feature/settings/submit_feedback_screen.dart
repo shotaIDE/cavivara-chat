@@ -303,23 +303,23 @@ class _UserIdSection extends ConsumerStatefulWidget {
 }
 
 class _UserIdSectionState extends ConsumerState<_UserIdSection> {
-  String? _sendUserId;
-  var _displayUserId = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+  /// ユーザーIDの取得中にスケルトンとして表示する文字列
+  static const _placeholderUserId = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
+  String _displayUserId = _placeholderUserId;
 
   @override
   void initState() {
     super.initState();
 
+    // 入力欄への反映はコントローラーの書き換えを伴い、ビルド中には実行できない。
+    // そのため取得結果の購読はビルドの外で行う。
     ref.listenManual(
       currentUserProfileProvider,
       (previous, next) {
-        if (next.hasError) {
-          _sendUserId = '(failed to get user ID)';
-          _displayUserId = '-';
-        } else {
-          _sendUserId = next.value?.id;
-          _displayUserId = _sendUserId ?? 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-        }
+        _displayUserId = next.hasError
+            ? '-'
+            : next.value?.id ?? _placeholderUserId;
 
         _updateDisplayUserId(includeUserId: widget.includeUserId);
       },
@@ -330,6 +330,10 @@ class _UserIdSectionState extends ConsumerState<_UserIdSection> {
   @override
   Widget build(BuildContext context) {
     final isAvailable = ref.watch(isSubmissionAvailableProvider);
+    // スケルトン表示の解除には再構築が必要なため、購読ではなく監視する。
+    // listenManual のコールバックだけでは再構築されず、
+    // 取得完了後もシマーが動き続けてしまう。
+    final userProfile = ref.watch(currentUserProfileProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +361,7 @@ class _UserIdSectionState extends ConsumerState<_UserIdSection> {
         ),
         const SizedBox(height: 8),
         Skeletonizer(
-          enabled: _sendUserId == null,
+          enabled: userProfile.isLoading,
           child: TextFormField(
             controller: widget.controller,
             enabled: false,
