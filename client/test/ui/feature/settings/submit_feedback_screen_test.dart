@@ -65,6 +65,21 @@ void main() {
       );
     }
 
+    /// 永続化された返信用メールアドレスを、画面とは別のコンテナから読み直す
+    Future<String> readStoredEmail() async {
+      final newContainer = createContainer();
+      final storedEmail = await newContainer.read(
+        feedbackEmailRepositoryProvider.future,
+      );
+
+      // Riverpod は不要になった provider の破棄を Duration.zero の Timer で
+      // 予約する。addTearDown で破棄するとテストの不変条件の検証より後になり、
+      // 「A Timer is still pending」で失敗するため、ここで破棄して取り消す。
+      newContainer.dispose();
+
+      return storedEmail;
+    }
+
     setUp(() {
       setPreferences({});
       container = createContainer();
@@ -105,12 +120,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      final newContainer = createContainer();
-      addTearDown(newContainer.dispose);
-      expect(
-        await newContainer.read(feedbackEmailRepositoryProvider.future),
-        equals(dummyEmail),
-      );
+      expect(await readStoredEmail(), equals(dummyEmail));
     });
 
     testWidgets('未入力の場合はクリアボタンが表示されないこと', (tester) async {
@@ -147,12 +157,7 @@ void main() {
       );
 
       // Assert - 永続化データが消去されていること
-      final newContainer = createContainer();
-      addTearDown(newContainer.dispose);
-      expect(
-        await newContainer.read(feedbackEmailRepositoryProvider.future),
-        equals(''),
-      );
+      expect(await readStoredEmail(), equals(''));
     });
   });
 }
