@@ -12,7 +12,11 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 void main() {
   group('SubmitFeedbackScreen - 返信用メールアドレスの保持', () {
-    const dummyEmail = 'your.name@example.com';
+    // ヒントの Text ウィジェットは入力済みでもツリーに残る（不透明度 0 で
+    // 描画されるだけ）ため、ダミー値にはヒントと異なる文字列を使う。
+    // 同一にすると find.text がヒントも拾い、入力内容の検証ができなくなる。
+    const dummyEmail = 'saved.address@example.com';
+    const emailFieldHint = 'your.name@example.com';
     const emailFieldLabel = '返信用メールアドレス（任意）';
 
     late ProviderContainer container;
@@ -95,7 +99,7 @@ void main() {
 
       // Act
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'your.name@example.com').first,
+        find.widgetWithText(TextFormField, emailFieldHint),
         dummyEmail,
       );
       await tester.pumpAndSettle();
