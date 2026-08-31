@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/feedback_request.dart';
 import 'package:house_worker/data/model/send_feedback_exception.dart';
+import 'package:house_worker/data/repository/feedback_email_repository.dart';
 import 'package:house_worker/data/service/auth_service.dart';
 import 'package:house_worker/ui/feature/settings/submit_feedback_presenter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -30,6 +33,31 @@ class _SubmitFeedbackScreenState extends ConsumerState<SubmitFeedbackScreen> {
   final _feedbackController = TextEditingController();
   final _emailController = TextEditingController();
   final _userIdController = TextEditingController();
+
+  /// 保存済みの返信用メールアドレスを復元済みかどうか
+  ///
+  /// 復元は画面表示時の一度きりとする。保存のたびに復元すると、
+  /// 入力中のカーソル位置が末尾に移動してしまうためである。
+  var _hasRestoredEmail = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listenManual(
+      feedbackEmailRepositoryProvider,
+      (previous, next) {
+        final email = next.value;
+        if (email == null || _hasRestoredEmail) {
+          return;
+        }
+
+        _hasRestoredEmail = true;
+        _emailController.text = email;
+      },
+      fireImmediately: true,
+    );
+  }
 
   @override
   void dispose() {
@@ -203,24 +231,55 @@ class _EmailField extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        TextFormField(
-          controller: controller,
-          enabled: isAvailable,
-          decoration: const InputDecoration(
-            hintText: 'your.name@example.com',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return null;
-            }
+        // クリアボタンの表示・非表示を入力内容に追従させるため、
+        // 入力内容の変化を購読して再構築する
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, editingValue, _) {
+            final clearButton = IconButton(
+              icon: const Icon(Icons.clear),
+              tooltip: '返信用メールアドレスを消去',
+              onPressed: isAvailable
+                  ? () {
+                      controller.clear();
 
-            if (EmailValidator.validate(value)) {
-              return null;
-            }
+                      unawaited(
+                        ref
+                            .read(feedbackEmailRepositoryProvider.notifier)
+                            .clear(),
+                      );
+                    }
+                  : null,
+            );
 
-            return '有効な形式のメールアドレスを入力してください';
+            return TextFormField(
+              controller: controller,
+              enabled: isAvailable,
+              decoration: InputDecoration(
+                hintText: 'your.name@example.com',
+                border: const OutlineInputBorder(),
+                suffixIcon: editingValue.text.isEmpty ? null : clearButton,
+              ),
+              keyboardType: TextInputType.emailAddress,
+              onChanged: (value) {
+                unawaited(
+                  ref
+                      .read(feedbackEmailRepositoryProvider.notifier)
+                      .save(value),
+                );
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return null;
+                }
+
+                if (EmailValidator.validate(value)) {
+                  return null;
+                }
+
+                return '有効な形式のメールアドレスを入力してください';
+              },
+            );
           },
         ),
       ],
@@ -244,23 +303,23 @@ class _UserIdSection extends ConsumerStatefulWidget {
 }
 
 class _UserIdSectionState extends ConsumerState<_UserIdSection> {
-  String? _sendUserId;
-  var _displayUserId = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+  /// ユーザーIDの取得中にスケルトンとして表示する文字列
+  static const _placeholderUserId = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
+  String _displayUserId = _placeholderUserId;
 
   @override
   void initState() {
     super.initState();
 
+    // 入力欄への反映はコントローラーの書き換えを伴い、ビルド中には実行できない。
+    // そのため取得結果の購読はビルドの外で行う。
     ref.listenManual(
       currentUserProfileProvider,
       (previous, next) {
-        if (next.hasError) {
-          _sendUserId = '(failed to get user ID)';
-          _displayUserId = '-';
-        } else {
-          _sendUserId = next.value?.id;
-          _displayUserId = _sendUserId ?? 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-        }
+        _displayUserId = next.hasError
+            ? '-'
+            : next.value?.id ?? _placeholderUserId;
 
         _updateDisplayUserId(includeUserId: widget.includeUserId);
       },
@@ -271,6 +330,10 @@ class _UserIdSectionState extends ConsumerState<_UserIdSection> {
   @override
   Widget build(BuildContext context) {
     final isAvailable = ref.watch(isSubmissionAvailableProvider);
+    // スケルトン表示の解除には再構築が必要なため、購読ではなく監視する。
+    // listenManual のコールバックだけでは再構築されず、
+    // 取得完了後もシマーが動き続けてしまう。
+    final userProfile = ref.watch(currentUserProfileProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +361,7 @@ class _UserIdSectionState extends ConsumerState<_UserIdSection> {
         ),
         const SizedBox(height: 8),
         Skeletonizer(
-          enabled: _sendUserId == null,
+          enabled: userProfile.isLoading,
           child: TextFormField(
             controller: widget.controller,
             enabled: false,

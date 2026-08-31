@@ -6,4 +6,5 @@ enum PreferenceKey {
   loginBonusGrantedDates,
   earnedBadgeList,
   chatModeSelection,
+  feedbackEmail,
 }
