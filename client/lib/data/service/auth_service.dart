@@ -38,8 +38,7 @@ Stream<UserProfile?> currentUserProfile(Ref ref) {
 }
 
 class AuthService {
-  AuthService({required ErrorReportService errorReportService})
-    : _errorReportService = errorReportService;
+  AuthService({required this._errorReportService});
 
   final ErrorReportService _errorReportService;
   final _logger = Logger('AuthService');
