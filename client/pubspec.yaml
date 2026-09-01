@@ -27,6 +27,8 @@ dependencies:
   firebase_app_installations: 0.4.2+4
   firebase_auth: 6.5.4
   firebase_core: 4.11.0
+  # 5.2.5以上に更新すると、CrashlyticsのdSYMアップロードに失敗するため、
+  # 5.2.4を維持している。
   firebase_crashlytics: 5.2.4
   firebase_remote_config: 6.5.3
   flutter:
