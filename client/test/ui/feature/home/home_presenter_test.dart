@@ -824,10 +824,27 @@ void main() {
   });
 
   group('Home Presenter - Current Ai Answer Caution', () {
+    late MockAiChatService mockAiChatService;
     late ProviderContainer container;
 
     setUp(() {
-      container = ProviderContainer();
+      mockAiChatService = MockAiChatService();
+
+      container = ProviderContainer(
+        overrides: [
+          aiChatServiceProvider.overrideWith((ref) => mockAiChatService),
+          cavivaraProfileProvider.overrideWith(
+            (ref) => const CavivaraProfile(
+              displayName: 'テストカヴィヴァラ',
+              title: 'テスト用',
+              description: 'テスト用のカヴィヴァラです',
+              iconPath: 'test_icon.png',
+              aiPrompt: 'You are a helpful assistant.',
+              tags: ['test'],
+            ),
+          ),
+        ],
+      );
     });
 
     tearDown(() {
