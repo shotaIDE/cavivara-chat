@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:house_worker/data/definition/app_feature.dart';
+import 'package:house_worker/data/model/ai_answer_caution.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/chat_message.dart';
 import 'package:house_worker/data/model/chat_mode.dart';
@@ -187,6 +188,9 @@ class ChatMessages extends _$ChatMessages {
     // 改めて判定できるようにする
     ref.read(resolvedChatModeProvider.notifier).reset();
 
+    // 次の会話では別の注意書きを表示できるよう、選び直す
+    ref.read(currentAiAnswerCautionProvider.notifier).reselect();
+
     // AIサービスのセッションキャッシュもクリア
     final cavivaraProfile = ref.read(cavivaraProfileProvider);
     ref.read(aiChatServiceProvider).clearChatSession(cavivaraProfile.aiPrompt);
@@ -243,6 +247,29 @@ class ResolvedChatMode extends _$ResolvedChatMode {
   /// 判定結果をクリアする
   void reset() {
     state = null;
+  }
+}
+
+/// 現在の会話でカヴィヴァラさんの回答に添える注意書きを保持するプロバイダー
+///
+/// 1つの会話の流れの中では文言を統一するため、会話をクリアするまで最初に選んだ
+/// 注意書きを保持し続ける。
+///
+/// 注意書きは、吹き出しの下のボタンがタップされたときにのみ読み出される。自動破棄
+/// されるとタップのたびに文言が選び直されてしまうため、破棄せずに保持する。
+@Riverpod(keepAlive: true)
+class CurrentAiAnswerCaution extends _$CurrentAiAnswerCaution {
+  @override
+  AiAnswerCaution build() => _selectRandomly();
+
+  /// 注意書きを選び直す
+  void reselect() {
+    state = _selectRandomly();
+  }
+
+  static AiAnswerCaution _selectRandomly() {
+    const candidates = AiAnswerCaution.values;
+    return candidates[Random().nextInt(candidates.length)];
   }
 }
 

@@ -9,6 +9,7 @@ import 'package:house_worker/data/model/chat_mode_selection.dart';
 import 'package:house_worker/data/repository/chat_mode_selection_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
+import 'package:house_worker/ui/component/ai_answer_caution_dialog.dart';
 import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
@@ -837,6 +838,7 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
           ),
           child: _ChatBubble(
             message: message,
+            isLastMessage: index == messages.length - 1,
           ),
         );
       },
@@ -853,9 +855,13 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 class _ChatBubble extends ConsumerWidget {
   const _ChatBubble({
     required this.message,
+    required this.isLastMessage,
   });
 
   final ChatMessage message;
+
+  /// 会話の最後のメッセージかどうか
+  final bool isLastMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -863,6 +869,7 @@ class _ChatBubble extends ConsumerWidget {
       ChatMessageSenderUser() => _UserChatBubble(message: message),
       ChatMessageSenderAi() => _AiChatBubble(
         message: message,
+        isLastMessage: isLastMessage,
       ),
       ChatMessageSenderApp() => _AppChatBubble(
         message: message,
@@ -1079,9 +1086,13 @@ class _UserChatBubble extends StatelessWidget {
 class _AiChatBubble extends ConsumerWidget {
   const _AiChatBubble({
     required this.message,
+    required this.isLastMessage,
   });
 
   final ChatMessage message;
+
+  /// 会話の最後のメッセージかどうか
+  final bool isLastMessage;
 
   /// カヴィヴァラさん(AI)の発言は毛並み(猫毛様式)で表示する。
   static const ChatBubbleDesign _design = ChatBubbleDesign.catFur;
@@ -1183,6 +1194,31 @@ class _AiChatBubble extends ConsumerWidget {
       ),
     );
 
+    // 注意書きは会話の最後がカヴィヴァラさんの発言のときだけ添える。
+    // 発言ごとに繰り返すと会話が読みづらくなるため、直近の回答にのみ表示する。
+    // また、回答の生成中は内容が出そろってから表示する。
+    final shouldShowCaution = isLastMessage && !message.isStreaming;
+    // 会話の流れを邪魔しないよう、普段は小さなアイコンだけを置き、
+    // タップしたときにダイアログで注意書きを表示する。
+    final cautionButton = shouldShowCaution
+        ? IconButton(
+            onPressed: () => unawaited(
+              AiAnswerCautionDialog.show(
+                context,
+                caution: ref.read(currentAiAnswerCautionProvider),
+              ),
+            ),
+            icon: const Icon(Icons.info_outline),
+            iconSize: 16,
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
+            tooltip: '回答についての注意を見る',
+            // アイコン自体は小さいため、余白でタップ領域を確保する。
+            // 次のメッセージとの間隔が空きすぎないよう、下側の余白は設けない。
+            padding: const EdgeInsets.only(left: 8, top: 8, right: 8),
+            constraints: const BoxConstraints(),
+          )
+        : null;
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1193,7 +1229,13 @@ class _AiChatBubble extends ConsumerWidget {
             // アイコンに対して吹き出しを少し下げつつ、上下の余白を揃える。
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: bubbleWithPointer,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  bubbleWithPointer,
+                  ?cautionButton,
+                ],
+              ),
             ),
           ),
         ],
