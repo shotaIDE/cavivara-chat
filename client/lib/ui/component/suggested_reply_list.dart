@@ -132,9 +132,12 @@ class _SuggestedReplyListState extends ConsumerState<SuggestedReplyList>
   ///
   /// 上下の余白もこのUIに含めることで、サジェストが存在しないとき
   /// （`SizedBox.shrink()`）には余白も発生しないようにする。
+  ///
+  /// 直前のメッセージ側が下余白を持つため、上側の余白は設けず、
+  /// 会話とサジェストが離れて見えないようにする。
   Widget _buildSuggestionList(BuildContext context, List<String> suggestions) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.only(bottom: 16),
       child: SizedBox(
         height: 48,
         child: ListView.separated(
