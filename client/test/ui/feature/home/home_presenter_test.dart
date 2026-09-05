@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:house_worker/data/model/ai_answer_caution.dart';
 import 'package:house_worker/data/model/ai_response.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/cavivara_profile.dart';
@@ -819,6 +820,58 @@ void main() {
         // 重複追加されず、元の1件のみ
         expect(badges.length, 1);
       });
+    });
+  });
+
+  group('Home Presenter - Current Ai Answer Caution', () {
+    late MockAiChatService mockAiChatService;
+    late ProviderContainer container;
+
+    setUp(() {
+      mockAiChatService = MockAiChatService();
+
+      container = ProviderContainer(
+        overrides: [
+          aiChatServiceProvider.overrideWith((ref) => mockAiChatService),
+          cavivaraProfileProvider.overrideWith(
+            (ref) => const CavivaraProfile(
+              displayName: 'テストカヴィヴァラ',
+              title: 'テスト用',
+              description: 'テスト用のカヴィヴァラです',
+              iconPath: 'test_icon.png',
+              aiPrompt: 'You are a helpful assistant.',
+              tags: ['test'],
+            ),
+          ),
+        ],
+      );
+    });
+
+    tearDown(() {
+      container.dispose();
+    });
+
+    test('同じ会話の中では常に同じ注意書きが返されること', () {
+      final caution = container.read(currentAiAnswerCautionProvider);
+
+      for (var i = 0; i < 10; i++) {
+        expect(container.read(currentAiAnswerCautionProvider), equals(caution));
+      }
+    });
+
+    test('チャットクリア時に注意書きが選び直されること', () {
+      // 選び直しは無作為であり、同じ注意書きが続けて選ばれることもあるため、
+      // クリアを繰り返して複数種類が現れることで選び直しを確認する。
+      final selectedCautions = <AiAnswerCaution>{
+        container.read(currentAiAnswerCautionProvider),
+      };
+
+      for (var i = 0; i < 50; i++) {
+        container.read(chatMessagesProvider.notifier).clearMessages();
+        selectedCautions.add(container.read(currentAiAnswerCautionProvider));
+      }
+
+      expect(selectedCautions.length, greaterThan(1));
     });
   });
 }

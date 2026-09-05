@@ -9,6 +9,7 @@ import 'package:house_worker/data/model/chat_mode_selection.dart';
 import 'package:house_worker/data/repository/chat_mode_selection_repository.dart';
 import 'package:house_worker/data/repository/skip_clear_chat_confirmation_repository.dart';
 import 'package:house_worker/data/service/cavivara_profile_service.dart';
+import 'package:house_worker/ui/component/ai_answer_caution_dialog.dart';
 import 'package:house_worker/ui/component/animated_cavivara.dart';
 import 'package:house_worker/ui/component/app_drawer.dart';
 import 'package:house_worker/ui/component/cat_fur_bubble_painter.dart';
@@ -823,20 +824,27 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
         }
 
         final message = messages[index];
+        final isLastMessage = index == messages.length - 1;
         // カヴィヴァラさん(AI)の発言は猫毛様式で毛先がはみ出すため、
         // 上下の余白を広めに確保する。
         final verticalPadding = message.sender is ChatMessageSenderAi
             ? 16.0
             : 8.0;
+        // 注意書きアイコンを添えるときは、発言の下端が毛先ではなくアイコンの
+        // タップ領域になる。毛先のための余白は不要なため下側を詰める。
+        final hasCaution =
+            message.sender is ChatMessageSenderAi &&
+            _AiChatBubble.showsCaution(message, isLastMessage: isLastMessage);
         return Padding(
           padding: EdgeInsets.only(
             left: 16 + MediaQuery.of(context).viewPadding.left,
             right: 16 + MediaQuery.of(context).viewPadding.right,
             top: verticalPadding,
-            bottom: verticalPadding,
+            bottom: hasCaution ? 8 : verticalPadding,
           ),
           child: _ChatBubble(
             message: message,
+            isLastMessage: isLastMessage,
           ),
         );
       },
@@ -853,9 +861,13 @@ class _ChatMessageListState extends ConsumerState<_ChatMessageList> {
 class _ChatBubble extends ConsumerWidget {
   const _ChatBubble({
     required this.message,
+    required this.isLastMessage,
   });
 
   final ChatMessage message;
+
+  /// 会話の最後のメッセージかどうか
+  final bool isLastMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -863,6 +875,7 @@ class _ChatBubble extends ConsumerWidget {
       ChatMessageSenderUser() => _UserChatBubble(message: message),
       ChatMessageSenderAi() => _AiChatBubble(
         message: message,
+        isLastMessage: isLastMessage,
       ),
       ChatMessageSenderApp() => _AppChatBubble(
         message: message,
@@ -1079,12 +1092,29 @@ class _UserChatBubble extends StatelessWidget {
 class _AiChatBubble extends ConsumerWidget {
   const _AiChatBubble({
     required this.message,
+    required this.isLastMessage,
   });
 
   final ChatMessage message;
 
+  /// 会話の最後のメッセージかどうか
+  final bool isLastMessage;
+
   /// カヴィヴァラさん(AI)の発言は毛並み(猫毛様式)で表示する。
   static const ChatBubbleDesign _design = ChatBubbleDesign.catFur;
+
+  /// 注意書きアイコンを添えるかどうか。
+  ///
+  /// 注意書きは会話の最後がカヴィヴァラさんの発言のときだけ添える。
+  /// 発言ごとに繰り返すと会話が読みづらくなるため、直近の回答にのみ表示する。
+  /// また、回答の生成中は内容が出そろってから表示する。
+  ///
+  /// アイコンの有無で発言の下側に必要な余白が変わるため、呼び出し元でも
+  /// この判定を参照できるようにしている。
+  static bool showsCaution(
+    ChatMessage message, {
+    required bool isLastMessage,
+  }) => isLastMessage && !message.isStreaming;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1183,6 +1213,36 @@ class _AiChatBubble extends ConsumerWidget {
       ),
     );
 
+    final shouldShowCaution = showsCaution(
+      message,
+      isLastMessage: isLastMessage,
+    );
+    // 会話の流れを邪魔しないよう、普段は小さなアイコンだけを置き、
+    // タップしたときにダイアログで注意書きを表示する。
+    final cautionButton = shouldShowCaution
+        ? IconButton(
+            onPressed: () => unawaited(
+              AiAnswerCautionDialog.show(
+                context,
+                caution: ref.read(currentAiAnswerCautionProvider),
+              ),
+            ),
+            icon: const Icon(Icons.info_outline),
+            iconSize: 16,
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
+            tooltip: '回答についての注意を見る',
+            // アイコン自体は小さいため、Material の最小インタラクションサイズ
+            // (48dp) をタップ領域として確保する。
+            // アイコンの見た目の位置は吹き出しの左端に揃える。
+            padding: const EdgeInsets.only(left: 8),
+            alignment: Alignment.centerLeft,
+            constraints: const BoxConstraints(
+              minWidth: kMinInteractiveDimension,
+              minHeight: kMinInteractiveDimension,
+            ),
+          )
+        : null;
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1191,9 +1251,20 @@ class _AiChatBubble extends ConsumerWidget {
           const SizedBox(width: 8),
           Flexible(
             // アイコンに対して吹き出しを少し下げつつ、上下の余白を揃える。
+            // ただし注意書きアイコンはタップ領域として上下に余白を内包するため、
+            // 添えるときは下側の余白を重ねて設けない。
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: bubbleWithPointer,
+              padding: EdgeInsets.only(
+                top: 8,
+                bottom: cautionButton == null ? 8 : 0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  bubbleWithPointer,
+                  ?cautionButton,
+                ],
+              ),
             ),
           ),
         ],
