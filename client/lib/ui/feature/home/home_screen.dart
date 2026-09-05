@@ -1212,10 +1212,15 @@ class _AiChatBubble extends ConsumerWidget {
             iconSize: 16,
             color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
             tooltip: '回答についての注意を見る',
-            // アイコン自体は小さいため、余白でタップ領域を確保する。
-            // 次のメッセージとの間隔が空きすぎないよう、下側の余白は設けない。
-            padding: const EdgeInsets.only(left: 8, top: 8, right: 8),
-            constraints: const BoxConstraints(),
+            // アイコン自体は小さいため、Material の最小インタラクションサイズ
+            // (48dp) をタップ領域として確保する。
+            // アイコンの見た目の位置は吹き出しの左端に揃える。
+            padding: const EdgeInsets.only(left: 8),
+            alignment: Alignment.centerLeft,
+            constraints: const BoxConstraints(
+              minWidth: kMinInteractiveDimension,
+              minHeight: kMinInteractiveDimension,
+            ),
           )
         : null;
 
