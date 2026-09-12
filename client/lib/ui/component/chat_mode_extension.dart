@@ -24,7 +24,7 @@ extension ChatModeExtension on ChatMode {
   String get description {
     switch (this) {
       case ChatMode.plectrumSocietyMaster:
-        return 'プレクトラム結社について、今来ている演奏会や過去の演奏会について知りたい場合に指定します。';
+        return 'プレクトラム結社の内部事情や演奏会について知りたい場合に指定します。';
       case ChatMode.chitChatMaster:
         return '雑談をしたい場合に指定します。';
     }
