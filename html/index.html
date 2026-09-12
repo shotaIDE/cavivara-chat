@@ -72,14 +72,12 @@
     transition: opacity 0.2s;
   }
   .badge:hover { opacity: 0.75; }
+  /* どちらのバッジも画像内に余白がないため、高さを揃えれば見た目も揃う */
   .badge img {
     display: block;
     width: auto;
+    height: 44px;
   }
-  /* App Store バッジは余白なし、Google Play バッジは画像内に約10%の余白があるため、
-     見た目の高さを揃えるように個別に指定する */
-  .badge-ios img { height: 44px; }
-  .badge-android img { height: 64px; }
   .note {
     margin-top: 32px;
     font-size: 12px;
@@ -106,8 +104,10 @@
            loading="lazy" decoding="async" fetchpriority="low">
     </a>
     <a class="badge badge-android" href="https://play.google.com/store/apps/details?id=ide.shota.colomney.CavivaraTalk">
-      <img src="https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png"
-           alt="Google Play で手に入れよう" width="165" height="64"
+      <!-- Google はバッジ画像の直接リンクを提供しなくなったため、
+           公式の配布アセットをリポジトリ内に配置して参照する -->
+      <img src="google-play-badge-ja.svg"
+           alt="Google Play で手に入れよう" width="148" height="44"
            loading="lazy" decoding="async" fetchpriority="low">
     </a>
   </div>
