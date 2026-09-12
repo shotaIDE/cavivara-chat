@@ -1,4 +1,7 @@
-const appStoreId = '000000000';
+/// App Store におけるアプリの ID
+///
+/// iOS では、ストアのページを開く際にこの ID が必要になる。
+const appStoreId = '6754788785';
 
 /// 利用規約ページの URL
 const termsOfServiceUrl =
