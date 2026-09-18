@@ -89,6 +89,29 @@ bool showDebugFeatureOnProdRelease(Ref ref) {
   );
 }
 
+/// 結社公演Vol.11の称号を獲得できるか否か
+///
+/// デフォルト値は false。`getBool` は未設定時に false を返すため、Remote Config に
+/// 値が設定されていない場合は称号を獲得できない。公演の開催期間に合わせて true に
+/// 切り替えることで、会場の二次元コードが出回った後も獲得を止められるようにする。
+///
+/// Firebase が初期化されていない場合（初期化に失敗した場合や、単体テストの実行時）は
+/// `FirebaseRemoteConfig.instance` が例外を投げる。二次元コードの読み取り経路から
+/// 参照されるため、例外を送出すると読み取り自体が失敗する。Firebase の初期化に
+/// 失敗してもアプリを続行する方針に合わせ、獲得できない状態にフォールバックする。
+@riverpod
+bool enablePlectrumConcertVol11Badge(Ref ref) {
+  try {
+    return FirebaseRemoteConfig.instance.getBool(
+      RemoteConfigParameterKey.enablePlectrumConcertVol11Badge.name,
+    );
+  } on Exception catch (e) {
+    _logger.warning('Remote Config から結社公演Vol.11の称号の設定を取得できませんでした', e);
+
+    return false;
+  }
+}
+
 /// Remote Config の現在の状態
 ///
 /// デバッグ画面で、アプリが実際に参照している値とその取得元を確認するために使う。

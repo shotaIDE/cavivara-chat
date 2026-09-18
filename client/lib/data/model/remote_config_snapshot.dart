@@ -12,6 +12,7 @@ enum RemoteConfigParameterKey {
   showDebugFeatureOnProdRelease,
   functionCallingConfig,
   initialChatSuggestionsConfig,
+  enablePlectrumConcertVol11Badge,
 }
 
 /// Remote Config の現在の状態
