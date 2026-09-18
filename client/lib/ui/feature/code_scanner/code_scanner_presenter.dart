@@ -2,6 +2,7 @@ import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/data/model/earned_badge.dart';
 import 'package:house_worker/data/repository/earned_badges_repository.dart';
 import 'package:house_worker/data/repository/viva_point_repository.dart';
+import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'code_scanner_presenter.g.dart';
@@ -22,6 +23,9 @@ enum CodeScanResult {
 
   /// 対象の二次元コードだが、すでにバッジを獲得済み
   alreadyEarned,
+
+  /// 対象の二次元コードだが、称号の獲得が有効化されていない
+  notAvailable,
 
   /// 対象外の二次元コード
   notMatched,
@@ -45,6 +49,12 @@ class CodeScannerPresenter extends _$CodeScannerPresenter {
   Future<CodeScanResult> handleScannedValue(String rawValue) async {
     if (rawValue != plectrumConcertVol11CodeUrl) {
       return CodeScanResult.notMatched;
+    }
+
+    // 獲得済みか否かの判定より先に有効化の判定を行う。無効化されている間は
+    // 誰にとっても獲得できない状態であることを、一貫した文言で伝えるためである。
+    if (!ref.read(enablePlectrumConcertVol11BadgeProvider)) {
+      return CodeScanResult.notAvailable;
     }
 
     // await をまたいで ref を使うと、その間にこのプロバイダーが破棄されて

@@ -10,6 +10,7 @@ import 'package:house_worker/data/repository/skip_clear_chat_confirmation_reposi
 import 'package:house_worker/data/repository/viva_point_repository.dart';
 import 'package:house_worker/data/service/remote_config_service.dart';
 import 'package:house_worker/ui/feature/code_scanner/badge_acquired_screen.dart';
+import 'package:house_worker/ui/feature/code_scanner/badge_unavailable_dialog.dart';
 import 'package:house_worker/ui/feature/code_scanner/code_scanner_presenter.dart';
 import 'package:house_worker/ui/feature/settings/debug_presenter.dart';
 import 'package:house_worker/ui/feature/settings/section_header.dart';
@@ -308,6 +309,8 @@ class _SimulatePlectrumConcertVol11Tile extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('このバッジはすでに獲得済みです')),
             );
+          case CodeScanResult.notAvailable:
+            await BadgeUnavailableDialog.show(context);
           case CodeScanResult.notMatched:
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('対象の二次元コードではありません')),

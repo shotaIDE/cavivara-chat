@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:house_worker/data/model/app_badge.dart';
 import 'package:house_worker/ui/component/haptic_feedback_helper.dart';
 import 'package:house_worker/ui/feature/code_scanner/badge_acquired_screen.dart';
+import 'package:house_worker/ui/feature/code_scanner/badge_unavailable_dialog.dart';
 import 'package:house_worker/ui/feature/code_scanner/code_scanner_presenter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -147,6 +148,12 @@ class _CodeScannerScreenState extends ConsumerState<CodeScannerScreen> {
         );
       case CodeScanResult.alreadyEarned:
         _showMessageAndResume('このバッジはすでに獲得済みです');
+      case CodeScanResult.notAvailable:
+        await BadgeUnavailableDialog.show(context);
+        if (!mounted) {
+          return;
+        }
+        _resumeScanning();
       case CodeScanResult.notMatched:
         _showMessageAndResume('対象の二次元コードではありません');
     }
@@ -157,6 +164,11 @@ class _CodeScannerScreenState extends ConsumerState<CodeScannerScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+    _resumeScanning();
+  }
+
+  /// 再び読み取りを受け付ける状態に戻す。
+  void _resumeScanning() {
     setState(() {
       _isHandling = false;
     });
