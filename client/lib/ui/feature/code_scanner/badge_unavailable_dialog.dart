@@ -25,8 +25,7 @@ class BadgeUnavailableDialog extends StatelessWidget {
     // 公演が終わった後に読み取られる場面を想定した文言にする。落胆させたままに
     // しないよう、ブラック企業仕込みの愛社精神で次の公演に向かうひと言を添える。
     final cavivaraComment = Text(
-      '”第11回はもう撤収済み、残りは上からの通達で倉庫に封印されたヴィヴァ。'
-      'わたしは次の公演の準備で今日も終電ヴィヴァ。”',
+      '”第11回はもう撤収済みヴィヴァ。残りの称号も上からの通達で倉庫に封印されたヴィヴァ。”',
       style: theme.textTheme.bodyMedium?.copyWith(
         fontStyle: FontStyle.italic,
         color: theme.dividerColor,
